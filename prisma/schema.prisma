@@ -40,8 +40,10 @@ model Donor {
 model Institution {
   id            Int            @id @default(autoincrement())
   accountId     Int            @unique
+  cnpj          String         @unique
+  phone         String         @db.VarChar(20)
   categories    Category[]
-  account       Account        @relation(fields: [accountId], references: [id])
+  account       Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
   Fields        Field[]
   Posts         Post[]
   Projects      Project[]
