@@ -42,6 +42,8 @@ model Institution {
   accountId     Int            @unique
   cnpj          String         @unique
   phone         String         @db.VarChar(20)
+  city          String         @db.VarChar(255)
+  state         String         @db.VarChar(2)
   categories    Category[]
   account       Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
   Fields        Field[]
