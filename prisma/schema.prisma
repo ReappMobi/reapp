@@ -18,9 +18,9 @@ model Account {
   accountType    AccountType  @default(DONOR)
   follwingCount  Int          @default(0)
   followersCount Int          @default(0)
-  Institution    Institution?
-  Admin          Admin?
-  Donor          Donor?
+  institution    Institution?
+  admin          Admin?
+  donor          Donor?
 }
 
 model Admin {
@@ -33,8 +33,8 @@ model Donor {
   id        Int        @id @default(autoincrement())
   accountId Int        @unique
   account   Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  Donations Donation[]
-  Like      Like[]
+  donations Donation[]
+  likes      Like[]
 }
 
 model Institution {
@@ -46,13 +46,13 @@ model Institution {
   state         String         @db.VarChar(2)
   categories    Category[]
   account       Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  Fields        Field[]
-  Posts         Post[]
-  Projects      Project[]
-  Donations     Donation[]
-  Partners      Partner[]
-  Volunteers    Volunteer[]
-  Collaborators Collaborator[]
+  fields        Field[]
+  posts         Post[]
+  projects      Project[]
+  donations     Donation[]
+  partners      Partner[]
+  volunteers    Volunteer[]
+  collaborators Collaborator[]
 }
 
 model Field {
@@ -60,31 +60,31 @@ model Field {
   name          String      @unique @db.VarChar(255)
   value         String      @db.VarChar(255)
   institutionId Int
-  Institution   Institution @relation(fields: [institutionId], references: [id])
+  institution   Institution @relation(fields: [institutionId], references: [id])
 }
 
 model Post {
   id            Int         @id @default(autoincrement())
   body          String      @db.Text
   mediaUrl      String?     @db.VarChar(255)
-  Comments      Comment[]
-  Likes         Like[]
-  Institution   Institution @relation(fields: [institutionId], references: [id])
+  comments      Comment[]
+  likes         Like[]
+  institution   Institution @relation(fields: [institutionId], references: [id])
   institutionId Int
 }
 
 model Like {
   id      Int   @id @default(autoincrement())
-  Post    Post  @relation(fields: [postId], references: [id])
+  post    Post  @relation(fields: [postId], references: [id])
   postId  Int
-  Donor   Donor @relation(fields: [donorId], references: [id])
+  donor   Donor @relation(fields: [donorId], references: [id])
   donorId Int
 }
 
 model Comment {
   id     Int    @id @default(autoincrement())
   body   String @db.Text
-  Post   Post   @relation(fields: [postId], references: [id])
+  post   Post   @relation(fields: [postId], references: [id])
   postId Int
 }
 
@@ -95,9 +95,9 @@ model Project {
   mediaUrl      String?     @db.VarChar(255)
   bannerUrl     String?     @db.VarChar(255)
   institutionId Int
-  Institution   Institution @relation(fields: [institutionId], references: [id])
-  Donations     Donation[]
-  Categories    Category[]
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  donations     Donation[]
+  categories    Category[]
 }
 
 model Donation {
@@ -109,19 +109,19 @@ model Donation {
   paymentTransactionId String         @unique
   paymentCheckoutUrl   String
   projectId            Int?
-  Project              Project?       @relation(fields: [projectId], references: [id])
+  project              Project?       @relation(fields: [projectId], references: [id])
   institutionId        Int?
   Institution          Institution?   @relation(fields: [institutionId], references: [id])
   donorId              Int
-  Donor                Donor          @relation(fields: [donorId], references: [id])
+  donor                Donor          @relation(fields: [donorId], references: [id])
 }
 
 model Category {
   id            Int          @id @default(autoincrement())
   name          String       @unique @db.VarChar(255)
-  Institution   Institution? @relation(fields: [institutionId], references: [id])
+  institution   Institution? @relation(fields: [institutionId], references: [id])
   institutionId Int?
-  Project       Project?     @relation(fields: [projectId], references: [id])
+  project       Project?     @relation(fields: [projectId], references: [id])
   projectId     Int?
 }
 
@@ -129,7 +129,7 @@ model Partner {
   id            Int          @id @default(autoincrement())
   name          String       @unique @db.VarChar(255)
   avatar        String       @db.VarChar(255)
-  Institution   Institution? @relation(fields: [institutionId], references: [id])
+  institution   Institution? @relation(fields: [institutionId], references: [id])
   institutionId Int?
 }
 
@@ -137,7 +137,7 @@ model Volunteer {
   id            Int          @id @default(autoincrement())
   name          String       @db.VarChar(255)
   avatar        String       @db.VarChar(255)
-  Institution   Institution? @relation(fields: [institutionId], references: [id])
+  institution   Institution? @relation(fields: [institutionId], references: [id])
   institutionId Int?
 }
 
@@ -145,7 +145,7 @@ model Collaborator {
   id            Int          @id @default(autoincrement())
   name          String       @db.VarChar(255)
   avatar        String       @db.VarChar(255)
-  Institution   Institution? @relation(fields: [institutionId], references: [id])
+  institution   Institution? @relation(fields: [institutionId], references: [id])
   institutionId Int?
 }
 
