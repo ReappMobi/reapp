@@ -49,9 +49,9 @@ export class AccountService {
           email: createAccountDto.email,
           passwordHash: hashedPassword,
           name: createAccountDto.name,
-          Institution: {
+          institution: {
             create: {
-              Fields: {
+              fields: {
                 createMany: {
                   data: [],
                 },
@@ -98,7 +98,7 @@ export class AccountService {
           email: createAccountDto.email,
           passwordHash: hashedPassword,
           name: createAccountDto.name,
-          Donor: {},
+          donor: {},
         },
       });
 
