@@ -42,9 +42,8 @@ model Institution {
   accountId     Int            @unique
   cnpj          String         @unique
   phone         String         @db.VarChar(20)
-  city          String         @db.VarChar(255)
-  state         String         @db.VarChar(2)
-  categories    Category[]
+  categoryId    Int
+  category      Category       @relation(fields: [categoryId], references: [id])
   account       Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
   fields        Field[]
   posts         Post[]
@@ -117,12 +116,12 @@ model Donation {
 }
 
 model Category {
-  id            Int          @id @default(autoincrement())
-  name          String       @unique @db.VarChar(255)
-  institution   Institution? @relation(fields: [institutionId], references: [id])
+  id            Int           @id @default(autoincrement())
+  name          String        @unique @db.VarChar(255)
   institutionId Int?
-  project       Project?     @relation(fields: [projectId], references: [id])
+  project       Project?      @relation(fields: [projectId], references: [id])
   projectId     Int?
+  Institution   Institution[]
 }
 
 model Partner {
