@@ -3,6 +3,39 @@ import { AccountType, CreateAccountDto } from './dto/create-account.dto';
 import { PrismaService } from '../../database/prisma.service';
 import * as bcrypt from 'bcrypt';
 
+const donorResponseFields = {
+  id: true,
+  email: true,
+  name: true,
+  donor: {
+    select: {
+      id: true,
+      donations: true,
+    },
+  },
+};
+
+const institutionResponseFields = {
+  id: true,
+  email: true,
+  name: true,
+  institution: {
+    select: {
+      id: true,
+      cnpj: true,
+      phone: true,
+      city: true,
+      state: true,
+      categories: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  },
+};
+
 @Injectable()
 export class AccountService {
   constructor(private readonly prismaService: PrismaService) {}
@@ -69,6 +102,7 @@ export class AccountService {
             },
           },
         },
+        select: institutionResponseFields,
       });
 
       return account;
@@ -103,6 +137,7 @@ export class AccountService {
             create: {},
           },
         },
+        select: donorResponseFields,
       });
 
       return account;
