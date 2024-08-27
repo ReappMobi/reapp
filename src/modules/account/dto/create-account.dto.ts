@@ -56,23 +56,7 @@ export abstract class CreateAccountDto {
 
   @Expose()
   @ValidateIf((o) => o.accountType === AccountType.INSTITUTION)
-  @IsNotEmpty({ message: 'A cidade é obrigatória para instituições.' })
-  city?: string;
-
-  @Expose()
-  @ValidateIf((o) => o.accountType === AccountType.INSTITUTION)
-  @IsNotEmpty({ message: 'O estado é obrigatório para instituições.' })
-  state?: string;
-
-  @Expose()
-  @ValidateIf((o) => o.accountType === AccountType.INSTITUTION)
-  @IsString({ message: 'O Facebook deve ser uma string.' })
+  @ValidateNested({ each: true })
+  @Type(() => AccountField)
   @IsOptional()
-  facebook?: string;
-
-  @Expose()
-  @ValidateIf((o) => o.accountType === AccountType.INSTITUTION)
-  @IsString({ message: 'O Instagram deve ser uma string.' })
-  @IsOptional()
-  instagram?: string;
 }
