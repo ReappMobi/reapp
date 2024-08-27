@@ -1,4 +1,4 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import {
   IsEmail,
   IsEnum,
@@ -8,11 +8,24 @@ import {
   MaxLength,
   MinLength,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 
 export enum AccountType {
   DONOR = 'donor',
   INSTITUTION = 'institution',
+}
+
+abstract class AccountField {
+  @Expose()
+  @IsNotEmpty()
+  @IsString()
+  name: string;
+
+  @Expose()
+  @IsNotEmpty()
+  @IsString()
+  value: string;
 }
 
 export abstract class CreateAccountDto {
@@ -59,4 +72,5 @@ export abstract class CreateAccountDto {
   @ValidateNested({ each: true })
   @Type(() => AccountField)
   @IsOptional()
+  fields?: AccountField[];
 }
