@@ -120,7 +120,35 @@ export class AccountService {
   }
 
   async findAll() {
-    return await this.prismaService.donor.findMany();
+    return await this.prismaService.account.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        accountType: true,
+        donor: {
+          select: {
+            id: true,
+            donations: true,
+          },
+        },
+        institution: {
+          select: {
+            id: true,
+            cnpj: true,
+            phone: true,
+            city: true,
+            state: true,
+            categories: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 
   async findOne(id: number) {
