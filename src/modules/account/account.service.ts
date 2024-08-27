@@ -90,15 +90,13 @@ export class AccountService {
                   data: [],
                 },
               },
-              categories: {
+              category: {
                 connect: {
                   id: category.id,
                 },
               },
               cnpj: createAccountDto.cnpj,
               phone: createAccountDto.phone,
-              city: createAccountDto.city,
-              state: createAccountDto.state,
             },
           },
         },
@@ -174,11 +172,8 @@ export class AccountService {
             id: true,
             cnpj: true,
             phone: true,
-            city: true,
-            state: true,
-            categories: {
+            category: {
               select: {
-                id: true,
                 name: true,
               },
             },
