@@ -19,14 +19,7 @@ model Account {
   followingCount Int          @default(0)
   followersCount Int          @default(0)
   institution    Institution?
-  admin          Admin?
   donor          Donor?
-}
-
-model Admin {
-  id        Int     @id @default(autoincrement())
-  accountId Int     @unique
-  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
 }
 
 model Donor {
