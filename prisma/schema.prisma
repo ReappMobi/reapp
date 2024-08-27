@@ -51,20 +51,18 @@ model Donor {
 }
 
 model Institution {
-  id            Int            @id @default(autoincrement())
-  accountId     Int            @unique
-  cnpj          String         @unique
-  phone         String         @db.VarChar(20)
-  categoryId    Int
-  category      Category       @relation(fields: [categoryId], references: [id])
-  account       Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  fields        Field[]
-  posts         Post[]
-  projects      Project[]
-  donations     Donation[]
-  partners      Partner[]
-  volunteers    Volunteer[]
-  collaborators Collaborator[]
+  id         Int                 @id @default(autoincrement())
+  cnpj       String              @unique
+  phone      String              @db.VarChar(20)
+  account    Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId  Int                 @unique
+  category   Category            @relation(fields: [categoryId], references: [id])
+  categoryId Int
+  fields     InstitutionField[]
+  posts      Post[]
+  projects   Project[]
+  donations  Donation[]
+  members    InstitutionMember[]
 }
 
 model InstitutionField {
