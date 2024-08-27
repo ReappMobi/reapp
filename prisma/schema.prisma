@@ -24,8 +24,8 @@ model Account {
 
 model Donor {
   id        Int        @id @default(autoincrement())
-  accountId Int        @unique
   account   Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId Int        @unique
   donations Donation[]
   likes     Like[]
 }
