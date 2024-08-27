@@ -17,6 +17,8 @@ enum DonationStatus {
   PENDING
   APPROVED
   REJECTED
+  FAILED
+  CANCELED
 }
 
 enum InstitutionMemberType {
