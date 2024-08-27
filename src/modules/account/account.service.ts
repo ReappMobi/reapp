@@ -9,10 +9,10 @@ const donorResponseFields = {
   name: true,
   donor: {
     select: {
-      id: true,
       donations: true,
     },
   },
+  institution: false,
 };
 
 const institutionResponseFields = {
@@ -21,14 +21,10 @@ const institutionResponseFields = {
   name: true,
   institution: {
     select: {
-      id: true,
       cnpj: true,
       phone: true,
-      city: true,
-      state: true,
-      categories: {
+      category: {
         select: {
-          id: true,
           name: true,
         },
       },
@@ -163,13 +159,11 @@ export class AccountService {
         accountType: true,
         donor: {
           select: {
-            id: true,
             donations: true,
           },
         },
         institution: {
           select: {
-            id: true,
             cnpj: true,
             phone: true,
             category: {
@@ -177,6 +171,7 @@ export class AccountService {
                 name: true,
               },
             },
+            fields: true,
           },
         },
       },
