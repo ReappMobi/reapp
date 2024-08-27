@@ -7,6 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum AccountType {
+  ADMIN
+  DONOR
+  INSTITUTION
+}
+
+enum DonationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum InstitutionMemberType {
   PARTNER
   VOLUNTEER
@@ -130,15 +142,4 @@ model InstitutionMember {
   memberType    InstitutionMemberType
   institution   Institution?          @relation(fields: [institutionId], references: [id])
   institutionId Int?
-}
-enum AccountType {
-  ADMIN
-  DONOR
-  INSTITUTION
-}
-
-enum DonationStatus {
-  PENDING
-  APPROVED
-  REJECTED
 }
