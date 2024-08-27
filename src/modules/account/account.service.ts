@@ -46,6 +46,7 @@ export class AccountService {
       const hashedPassword = bcrypt.hashSync(createAccountDto.password, 10);
       const account = await this.prismaService.account.create({
         data: {
+          accountType: 'INSTITUTION',
           email: createAccountDto.email,
           passwordHash: hashedPassword,
           name: createAccountDto.name,
