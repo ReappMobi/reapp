@@ -34,7 +34,7 @@ model Donor {
   accountId Int        @unique
   account   Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
   donations Donation[]
-  likes      Like[]
+  likes     Like[]
 }
 
 model Institution {
