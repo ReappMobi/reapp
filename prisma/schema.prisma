@@ -67,7 +67,7 @@ model Institution {
   collaborators Collaborator[]
 }
 
-model Field {
+model InstitutionField {
   id            Int         @id @default(autoincrement())
   name          String      @unique @db.VarChar(255)
   value         String      @db.VarChar(255)
