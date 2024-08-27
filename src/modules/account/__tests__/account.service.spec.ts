@@ -44,8 +44,6 @@ describe('AccountService', () => {
       phone: '1234567890',
       cnpj: '12345678901234',
       category: 'Test Category',
-      city: 'Test City',
-      state: 'Test State',
     };
 
     it('should throw an error if email already exists', async () => {
@@ -99,8 +97,6 @@ describe('AccountService', () => {
         phone: '1234567890',
         cnpj: '12345678901234',
         category: 'Test Category',
-        city: 'Test City',
-        state: 'Test State',
       };
 
       jest.spyOn(service, 'create').mockResolvedValue(undefined);
