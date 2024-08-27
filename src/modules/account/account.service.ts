@@ -99,7 +99,9 @@ export class AccountService {
           email: createAccountDto.email,
           passwordHash: hashedPassword,
           name: createAccountDto.name,
-          donor: {},
+          donor: {
+            create: {},
+          },
         },
       });
 
