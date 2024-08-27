@@ -16,7 +16,7 @@ model Account {
   updatedAt      DateTime     @updatedAt
   avatar         String?      @db.VarChar(255)
   accountType    AccountType  @default(DONOR)
-  follwingCount  Int          @default(0)
+  followingCount Int          @default(0)
   followersCount Int          @default(0)
   institution    Institution?
   admin          Admin?
