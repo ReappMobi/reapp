@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum InstitutionMemberType {
+  PARTNER
+  VOLUNTEER
+  COLLABORATOR
+}
+
 model Account {
   id             Int          @id @default(autoincrement())
   name           String       @db.VarChar(255)
@@ -117,30 +123,14 @@ model Category {
   Institution   Institution[]
 }
 
-model Partner {
-  id            Int          @id @default(autoincrement())
-  name          String       @unique @db.VarChar(255)
-  avatar        String       @db.VarChar(255)
-  institution   Institution? @relation(fields: [institutionId], references: [id])
+model InstitutionMember {
+  id            Int                   @id @default(autoincrement())
+  name          String                @db.VarChar(50)
+  avatar        String                @db.VarChar(255)
+  memberType    InstitutionMemberType
+  institution   Institution?          @relation(fields: [institutionId], references: [id])
   institutionId Int?
 }
-
-model Volunteer {
-  id            Int          @id @default(autoincrement())
-  name          String       @db.VarChar(255)
-  avatar        String       @db.VarChar(255)
-  institution   Institution? @relation(fields: [institutionId], references: [id])
-  institutionId Int?
-}
-
-model Collaborator {
-  id            Int          @id @default(autoincrement())
-  name          String       @db.VarChar(255)
-  avatar        String       @db.VarChar(255)
-  institution   Institution? @relation(fields: [institutionId], references: [id])
-  institutionId Int?
-}
-
 enum AccountType {
   ADMIN
   DONOR
