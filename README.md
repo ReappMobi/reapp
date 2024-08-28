@@ -1,6 +1,3 @@
-<p align="center">
-</p>
-
 ## Description
 
 [Reapp](https://github.com/ReappMobi/reappt) is a free, open-source social network server where users can follow and donate to social institutions discover new ones.
