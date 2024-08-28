@@ -10,6 +10,24 @@ $ npm install
 
 ## Running the app
 
+Create a .env file with the following content:
+```yaml
+NODE_ENV=test
+
+# Database
+POSTGRES_USER=<your_user>
+POSTGRES_PASSWORD=<your_password>
+DATABASE_HOST=localhost
+DATABASE_DB=test
+DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}:5433/${DATABASE_DB}?schema=public"
+```
+
+Run prisma migrations:
+```bash
+$ npx prisma migrate dev
+```
+
+Run the app:
 ```bash
 # development
 $ npm run start
@@ -22,13 +40,23 @@ $ npm run start:prod
 ```
 
 ## Test
+Create a .env.test.local file with the following content:
+```yaml
+NODE_ENV=test
+
+# Database
+POSTGRES_USER=<your_user>
+POSTGRES_PASSWORD=<your_password>
+DATABASE_HOST=localhost
+DATABASE_DB=test
+DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}:5433/${DATABASE_DB}?schema=public"
+```
+
+
+To run tests you need the [dotenvx](https://dotenvx.com/) package to load the environment variables from the .env file.
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
+$ ./scripts/run-test.sh
 
 # test coverage
 $ npm run test:cov
