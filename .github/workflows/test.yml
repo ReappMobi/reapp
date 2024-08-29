@@ -34,4 +34,4 @@ jobs:
       - run: npm run build
       - run: npx prisma migrate deploy
       - run: npm run test
-      - run: npm run test:e2el
+      - run: npm run test:e2e
