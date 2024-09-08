@@ -73,4 +73,15 @@ export abstract class CreateAccountDto {
   @Type(() => AccountField)
   @IsOptional()
   fields?: AccountField[];
+
+  @Expose()
+  @IsOptional()
+  @IsString({ message: 'O avatar deve ser uma string.' })
+  avatar?: string;
+}
+
+export abstract class CreateAccountGoogleDto {
+  @Expose()
+  @IsNotEmpty({ message: 'O token é obrigatório.' })
+  idToken: string;
 }
