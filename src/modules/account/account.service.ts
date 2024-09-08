@@ -1,7 +1,12 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { AccountType, CreateAccountDto } from './dto/create-account.dto';
+import {
+  AccountType,
+  CreateAccountDto,
+  CreateAccountGoogleDto,
+} from './dto/create-account.dto';
 import { PrismaService } from '../../database/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { OAuth2Client } from 'google-auth-library';
 
 const donorResponseFields = {
   id: true,
@@ -36,7 +41,10 @@ const institutionResponseFields = {
 
 @Injectable()
 export class AccountService {
-  constructor(private readonly prismaService: PrismaService) {}
+  private client: OAuth2Client;
+  constructor(private readonly prismaService: PrismaService) {
+    this.client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+  }
 
   private async createInstitution(createAccountDto: CreateAccountDto) {
     const emailExists = await this.prismaService.account.findFirst({
@@ -129,6 +137,7 @@ export class AccountService {
           email: createAccountDto.email,
           passwordHash: hashedPassword,
           name: createAccountDto.name,
+          avatar: createAccountDto.avatar,
           donor: {
             create: {},
           },
@@ -149,6 +158,44 @@ export class AccountService {
     if (createAccountDto.accountType === AccountType.INSTITUTION) {
       return await this.createInstitution(createAccountDto);
     }
+    return await this.createDonor(createAccountDto);
+  }
+
+  async createWithGoogle(createAccountGoogleDto: CreateAccountGoogleDto) {
+    const { idToken } = createAccountGoogleDto;
+
+    const ticket = await this.client.verifyIdToken({
+      idToken,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) {
+      throw new HttpException(
+        'Não foi possível autenticar. Tente novamente mais tarde.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const email = payload['email'];
+    const name = payload['name'];
+    const avatar = payload['picture'];
+
+    const emailExists = await this.prismaService.account.findFirst({
+      where: { email: email },
+    });
+
+    if (emailExists) {
+      throw new HttpException('email já cadastrado', HttpStatus.BAD_REQUEST);
+    }
+
+    const createAccountDto: CreateAccountDto = {
+      accountType: AccountType.DONOR,
+      email: email,
+      name: name,
+      avatar: avatar,
+      password: idToken,
+    };
+
     return await this.createDonor(createAccountDto);
   }
 
