@@ -17,7 +17,9 @@ const donorResponseFields = {
       donations: true,
     },
   },
-  institution: false,
+  institution: true,
+  createdAt: true,
+  updatedAt: true,
 };
 
 const institutionResponseFields = {
