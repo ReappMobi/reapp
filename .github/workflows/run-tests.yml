@@ -7,7 +7,7 @@ on:
       - main
       - develop
 jobs:
-  test:
+  tests:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -24,12 +24,14 @@ jobs:
           - 5432:5432
     env:
       DATABASE_URL: postgresql://reapp:reapp@localhost:5432/test
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20.16.0'
+      - run: apt-get update && apt-get install -y openssl
       - run: npm ci
       - run: npm run build
       - run: npx prisma migrate deploy
