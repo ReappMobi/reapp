@@ -31,7 +31,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20.16.0'
-      - run: apt update && apt install -y openssl
+      - run: sudo apt update && sudo apt install -y openssl
       - run: npm ci
       - run: npm run build
       - run: npx prisma migrate deploy
