@@ -122,6 +122,26 @@ export class DonationService {
       );
     }
 
+    const user = await this.prismaService.account.findUnique({
+      where: {
+        email: requestDonationDto.email,
+      },
+      select: {
+        institution: true,
+      },
+    });
+
+    if (!user) {
+      throw new HttpException('Usuário não encontrado', HttpStatus.BAD_REQUEST);
+    }
+
+    if (user.institution) {
+      throw new HttpException(
+        'Usuário é uma instituição e não pode fazer doações',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     if (requestDonationDto.amount < 0.01) {
       throw new HttpException('Valor inválido', HttpStatus.BAD_REQUEST);
     }
