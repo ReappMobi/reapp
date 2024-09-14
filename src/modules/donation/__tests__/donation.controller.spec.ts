@@ -32,6 +32,8 @@ describe('DonationController', () => {
   describe('requestDonation', () => {
     it('should call donationService.requestDonation with correct data', async () => {
       const requestDonationDto: RequestDonationDto = {
+        name: 'test',
+        email: 'test@test.com',
         userToken: 'test',
         amount: 10,
         institutionId: 1,
