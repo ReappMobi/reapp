@@ -147,7 +147,7 @@ export class DonationService {
     return this.requestGeneralDonation(requestDonationDto);
   }
 
-  async callbackDonation() {
+  async notifyDonation() {
     return 'Callback donation';
   }
 }

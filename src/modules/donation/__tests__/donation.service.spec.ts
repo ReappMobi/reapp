@@ -231,7 +231,7 @@ describe('DonationService', () => {
 
   describe('callbackDonation', () => {
     it('should return "Callback donation"', async () => {
-      const result = await service.callbackDonation();
+      const result = await service.notifyDonation();
       expect(result).toBe('Callback donation');
     });
   });

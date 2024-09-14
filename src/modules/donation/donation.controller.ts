@@ -12,8 +12,8 @@ export class DonationController {
     return this.donationService.requestDonation(requestDonationDto);
   }
 
-  @Post('callback')
+  @Post('notify')
   callbackDonation() {
-    return this.donationService.callbackDonation();
+    return this.donationService.notifyDonation();
   }
 }

@@ -48,7 +48,7 @@ describe('DonationController', () => {
   describe('callbackDonation', () => {
     it('should call donationService.callbackDonation', async () => {
       await controller.callbackDonation();
-      expect(donationService.callbackDonation).toHaveBeenCalled();
+      expect(donationService.notifyDonation).toHaveBeenCalled();
     });
   });
 });
