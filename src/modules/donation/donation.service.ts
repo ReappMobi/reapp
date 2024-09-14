@@ -3,23 +3,18 @@ import { PrismaService } from '../..//database/prisma.service';
 import { RequestDonationDto } from './dto/request-donation.dto';
 import { Injectable, HttpStatus, HttpException } from '@nestjs/common';
 
-type itemInfo = {
+type mercadopagoRequest = {
+  items: {
+    id: string;
   title: string;
   description: string;
-  unit_price: number;
-};
-
-type Item = {
-  id: string;
   quantity: number;
   currency_id: string;
-} & itemInfo;
-
-type mercadopagoRequest = {
-  items: Item[];
+    unit_price: number;
+  }[];
   payer: {
-    email: string;
     name: string;
+    email: string;
   };
   notification_url: string;
   external_reference: string;
