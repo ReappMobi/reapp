@@ -13,7 +13,7 @@ export class DonationController {
   }
 
   @Post('notify')
-  callbackDonation() {
+  notifyDonation() {
     return this.donationService.notifyDonation();
   }
 }

@@ -148,6 +148,6 @@ export class DonationService {
   }
 
   async notifyDonation() {
-    return 'Callback donation';
+    return 'notify donation';
   }
 }
