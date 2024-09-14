@@ -6,10 +6,10 @@ import { Injectable, HttpStatus, HttpException } from '@nestjs/common';
 type mercadopagoRequest = {
   items: {
     id: string;
-  title: string;
-  description: string;
-  quantity: number;
-  currency_id: string;
+    title: string;
+    description: string;
+    quantity: number;
+    currency_id: string;
     unit_price: number;
   }[];
   payer: {
@@ -145,6 +145,7 @@ export class DonationService {
     if (requestDonationDto.amount < 0.01) {
       throw new HttpException('Valor inválido', HttpStatus.BAD_REQUEST);
     }
+
     if (requestDonationDto.projectId) {
       return this.requestProjectDonation(requestDonationDto);
     }
