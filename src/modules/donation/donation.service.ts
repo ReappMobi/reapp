@@ -102,13 +102,10 @@ export class DonationService {
       );
     }
 
-    const itemInfo = {
-      title: institution.account.name,
-      description: requestDonationDto.description,
-      unit_price: requestDonationDto.amount,
-    };
-
-    const mpRequestBody = this.buildRequestBody(itemInfo);
+    const mpRequestBody = this.buildRequestBody(
+      requestDonationDto,
+      institution.account.name,
+    );
     return this.createMercadopagoRequest(mpRequestBody);
   }
 
