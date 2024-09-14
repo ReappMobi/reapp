@@ -115,7 +115,7 @@ export class DonationService {
   }
 
   async requestDonation(requestDonationDto: RequestDonationDto) {
-    if (requestDonationDto.amount < 0 || requestDonationDto.amount === 0) {
+    if (requestDonationDto.amount <= 0) {
       throw new HttpException(
         'A quantidade de doação não pode ser negativa',
         HttpStatus.BAD_REQUEST,
