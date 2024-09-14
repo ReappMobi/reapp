@@ -110,12 +110,7 @@ export class DonationService {
   }
 
   private requestGeneralDonation(requestDonationDto: RequestDonationDto) {
-    const itemInfo = {
-      title: 'Reapp',
-      description: requestDonationDto.description,
-      unit_price: requestDonationDto.amount,
-    };
-    const mpRequestBody = this.buildRequestBody(itemInfo);
+    const mpRequestBody = this.buildRequestBody(requestDonationDto);
     return this.createMercadopagoRequest(mpRequestBody);
   }
 
