@@ -76,13 +76,10 @@ export class DonationService {
       throw new HttpException('Projeto não encontrado', HttpStatus.BAD_REQUEST);
     }
 
-    const itemInfo = {
-      title: project.name,
-      description: requestDonationDto.description,
-      unit_price: requestDonationDto.amount,
-    };
-
-    const mpRequestBody = this.buildRequestBody(itemInfo);
+    const mpRequestBody = this.buildRequestBody(
+      requestDonationDto,
+      project.name,
+    );
     return this.createMercadopagoRequest(mpRequestBody);
   }
 
