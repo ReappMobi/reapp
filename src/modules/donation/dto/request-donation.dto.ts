@@ -10,9 +10,18 @@ import {
   IsString,
   MaxLength,
   MinLength,
+  IsEmail,
 } from 'class-validator';
 
 export abstract class RequestDonationDto {
+  @IsNotEmpty({ message: 'O email é obrigatório.' })
+  @IsEmail({}, { message: 'O email deve ser um email válido.' })
+  email: string;
+
+  @IsNotEmpty({ message: 'O nome é obrigatório.' })
+  @IsString({ message: 'O nome deve ser uma string.' })
+  name: string;
+
   @IsNotEmpty({ message: 'O valor é obrigatório.' })
   @IsCurrency({}, { message: 'O valor deve ser uma moeda.' })
   @IsNumber(
