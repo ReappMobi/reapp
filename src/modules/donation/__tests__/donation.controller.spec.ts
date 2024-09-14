@@ -15,7 +15,7 @@ describe('DonationController', () => {
           provide: DonationService,
           useValue: {
             requestDonation: jest.fn(),
-            callbackDonation: jest.fn(),
+            notifyDonation: jest.fn(),
           },
         },
       ],
@@ -45,9 +45,9 @@ describe('DonationController', () => {
     });
   });
 
-  describe('callbackDonation', () => {
-    it('should call donationService.callbackDonation', async () => {
-      await controller.callbackDonation();
+  describe('notifyDonation', () => {
+    it('should call donationService.notifyDonation', async () => {
+      await controller.notifyDonation();
       expect(donationService.notifyDonation).toHaveBeenCalled();
     });
   });
