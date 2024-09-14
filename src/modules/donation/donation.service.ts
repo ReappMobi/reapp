@@ -49,7 +49,8 @@ export class DonationService {
         email: 'not_implemented',
       },
       notification_url:
-        'https://webhook.site/8b3a7a8c-6f0b-4c5e-9d6e-9c4b4f3d1a9c',
+        process.env.MERCADOPAGO_NOTIFICATION_URL ||
+        'localhost:3000/donation/notify',
       external_reference: 'not_implemented',
     };
   }
