@@ -27,21 +27,24 @@ export class DonationService {
     private readonly mercadopagoService: MercadopagoService,
   ) {}
 
-  private buildRequestBody(itemInfo: itemInfo): mercadopagoRequest {
+  private buildRequestBody(
+    bodyInfo: RequestDonationDto,
+    title = 'Reapp',
+  ): mercadopagoRequest {
     return {
       items: [
         {
           id: 'not_implemented',
-          title: itemInfo.title,
-          description: itemInfo.description,
+          title: title,
+          description: bodyInfo.description,
           quantity: 1,
           currency_id: 'BRL',
-          unit_price: itemInfo.unit_price,
+          unit_price: bodyInfo.amount,
         },
       ],
       payer: {
-        name: 'not_implemented',
-        email: 'not_implemented',
+        name: bodyInfo.name,
+        email: bodyInfo.email,
       },
       notification_url:
         process.env.MERCADOPAGO_NOTIFICATION_URL ||
