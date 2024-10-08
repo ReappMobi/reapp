@@ -74,13 +74,14 @@ model InstitutionField {
 }
 
 model Post {
-  id            Int         @id @default(autoincrement())
-  body          String      @db.Text
-  mediaUrl      String?     @db.VarChar(255)
+  id            Int             @id @default(autoincrement())
+  body          String          @db.Text
   comments      Comment[]
   likes         Like[]
-  institution   Institution @relation(fields: [institutionId], references: [id])
+  institution   Institution      @relation(fields: [institutionId], references: [id])
   institutionId Int
+  mediaId       String?         // Chave estrangeira para MediaAttachment (opcional)
+  media         MediaAttachment? @relation(fields: [mediaId], references: [id])  // Relacionamento com MediaAttachment (opcional)
 }
 
 model Like {
@@ -142,4 +143,31 @@ model InstitutionMember {
   memberType    InstitutionMemberType
   institution   Institution?          @relation(fields: [institutionId], references: [id])
   institutionId Int?
+}
+
+model MediaAttachment {
+  id                         String    @id
+  statusId                   BigInt?
+  fileFileName               String?
+  fileContentType            String?
+  fileFileSize               Int?
+  fileUpdatedAt              DateTime?
+  remoteUrl                  String    @default("")
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+  shortcode                  String?
+  type                       Int       @default(0)
+  fileMeta                   Json?
+  accountId                  BigInt?
+  description                String?
+  scheduledStatusId          BigInt?
+  blurhash                   String?
+  processing                 Int?
+  fileStorageSchemaVersion   Int?
+  thumbnailFileName          String?
+  thumbnailContentType       String?
+  thumbnailFileSize          Int?
+  thumbnailUpdatedAt         DateTime?
+  thumbnailRemoteUrl         String?
+  posts                      Post[]    // Relacionamento inverso com Post
 }
