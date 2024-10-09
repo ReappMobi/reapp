@@ -23,6 +23,7 @@ export class MediaAttachmentController {
   constructor(private readonly mediaAttachmentService: MediaService) {}
 
   @Post()
+  @UseGuards(AuthGuard)
   @UseInterceptors(
     FileFieldsInterceptor(
       [
