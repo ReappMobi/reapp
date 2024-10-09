@@ -40,6 +40,7 @@ model Account {
   followersCount Int          @default(0)
   institution    Institution?
   donor          Donor?
+  mediaAttachments MediaAttachment[]  // Relacionamento inverso com MediaAttachment
 }
 
 model Donor {
@@ -158,7 +159,7 @@ model MediaAttachment {
   shortcode                  String?
   type                       Int       @default(0)
   fileMeta                   Json?
-  accountId                  BigInt?
+  accountId                  Int?      // Chave estrangeira para Account
   description                String?
   scheduledStatusId          BigInt?
   blurhash                   String?
@@ -169,5 +170,6 @@ model MediaAttachment {
   thumbnailFileSize          Int?
   thumbnailUpdatedAt         DateTime?
   thumbnailRemoteUrl         String?
+  account                    Account?  @relation(fields: [accountId], references: [id])
   posts                      Post[]    // Relacionamento inverso com Post
 }
