@@ -63,7 +63,15 @@ export class DonationService {
       requestDonationDto,
       project.name,
     );
-    return this.createMercadopagoRequest(mpRequestBody);
+
+    const response = await this.createMercadopagoRequest(mpRequestBody);
+    if (!response.init_point) {
+      throw new HttpException(
+        'Erro ao processar pagamento',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    return response;
   }
 
   private async requestInstitutionDonation(
@@ -89,12 +97,28 @@ export class DonationService {
       requestDonationDto,
       institution.account.name,
     );
-    return this.createMercadopagoRequest(mpRequestBody);
+
+    const response = await this.createMercadopagoRequest(mpRequestBody);
+    if (!response.init_point) {
+      throw new HttpException(
+        'Erro ao processar pagamento',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    return response;
   }
 
   private async requestGeneralDonation(requestDonationDto: RequestDonationDto) {
     const mpRequestBody = this.buildRequestBody(requestDonationDto);
-    return this.createMercadopagoRequest(mpRequestBody);
+
+    const response = await this.createMercadopagoRequest(mpRequestBody);
+    if (!response.init_point) {
+      throw new HttpException(
+        'Erro ao processar pagamento',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    return response;
   }
 
   async requestDonation(requestDonationDto: RequestDonationDto) {
