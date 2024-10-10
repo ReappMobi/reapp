@@ -2,23 +2,7 @@ import { MercadopagoService } from '../..//services/mercadopago/mercadopago.serv
 import { PrismaService } from '../..//database/prisma.service';
 import { RequestDonationDto } from './dto/request-donation.dto';
 import { Injectable, HttpStatus, HttpException } from '@nestjs/common';
-
-type mercadopagoRequest = {
-  items: {
-    id: string;
-    title: string;
-    description: string;
-    quantity: number;
-    currency_id: string;
-    unit_price: number;
-  }[];
-  payer: {
-    name: string;
-    email: string;
-  };
-  notification_url: string;
-  external_reference: string;
-};
+import { PreferenceRequest } from 'mercadopago/dist/clients/preference/commonTypes';
 
 @Injectable()
 export class DonationService {
@@ -30,7 +14,7 @@ export class DonationService {
   private buildRequestBody(
     bodyInfo: RequestDonationDto,
     title = 'Reapp',
-  ): mercadopagoRequest {
+  ): PreferenceRequest {
     return {
       items: [
         {
