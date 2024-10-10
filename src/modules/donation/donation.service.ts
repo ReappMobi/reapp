@@ -33,7 +33,6 @@ export class DonationService {
       notification_url:
         process.env.MERCADOPAGO_NOTIFICATION_URL ||
         'localhost:3000/donation/notify',
-      external_reference: 'not_implemented',
     };
   }
 
