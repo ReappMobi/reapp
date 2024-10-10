@@ -1,6 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 
+export type PreferenceRequest = {
+  items: {
+    id: string;
+    title: string;
+    description: string;
+    quantity: number;
+    currency_id: string;
+    unit_price: number;
+  }[];
+  payer: {
+    name: string;
+    email: string;
+  };
+  notification_url: string;
+};
 
 @Injectable()
 export class MercadopagoService {
