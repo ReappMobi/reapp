@@ -37,7 +37,7 @@ export class DonationService {
     };
   }
 
-  private async createMercadopagoRequest(mpRequestBody: mercadopagoRequest) {
+  private async createMercadopagoRequest(mpRequestBody: PreferenceRequest) {
     try {
       const response =
         await this.mercadopagoService.processPayment(mpRequestBody);
@@ -93,7 +93,7 @@ export class DonationService {
     return this.createMercadopagoRequest(mpRequestBody);
   }
 
-  private requestGeneralDonation(requestDonationDto: RequestDonationDto) {
+  private async requestGeneralDonation(requestDonationDto: RequestDonationDto) {
     const mpRequestBody = this.buildRequestBody(requestDonationDto);
     return this.createMercadopagoRequest(mpRequestBody);
   }
