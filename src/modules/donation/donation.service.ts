@@ -7,6 +7,7 @@ import {
   PreferenceResponse,
 } from 'mercadopago/dist/clients/preference/commonTypes';
 
+// TODO: Simplify this class and fix error handling
 @Injectable()
 export class DonationService {
   constructor(
