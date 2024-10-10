@@ -30,6 +30,9 @@ describe('DonationService tests', () => {
             account: {
               findUnique: jest.fn(),
             },
+            donation: {
+              create: jest.fn(),
+            },
           },
         },
       ],
@@ -144,9 +147,10 @@ describe('DonationService tests', () => {
         email: 'test@test.com',
         name: 'test',
       });
-      (mercadopagoService.processPayment as jest.Mock).mockResolvedValue(
-        'payment link',
-      );
+      (mercadopagoService.processPayment as jest.Mock).mockResolvedValue({
+        id: 'test_id',
+        init_point: 'https://test_url',
+      });
       await service.requestDonation(requestDonationDto);
       expect(mercadopagoService.processPayment).toHaveBeenCalledWith({
         items: [
@@ -164,7 +168,6 @@ describe('DonationService tests', () => {
           email: requestDonationDto.email,
         },
         notification_url: 'localhost:3000/donation/notify',
-        external_reference: 'not_implemented',
       });
     });
 
@@ -178,9 +181,10 @@ describe('DonationService tests', () => {
         email: 'test@test.com',
         name: 'test',
       });
-      (mercadopagoService.processPayment as jest.Mock).mockResolvedValue(
-        'payment link',
-      );
+      (mercadopagoService.processPayment as jest.Mock).mockResolvedValue({
+        id: 'test_id',
+        init_point: 'https://test_url',
+      });
       requestDonationDto.projectId = null;
       requestDonationDto.institutionId = 1;
       await service.requestDonation(requestDonationDto);
@@ -200,7 +204,6 @@ describe('DonationService tests', () => {
           email: requestDonationDto.email,
         },
         notification_url: 'localhost:3000/donation/notify',
-        external_reference: 'not_implemented',
       });
     });
 
@@ -209,9 +212,10 @@ describe('DonationService tests', () => {
         email: 'test@test.com',
         name: 'test',
       });
-      (mercadopagoService.processPayment as jest.Mock).mockResolvedValue(
-        'payment link',
-      );
+      (mercadopagoService.processPayment as jest.Mock).mockResolvedValue({
+        id: 'test_id',
+        init_point: 'https://test_url',
+      });
       requestDonationDto.projectId = null;
       requestDonationDto.institutionId = null;
 
@@ -232,7 +236,6 @@ describe('DonationService tests', () => {
           email: requestDonationDto.email,
         },
         notification_url: 'localhost:3000/donation/notify',
-        external_reference: 'not_implemented',
       });
     });
   });
