@@ -2,7 +2,10 @@ import { MercadopagoService } from '../..//services/mercadopago/mercadopago.serv
 import { PrismaService } from '../..//database/prisma.service';
 import { RequestDonationDto } from './dto/request-donation.dto';
 import { Injectable, HttpStatus, HttpException } from '@nestjs/common';
-import { PreferenceRequest } from 'mercadopago/dist/clients/preference/commonTypes';
+import {
+  PreferenceRequest,
+  PreferenceResponse,
+} from 'mercadopago/dist/clients/preference/commonTypes';
 
 @Injectable()
 export class DonationService {
@@ -134,6 +137,7 @@ export class DonationService {
         email: requestDonationDto.email,
       },
       select: {
+        id: true,
         institution: true,
       },
     });
@@ -153,13 +157,35 @@ export class DonationService {
       throw new HttpException('Valor inválido', HttpStatus.BAD_REQUEST);
     }
 
+    let response: PreferenceResponse;
     if (requestDonationDto.projectId) {
-      return this.requestProjectDonation(requestDonationDto);
+      response = await this.requestProjectDonation(requestDonationDto);
+    } else if (requestDonationDto.institutionId) {
+      response = await this.requestInstitutionDonation(requestDonationDto);
+    } else {
+      response = await this.requestGeneralDonation(requestDonationDto);
     }
-    if (requestDonationDto.institutionId) {
-      return this.requestInstitutionDonation(requestDonationDto);
+    try {
+      await this.prismaService.donation.create({
+        data: {
+          amount: requestDonationDto.amount,
+          paymentCheckoutUrl: response.init_point,
+          paymentTransactionId: response.id,
+          donor: {
+            connect: {
+              id: account.id,
+            },
+          },
+        },
+      });
+      return response.init_point;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(
+        'Erro ao salvar doação',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-    return this.requestGeneralDonation(requestDonationDto);
   }
 
   async notifyDonation() {
