@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
-import { PreferenceRequest } from 'mercadopago/dist/clients/preference/commonTypes';
+import {
+  PreferenceRequest,
+  PreferenceResponse,
+} from 'mercadopago/dist/clients/preference/commonTypes';
 
 @Injectable()
 export class MercadopagoService {
@@ -16,7 +19,7 @@ export class MercadopagoService {
     });
   }
 
-  async processPayment(data: PreferenceRequest): Promise<any> {
+  async processPayment(data: PreferenceRequest): Promise<PreferenceResponse> {
     const preference = new Preference(this.client);
     const requestOptions = {
       idempotencyKey: process.env.MERCADOPAGO_IDEMPOTENCY_KEY,
@@ -29,7 +32,7 @@ export class MercadopagoService {
     }
   }
 
-  async getPayment(preferenceId: string): Promise<any> {
+  async getPayment(preferenceId: string): Promise<PreferenceResponse> {
     const preference = new Preference(this.client);
     try {
       const response = await preference.get({ preferenceId });
