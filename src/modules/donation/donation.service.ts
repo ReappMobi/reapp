@@ -105,7 +105,7 @@ export class DonationService {
       );
     }
 
-    const user = await this.prismaService.account.findUnique({
+    const account = await this.prismaService.account.findUnique({
       where: {
         email: requestDonationDto.email,
       },
@@ -114,11 +114,11 @@ export class DonationService {
       },
     });
 
-    if (!user) {
+    if (!account) {
       throw new HttpException('Usuário não encontrado', HttpStatus.BAD_REQUEST);
     }
 
-    if (user.institution) {
+    if (account.institution) {
       throw new HttpException(
         'Usuário é uma instituição e não pode fazer doações',
         HttpStatus.BAD_REQUEST,
