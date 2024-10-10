@@ -1,21 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
-
-export type PreferenceRequest = {
-  items: {
-    id: string;
-    title: string;
-    description: string;
-    quantity: number;
-    currency_id: string;
-    unit_price: number;
-  }[];
-  payer: {
-    name: string;
-    email: string;
-  };
-  notification_url: string;
-};
+import { PreferenceRequest } from 'mercadopago/dist/clients/preference/commonTypes';
 
 @Injectable()
 export class MercadopagoService {
@@ -31,7 +16,7 @@ export class MercadopagoService {
     });
   }
 
-  async processPayment(data: any): Promise<any> {
+  async processPayment(data: PreferenceRequest): Promise<any> {
     const preference = new Preference(this.client);
     const requestOptions = {
       idempotencyKey: process.env.MERCADOPAGO_IDEMPOTENCY_KEY,
