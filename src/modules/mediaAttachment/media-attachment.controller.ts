@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  HttpException,
   HttpStatus,
   Param,
   ParseIntPipe,
@@ -46,73 +45,10 @@ export class MediaAttachmentController {
     const file = files.file ? files.file[0] : undefined;
     const thumbnail = files.thumbnail ? files.thumbnail[0] : undefined;
 
-    if (!file) {
-      throw new HttpException(
-        'File is required',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
-    if (!accountId) {
-      throw new HttpException(
-        'Account ID is required',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
-    const allowedImageTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-    ];
-    const allowedVideoTypes = ['video/mp4', 'video/x-matroska', 'video/webm'];
-
-    const imageSizeLimit = 16 * 1024 * 1024; // 16MB for images
-    const videoSizeLimit = 99 * 1024 * 1024; // 99MB for videos
-    const thumbnailSizeLimit = 5 * 1024 * 1024; // 5MB for thumbnails
-
-    let mainFileSizeLimit = 0;
-    if (allowedImageTypes.includes(file.mimetype)) {
-      mainFileSizeLimit = imageSizeLimit;
-    } else if (allowedVideoTypes.includes(file.mimetype)) {
-      mainFileSizeLimit = videoSizeLimit;
-    } else {
-      throw new HttpException(
-        'Invalid file type for main file',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
-    if (file.size > mainFileSizeLimit) {
-      throw new HttpException(
-        'Main file size exceeds the limit',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
-    if (thumbnail) {
-      if (!allowedImageTypes.includes(thumbnail.mimetype)) {
-        throw new HttpException(
-          'Invalid file type for thumbnail',
-          HttpStatus.UNPROCESSABLE_ENTITY,
-        );
-      }
-
-      if (thumbnail.size > thumbnailSizeLimit) {
-        throw new HttpException(
-          'Thumbnail size exceeds the limit',
-          HttpStatus.UNPROCESSABLE_ENTITY,
-        );
-      }
-    }
-
+    // Delegate all logic to the service
     const mediaAttachment = await this.mediaAttachmentService.processMedia(
       file,
-      thumbnail,
-      accountId,
-      description,
-      focus,
+      { thumbnail, accountId, description, focus },
     );
 
     if (mediaAttachment.isSynchronous) {
