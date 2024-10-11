@@ -2,6 +2,7 @@ import { Controller } from '@nestjs/common';
 import { Post } from '@nestjs/common';
 import { RequestDonationDto } from './dto/request-donation.dto';
 import { DonationService } from './donation.service';
+import { NotificationRequestDto } from './dto/notification.dto';
 
 @Controller('donation')
 export class DonationController {
@@ -13,7 +14,7 @@ export class DonationController {
   }
 
   @Post('notify')
-  notifyDonation() {
-    return this.donationService.notifyDonation();
+  notifyDonation(requestBody: NotificationRequestDto) {
+    return this.donationService.notifyDonation(requestBody);
   }
 }
