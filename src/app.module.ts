@@ -4,12 +4,13 @@ import { AuthenticationModule } from './modules/authentication/authentication.mo
 import { MediaAttachmentModule } from './modules/mediaAttachment/media-attachment.module';
 import { BullModule } from '@nestjs/bull';
 import { MediaProcessingModule } from './modules/mediaAttachment/media-processing.module';
+import { PostModule } from './modules/post/post.module';
 
 @Module({
   imports: [
     BullModule.forRoot({
       redis: {
-        host: 'localhost', // Update if your Redis server is elsewhere
+        host: 'localhost',
         port: 6379,
       },
     }),
@@ -17,6 +18,7 @@ import { MediaProcessingModule } from './modules/mediaAttachment/media-processin
     AuthenticationModule,
     MediaAttachmentModule,
     MediaProcessingModule,
+    PostModule,
   ],
 })
 export class AppModule {}
