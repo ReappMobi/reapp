@@ -3,6 +3,7 @@ import { DonationService } from '../donation.service';
 import { MercadopagoService } from '../../../services/mercadopago/mercadopago.service';
 import { PrismaService } from '../../../database/prisma.service';
 import { RequestDonationDto } from '../dto/request-donation.dto';
+import { NotificationRequestDto } from '../dto/notification.dto';
 
 describe('DonationService tests', () => {
   let service: DonationService;
@@ -16,6 +17,7 @@ describe('DonationService tests', () => {
           provide: MercadopagoService,
           useValue: {
             processPayment: jest.fn(),
+            getPayment: jest.fn(),
           },
         },
         {
@@ -32,6 +34,7 @@ describe('DonationService tests', () => {
             },
             donation: {
               create: jest.fn(),
+              update: jest.fn(),
             },
           },
         },
@@ -155,7 +158,7 @@ describe('DonationService tests', () => {
       expect(mercadopagoService.processPayment).toHaveBeenCalledWith({
         items: [
           {
-            id: 'not_implemented',
+            id: 'test',
             title: 'test',
             description: requestDonationDto.description,
             quantity: 1,
@@ -191,7 +194,7 @@ describe('DonationService tests', () => {
       expect(mercadopagoService.processPayment).toHaveBeenCalledWith({
         items: [
           {
-            id: 'not_implemented',
+            id: 'test',
             title: 'test',
             description: requestDonationDto.description,
             quantity: 1,
@@ -223,7 +226,7 @@ describe('DonationService tests', () => {
       expect(mercadopagoService.processPayment).toHaveBeenCalledWith({
         items: [
           {
-            id: 'not_implemented',
+            id: 'Reapp',
             title: 'Reapp',
             description: requestDonationDto.description,
             quantity: 1,
@@ -241,9 +244,95 @@ describe('DonationService tests', () => {
   });
 
   describe('notifyDonation', () => {
-    it('should return "notify donation"', async () => {
-      const result = await service.notifyDonation();
-      expect(result).toBe('notify donation');
+    const data: NotificationRequestDto = {
+      id: 123,
+      live_mode: true,
+      type: 'payment',
+      date_created: '2021-08-25T14:00:00Z',
+      user_id: 123,
+      api_version: 'v1',
+      action: 'payment.created',
+      data: {
+        id: '123',
+      },
+    };
+
+    it('should throw an error if payment is not found', async () => {
+      (mercadopagoService.getPayment as jest.Mock).mockResolvedValue(null);
+      await expect(service.notifyDonation(data)).rejects.toThrow(
+        'Pagamento não encontrado',
+      );
+    });
+
+    it('should call mercadopagoService.getPayment with correct data', async () => {
+      (mercadopagoService.getPayment as jest.Mock).mockResolvedValue({
+        id: '123',
+        status: 'approved',
+        transaction_amount: 10,
+      });
+      await service.notifyDonation(data);
+      expect(mercadopagoService.getPayment).toHaveBeenCalledWith('123');
+    });
+
+    it('should call prismaService.donation.update with correct data to approved', async () => {
+      (mercadopagoService.getPayment as jest.Mock).mockResolvedValue({
+        id: '123',
+        status: 'approved',
+        transaction_amount: 10,
+      });
+      await service.notifyDonation(data);
+      expect(prismaService.donation.update).toHaveBeenCalledWith({
+        data: {
+          status: 'APPROVED',
+        },
+        where: {
+          paymentTransactionId: '123',
+        },
+      });
+    });
+
+    it('should call prismaService.donation.update with correct data to cancelled', async () => {
+      (mercadopagoService.getPayment as jest.Mock).mockResolvedValue({
+        id: '123',
+        status: 'cancelled',
+        transaction_amount: 10,
+      });
+      await service.notifyDonation(data);
+      expect(prismaService.donation.update).toHaveBeenCalledWith({
+        data: {
+          status: 'CANCELED',
+        },
+        where: {
+          paymentTransactionId: '123',
+        },
+      });
+    });
+
+    it('should call prismaService.donation.update with correct data to rejected', async () => {
+      (mercadopagoService.getPayment as jest.Mock).mockResolvedValue({
+        id: '123',
+        status: 'rejected',
+        transaction_amount: 10,
+      });
+      await service.notifyDonation(data);
+      expect(prismaService.donation.update).toHaveBeenCalledWith({
+        data: {
+          status: 'REJECTED',
+        },
+        where: {
+          paymentTransactionId: '123',
+        },
+      });
+    });
+
+    it('should not call prismaService.donation.update if status is not approved, cancelled or rejected', async () => {
+      (mercadopagoService.getPayment as jest.Mock).mockResolvedValue({
+        id: '123',
+        status: 'in_process',
+        transaction_amount: 10,
+      });
+      await service.notifyDonation(data);
+      expect(prismaService.donation.update).not.toHaveBeenCalled();
     });
   });
 });
