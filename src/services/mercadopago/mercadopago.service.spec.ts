@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MercadopagoService } from './mercadopago.service';
-import { Preference } from 'mercadopago';
+import { Payment, Preference } from 'mercadopago';
 
 jest.mock('mercadopago');
 describe('MercadopagoService', () => {
   let service: MercadopagoService;
-  let mercadoPagoMock: jest.Mocked<Preference>;
+  let mercadopagoPreferenceMock: jest.Mocked<Preference>;
+  let mercadopagoPaymentMock: jest.Mocked<Payment>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -13,7 +14,8 @@ describe('MercadopagoService', () => {
     }).compile();
 
     service = module.get<MercadopagoService>(MercadopagoService);
-    mercadoPagoMock = Preference.prototype as any;
+    mercadopagoPaymentMock = Payment.prototype as any;
+    mercadopagoPreferenceMock = Preference.prototype as any;
   });
 
   it('should be defined', () => {
@@ -44,11 +46,9 @@ describe('MercadopagoService', () => {
           init_point: 'https://test.com/payment',
         },
       };
-      mercadoPagoMock.create.mockResolvedValue(response as any);
-
+      mercadopagoPreferenceMock.create.mockResolvedValue(response as any);
       const result = await service.processPayment(data);
-
-      expect(mercadoPagoMock.create).toHaveBeenCalledWith({
+      expect(mercadopagoPreferenceMock.create).toHaveBeenCalledWith({
         body: data,
         requestOptions: {
           idempotencyKey: process.env.MERCADOPAGO_IDEMPOTENCY_KEY,
@@ -57,16 +57,28 @@ describe('MercadopagoService', () => {
       expect(result).toEqual(response);
     });
 
-    it('should handle errors', async () => {
+    it('should return error if mercadopago.create throws an error', async () => {
       const data = {
-        items: [],
+        items: [
+          {
+            id: '1',
+            title: 'Test',
+            description: 'Test description',
+            quantity: 1,
+            currency_id: 'BRL',
+            unit_price: 10,
+          },
+        ],
+        payer: {
+          name: 'Test',
+          email: 'test@test.com',
+        },
+        notification_url: 'https://test.com/webhook',
       };
       const error = new Error('Test error');
-      mercadoPagoMock.create.mockRejectedValue(error);
-
+      mercadopagoPreferenceMock.create.mockRejectedValue(error);
       const result = await service.processPayment(data);
-
-      expect(mercadoPagoMock.create).toHaveBeenCalledWith({
+      expect(mercadopagoPreferenceMock.create).toHaveBeenCalledWith({
         body: data,
         requestOptions: {
           idempotencyKey: process.env.MERCADOPAGO_IDEMPOTENCY_KEY,
@@ -84,25 +96,25 @@ describe('MercadopagoService', () => {
           status: 'approved',
         },
       };
-      mercadoPagoMock.get.mockResolvedValue(response as any);
+      mercadopagoPaymentMock.get.mockResolvedValue(response as any);
 
       const result = await service.getPayment(preferenceId);
 
-      expect(mercadoPagoMock.get).toHaveBeenCalledWith({
-        preferenceId: preferenceId,
+      expect(mercadopagoPaymentMock.get).toHaveBeenCalledWith({
+        id: preferenceId,
       });
       expect(result).toEqual(response);
     });
 
-    it('should handle errors', async () => {
+    it('should return error if mercadopago.get throws an error', async () => {
       const preferenceId = '123';
       const error = new Error('Test error');
-      mercadoPagoMock.get.mockRejectedValue(error);
+      mercadopagoPaymentMock.get.mockRejectedValue(error);
 
       const result = await service.getPayment(preferenceId);
 
-      expect(mercadoPagoMock.get).toHaveBeenCalledWith({
-        preferenceId: preferenceId,
+      expect(mercadopagoPaymentMock.get).toHaveBeenCalledWith({
+        id: preferenceId,
       });
       expect(result).toEqual(error);
     });
