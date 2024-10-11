@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { MercadoPagoConfig, Payment, Preference } from 'mercadopago';
+import { PaymentResponse } from 'mercadopago/dist/clients/payment/commonTypes';
 import {
   PreferenceRequest,
   PreferenceResponse,
@@ -32,10 +33,10 @@ export class MercadopagoService {
     }
   }
 
-  async getPayment(preferenceId: string): Promise<PreferenceResponse> {
-    const preference = new Preference(this.client);
+  async getPayment(paymentId: string): Promise<PaymentResponse> {
+    const payment = new Payment(this.client);
     try {
-      const response = await preference.get({ preferenceId });
+      const response = await payment.get({ id: paymentId });
       return response;
     } catch (error) {
       return error;
