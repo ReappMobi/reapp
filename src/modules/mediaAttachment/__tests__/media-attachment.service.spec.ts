@@ -6,7 +6,6 @@ import { HttpException } from '@nestjs/common';
 import * as fs from 'fs';
 import * as sharp from 'sharp';
 import * as mime from 'mime-types';
-import { IMAGE_LIMIT } from '../media-attachment.constants';
 
 jest.mock('fs');
 jest.mock('sharp');
@@ -15,7 +14,6 @@ jest.mock('uuid', () => ({
 }));
 jest.mock('bull');
 jest.mock('fluent-ffmpeg');
-
 jest.mock('mime-types', () => ({
   extension: jest.fn(),
   lookup: jest.fn(),
@@ -59,6 +57,88 @@ describe('MediaService', () => {
   });
 
   describe('processMedia', () => {
+    it('should throw an error if file is missing', async () => {
+      const file = null;
+      const options = {
+        accountId: 1,
+        description: 'Test image',
+        focus: '0.0,0.0',
+      };
+
+      await expect(service.processMedia(file, options)).rejects.toThrow(
+        HttpException,
+      );
+      await expect(service.processMedia(file, options)).rejects.toThrow(
+        'File is required',
+      );
+    });
+
+    it('should throw an error if accountId is missing', async () => {
+      const file = {
+        mimetype: 'image/jpeg',
+        buffer: Buffer.from(''),
+        originalname: 'test.jpg',
+        size: 1024,
+      } as Express.Multer.File;
+
+      const options = {
+        accountId: null,
+        description: 'Test image',
+        focus: '0.0,0.0',
+      };
+
+      await expect(service.processMedia(file, options)).rejects.toThrow(
+        HttpException,
+      );
+      await expect(service.processMedia(file, options)).rejects.toThrow(
+        'Account ID is required',
+      );
+    });
+
+    it('should throw an error if file type is invalid', async () => {
+      const file = {
+        mimetype: 'application/pdf',
+        buffer: Buffer.from(''),
+        originalname: 'test.pdf',
+        size: 1024,
+      } as Express.Multer.File;
+
+      const options = {
+        accountId: 1,
+        description: 'Test file',
+        focus: '0.0,0.0',
+      };
+
+      await expect(service.processMedia(file, options)).rejects.toThrow(
+        HttpException,
+      );
+      await expect(service.processMedia(file, options)).rejects.toThrow(
+        'Invalid file type for main file',
+      );
+    });
+
+    it('should throw an error if file size exceeds limit', async () => {
+      const file = {
+        mimetype: 'image/jpeg',
+        buffer: Buffer.from(''),
+        originalname: 'test.jpg',
+        size: 20 * 1024 * 1024, // 20MB, exceeds 16MB limit
+      } as Express.Multer.File;
+
+      const options = {
+        accountId: 1,
+        description: 'Test image',
+        focus: '0.0,0.0',
+      };
+
+      await expect(service.processMedia(file, options)).rejects.toThrow(
+        HttpException,
+      );
+      await expect(service.processMedia(file, options)).rejects.toThrow(
+        'Main file size exceeds the limit',
+      );
+    });
+
     it('should process synchronously when media type is image', async () => {
       const file = {
         mimetype: 'image/jpeg',
@@ -67,10 +147,12 @@ describe('MediaService', () => {
         size: 1024,
       } as Express.Multer.File;
 
-      const thumbnail = undefined;
-      const accountId = 1;
-      const description = 'Test image';
-      const focus = '0.0,0.0';
+      const options = {
+        thumbnail: undefined,
+        accountId: 1,
+        description: 'Test image',
+        focus: '0.0,0.0',
+      };
 
       jest.spyOn(service, 'isSynchronous').mockReturnValue(true);
       jest.spyOn(service, 'processSynchronously').mockResolvedValue({
@@ -85,22 +167,10 @@ describe('MediaService', () => {
         blurhash: 'mock-blurhash',
       });
 
-      const result = await service.processMedia(
-        file,
-        thumbnail,
-        accountId,
-        description,
-        focus,
-      );
+      const result = await service.processMedia(file, options);
 
       expect(service.isSynchronous).toHaveBeenCalledWith(file);
-      expect(service.processSynchronously).toHaveBeenCalledWith(
-        file,
-        thumbnail,
-        accountId,
-        description,
-        focus,
-      );
+      expect(service.processSynchronously).toHaveBeenCalledWith(file, options);
       expect(result).toEqual({
         isSynchronous: true,
         mediaAttachment: {
@@ -117,18 +187,20 @@ describe('MediaService', () => {
       });
     });
 
-    it('should enqueue processing when media type is not image', async () => {
+    it('should process asynchronously when media type is not image', async () => {
       const file = {
         mimetype: 'video/mp4',
         buffer: Buffer.from(''),
         originalname: 'test.mp4',
-        size: 1024 * 1024 * 50,
+        size: 50 * 1024 * 1024, // 50MB
       } as Express.Multer.File;
 
-      const thumbnail = undefined;
-      const accountId = 1;
-      const description = 'Test video';
-      const focus = '0.0,0.0';
+      const options = {
+        thumbnail: undefined,
+        accountId: 1,
+        description: 'Test video',
+        focus: '0.0,0.0',
+      };
 
       jest.spyOn(service, 'isSynchronous').mockReturnValue(false);
       jest.spyOn(service, 'enqueueMediaProcessing').mockResolvedValue({
@@ -143,21 +215,12 @@ describe('MediaService', () => {
         blurhash: null,
       });
 
-      const result = await service.processMedia(
-        file,
-        thumbnail,
-        accountId,
-        description,
-        focus,
-      );
+      const result = await service.processMedia(file, options);
 
       expect(service.isSynchronous).toHaveBeenCalledWith(file);
       expect(service.enqueueMediaProcessing).toHaveBeenCalledWith(
         file,
-        thumbnail,
-        accountId,
-        description,
-        focus,
+        options,
       );
       expect(result).toEqual({
         isSynchronous: false,
@@ -182,13 +245,15 @@ describe('MediaService', () => {
         mimetype: 'video/mp4',
         buffer: Buffer.from('video data'),
         originalname: 'test.mp4',
-        size: 1024 * 1024 * 50,
+        size: 50 * 1024 * 1024,
       } as Express.Multer.File;
 
-      const thumbnail = undefined;
-      const accountId = 1;
-      const description = 'Test video';
-      const focus = '0.0,0.0';
+      const options = {
+        thumbnail: undefined,
+        accountId: 1,
+        description: 'Test video',
+        focus: '0.0,0.0',
+      };
 
       (fs.mkdirSync as jest.Mock).mockReturnValue(undefined);
       (fs.writeFileSync as jest.Mock).mockReturnValue(undefined);
@@ -196,18 +261,12 @@ describe('MediaService', () => {
 
       prismaService.mediaAttachment.create = jest.fn().mockResolvedValue({
         id: 'mock-uuid',
-        description,
+        description: options.description,
       });
 
       mediaQueue.add = jest.fn().mockResolvedValue(undefined);
 
-      const result = await service.enqueueMediaProcessing(
-        file,
-        thumbnail,
-        accountId,
-        description,
-        focus,
-      );
+      const result = await service.enqueueMediaProcessing(file, options);
 
       expect(fs.mkdirSync).toHaveBeenCalled();
       expect(fs.writeFileSync).toHaveBeenCalled();
@@ -222,7 +281,7 @@ describe('MediaService', () => {
         remote_url: null,
         text_url: null,
         meta: null,
-        description,
+        description: options.description,
         blurhash: null,
       });
     });
@@ -237,10 +296,12 @@ describe('MediaService', () => {
         size: 1024,
       } as Express.Multer.File;
 
-      const thumbnail = undefined;
-      const accountId = 1;
-      const description = 'Test image';
-      const focus = '0.0,0.0';
+      const options = {
+        thumbnail: undefined,
+        accountId: 1,
+        description: 'Test image',
+        focus: '0.0,0.0',
+      };
 
       (fs.mkdirSync as jest.Mock).mockReturnValue(undefined);
       (fs.writeFileSync as jest.Mock).mockReturnValue(undefined);
@@ -253,17 +314,11 @@ describe('MediaService', () => {
 
       prismaService.mediaAttachment.create = jest.fn().mockResolvedValue({
         id: 'mock-uuid',
-        description,
+        description: options.description,
         remoteUrl: '',
       });
 
-      const result = await service.processSynchronously(
-        file,
-        thumbnail,
-        accountId,
-        description,
-        focus,
-      );
+      const result = await service.processSynchronously(file, options);
 
       expect(fs.mkdirSync).toHaveBeenCalled();
       expect(fs.writeFileSync).toHaveBeenCalled();
@@ -280,7 +335,7 @@ describe('MediaService', () => {
         remote_url: null,
         text_url: expect.any(String),
         meta: {},
-        description,
+        description: options.description,
         blurhash: 'blurhash',
       });
     });
@@ -290,33 +345,22 @@ describe('MediaService', () => {
         mimetype: 'video/mp4',
         buffer: Buffer.from('video data'),
         originalname: 'test.mp4',
-        size: 1024 * 1024 * 50,
+        size: 50 * 1024 * 1024,
       } as Express.Multer.File;
 
-      const thumbnail = undefined;
-      const accountId = 1;
-      const description = 'Test video';
-      const focus = '0.0,0.0';
+      const options = {
+        thumbnail: undefined,
+        accountId: 1,
+        description: 'Test video',
+        focus: '0.0,0.0',
+      };
 
-      await expect(
-        service.processSynchronously(
-          file,
-          thumbnail,
-          accountId,
-          description,
-          focus,
-        ),
-      ).rejects.toThrow(HttpException);
-
-      await expect(
-        service.processSynchronously(
-          file,
-          thumbnail,
-          accountId,
-          description,
-          focus,
-        ),
-      ).rejects.toThrow('Http Exception');
+      await expect(service.processSynchronously(file, options)).rejects.toThrow(
+        HttpException,
+      );
+      await expect(service.processSynchronously(file, options)).rejects.toThrow(
+        'Unsupported media type for synchronous processing',
+      );
     });
   });
 
@@ -411,39 +455,6 @@ describe('MediaService', () => {
 
     it('should return "unknown" for unsupported mimetypes', () => {
       expect(service.determineMediaType('application/pdf')).toBe('unknown');
-    });
-  });
-
-  describe('validateFile', () => {
-    it('should throw error if file is invalid', () => {
-      expect(() => service.validateFile(null)).toThrow(HttpException);
-      expect(() => service.validateFile(null)).toThrow('Http Exception');
-    });
-
-    it('should throw error if unsupported file type', () => {
-      const file = { mimetype: 'application/pdf' } as Express.Multer.File;
-
-      expect(() => service.validateFile(file)).toThrow(HttpException);
-      expect(() => service.validateFile(file)).toThrow('Http Exception');
-    });
-
-    it('should throw error if file size exceeds limit', () => {
-      const file = {
-        mimetype: 'image/jpeg',
-        size: IMAGE_LIMIT + 1,
-      } as Express.Multer.File;
-
-      expect(() => service.validateFile(file)).toThrow(HttpException);
-      expect(() => service.validateFile(file)).toThrow('Http Exception');
-    });
-
-    it('should pass validation for valid file', () => {
-      const file = {
-        mimetype: 'image/jpeg',
-        size: IMAGE_LIMIT - 1,
-      } as Express.Multer.File;
-
-      expect(() => service.validateFile(file)).not.toThrow();
     });
   });
 

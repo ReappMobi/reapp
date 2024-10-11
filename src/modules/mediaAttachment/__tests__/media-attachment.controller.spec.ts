@@ -34,39 +34,7 @@ describe('MediaAttachmentController', () => {
   });
 
   describe('uploadMedia', () => {
-    it('should throw an error if no file is provided', async () => {
-      const files = { file: undefined, thumbnail: undefined };
-      const accountId = '1';
-      const description = 'Test description';
-      const focus = '0.5,0.5';
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
-      };
-
-      await expect(
-        controller.uploadMedia(
-          files,
-          parseInt(accountId),
-          description,
-          focus,
-          res,
-        ),
-      ).rejects.toThrow(HttpException);
-
-      // Optionally, check the exception details
-      await expect(
-        controller.uploadMedia(
-          files,
-          parseInt(accountId),
-          description,
-          focus,
-          res,
-        ),
-      ).rejects.toThrow('File is required');
-    });
-
-    it('should throw an error if no accountId is provided', async () => {
+    it('should call mediaService.processMedia with correct parameters and respond with 200 when isSynchronous is true', async () => {
       const mockFile: Express.Multer.File = {
         fieldname: 'file',
         originalname: 'test.jpg',
@@ -94,53 +62,7 @@ describe('MediaAttachmentController', () => {
       };
 
       const files = { file: [mockFile], thumbnail: [mockThumbnail] };
-      const accountId = undefined;
-      const description = 'Test description';
-      const focus = '0.5,0.5';
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
-      };
-
-      await expect(
-        controller.uploadMedia(files, accountId, description, focus, res),
-      ).rejects.toThrow(HttpException);
-
-      // Optionally, check the exception details
-      await expect(
-        controller.uploadMedia(files, accountId, description, focus, res),
-      ).rejects.toThrow('Account ID is required');
-    });
-
-    it('should call mediaService.processMedia with correct parameters', async () => {
-      const mockFile: Express.Multer.File = {
-        fieldname: 'file',
-        originalname: 'test.jpg',
-        encoding: '7bit',
-        mimetype: 'image/jpeg',
-        buffer: Buffer.from(''),
-        size: 1024,
-        stream: null,
-        destination: '',
-        filename: '',
-        path: '',
-      };
-
-      const mockThumbnail: Express.Multer.File = {
-        fieldname: 'thumbnail',
-        originalname: 'thumb.jpg',
-        encoding: '7bit',
-        mimetype: 'image/jpeg',
-        buffer: Buffer.from(''),
-        size: 512,
-        stream: null,
-        destination: '',
-        filename: '',
-        path: '',
-      };
-
-      const files = { file: [mockFile], thumbnail: [mockThumbnail] };
-      const accountId = '1';
+      const accountId = 1;
       const description = 'Test description';
       const focus = '0.5,0.5';
       const res = {
@@ -150,30 +72,23 @@ describe('MediaAttachmentController', () => {
 
       mediaService.processMedia = jest.fn().mockResolvedValue({
         isSynchronous: true,
-        mediaAttachment: {},
+        mediaAttachment: { id: '123' },
       });
 
-      await controller.uploadMedia(
-        files,
-        parseInt(accountId),
-        description,
-        focus,
-        res,
-      );
+      await controller.uploadMedia(files, accountId, description, focus, res);
 
-      expect(mediaService.processMedia).toHaveBeenCalledWith(
-        mockFile,
-        mockThumbnail,
-        parseInt(accountId),
+      expect(mediaService.processMedia).toHaveBeenCalledWith(mockFile, {
+        thumbnail: mockThumbnail,
+        accountId,
         description,
         focus,
-      );
+      });
 
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.send).toHaveBeenCalledWith({});
+      expect(res.send).toHaveBeenCalledWith({ id: '123' });
     });
 
-    it('should return 202 status code when processing is asynchronous', async () => {
+    it('should call mediaService.processMedia with correct parameters and respond with 202 when isSynchronous is false', async () => {
       const mockFile: Express.Multer.File = {
         fieldname: 'file',
         originalname: 'test.mp4',
@@ -188,7 +103,7 @@ describe('MediaAttachmentController', () => {
       };
 
       const files = { file: [mockFile], thumbnail: undefined };
-      const accountId = '1';
+      const accountId = 1;
       const description = 'Test video upload';
       const focus = '0.5,0.5';
       const res = {
@@ -198,37 +113,30 @@ describe('MediaAttachmentController', () => {
 
       mediaService.processMedia = jest.fn().mockResolvedValue({
         isSynchronous: false,
-        mediaAttachment: {},
+        mediaAttachment: { id: '123' },
       });
 
-      await controller.uploadMedia(
-        files,
-        parseInt(accountId),
-        description,
-        focus,
-        res,
-      );
+      await controller.uploadMedia(files, accountId, description, focus, res);
 
-      expect(mediaService.processMedia).toHaveBeenCalledWith(
-        mockFile,
-        undefined,
-        parseInt(accountId),
+      expect(mediaService.processMedia).toHaveBeenCalledWith(mockFile, {
+        thumbnail: undefined,
+        accountId,
         description,
         focus,
-      );
+      });
 
       expect(res.status).toHaveBeenCalledWith(202);
-      expect(res.send).toHaveBeenCalledWith({});
+      expect(res.send).toHaveBeenCalledWith({ id: '123' });
     });
 
-    it('should throw an error if file size exceeds limit', async () => {
+    it('should throw an error if mediaService.processMedia throws an error', async () => {
       const mockFile: Express.Multer.File = {
         fieldname: 'file',
         originalname: 'test.jpg',
         encoding: '7bit',
         mimetype: 'image/jpeg',
         buffer: Buffer.from(''),
-        size: 20 * 1024 * 1024, // 20MB
+        size: 1024,
         stream: null,
         destination: '',
         filename: '',
@@ -236,23 +144,27 @@ describe('MediaAttachmentController', () => {
       };
 
       const files = { file: [mockFile], thumbnail: undefined };
-      const accountId = '1';
-      const description = 'Test large image';
+      const accountId = 1;
+      const description = 'Test description';
       const focus = '0.5,0.5';
       const res = {
         status: jest.fn().mockReturnThis(),
         send: jest.fn(),
       };
 
+      const error = new HttpException('Some error', HttpStatus.BAD_REQUEST);
+      mediaService.processMedia = jest.fn().mockRejectedValue(error);
+
       await expect(
-        controller.uploadMedia(
-          files,
-          parseInt(accountId),
-          description,
-          focus,
-          res,
-        ),
-      ).rejects.toThrow('Main file size exceeds the limit');
+        controller.uploadMedia(files, accountId, description, focus, res),
+      ).rejects.toThrow(error);
+
+      expect(mediaService.processMedia).toHaveBeenCalledWith(mockFile, {
+        thumbnail: undefined,
+        accountId,
+        description,
+        focus,
+      });
     });
   });
 
