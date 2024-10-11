@@ -22,7 +22,7 @@ export class DonationService {
     return {
       items: [
         {
-          id: 'not_implemented',
+          id: title,
           title: title,
           description: bodyInfo.description,
           quantity: 1,
