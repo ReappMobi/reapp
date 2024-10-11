@@ -51,42 +51,114 @@ export class MediaService {
   ) {}
   async processMedia(
     file: Express.Multer.File,
-    thumbnail: Express.Multer.File | undefined,
-    accountId: number,
-    description: string,
-    focus: string,
+    options: {
+      thumbnail?: Express.Multer.File;
+      accountId: number;
+      description?: string;
+      focus?: string;
+    },
   ) {
+    const { thumbnail, accountId, description, focus } = options;
+    if (!file) {
+      throw new HttpException(
+        'File is required',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    if (!accountId) {
+      throw new HttpException(
+        'Account ID is required',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    // Move validation logic here
+    this.validateFiles(file, thumbnail);
     const isSynchronous = this.isSynchronous(file);
 
     if (isSynchronous) {
-      const mediaAttachment = await this.processSynchronously(
-        file,
+      const mediaAttachment = await this.processSynchronously(file, {
         thumbnail,
         accountId,
         description,
         focus,
-      );
+      });
       return { isSynchronous: true, mediaAttachment };
     } else {
-      const mediaAttachment = await this.enqueueMediaProcessing(
-        file,
+      const mediaAttachment = await this.enqueueMediaProcessing(file, {
         thumbnail,
         accountId,
         description,
         focus,
-      );
+      });
 
       return { isSynchronous: false, mediaAttachment };
     }
   }
 
-  async enqueueMediaProcessing(
+  private validateFiles(
     file: Express.Multer.File,
     thumbnail: Express.Multer.File | undefined,
-    accountId: number,
-    description: string,
-    focus: string,
   ) {
+    const allowedImageTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+    ];
+    const allowedVideoTypes = ['video/mp4', 'video/x-matroska', 'video/webm'];
+
+    const imageSizeLimit = 16 * 1024 * 1024; // 16MB for images
+    const videoSizeLimit = 99 * 1024 * 1024; // 99MB for videos
+    const thumbnailSizeLimit = 5 * 1024 * 1024; // 5MB for thumbnails
+
+    let mainFileSizeLimit = 0;
+    if (allowedImageTypes.includes(file.mimetype)) {
+      mainFileSizeLimit = imageSizeLimit;
+    } else if (allowedVideoTypes.includes(file.mimetype)) {
+      mainFileSizeLimit = videoSizeLimit;
+    } else {
+      throw new HttpException(
+        'Invalid file type for main file',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    if (file.size > mainFileSizeLimit) {
+      throw new HttpException(
+        'Main file size exceeds the limit',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    if (thumbnail) {
+      if (!allowedImageTypes.includes(thumbnail.mimetype)) {
+        throw new HttpException(
+          'Invalid file type for thumbnail',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
+      }
+
+      if (thumbnail.size > thumbnailSizeLimit) {
+        throw new HttpException(
+          'Thumbnail size exceeds the limit',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
+      }
+    }
+  }
+
+  async enqueueMediaProcessing(
+    file: Express.Multer.File,
+    options: {
+      thumbnail: Express.Multer.File | undefined;
+      accountId: number;
+      description: string;
+      focus: string;
+    },
+  ) {
+    const { thumbnail, accountId, description, focus } = options;
     this.validateFile(file);
 
     const mediaId = uuidv4();
@@ -194,7 +266,7 @@ export class MediaService {
       mediaAttachment.thumbnailContentType.split('/')[1];
     const mediaResponse = {
       id: mediaAttachment.id.toString(),
-      type: mediaAttachment.type,
+      type: this.getTypeStr(mediaAttachment.type),
       url: isProcessed
         ? `${baseUrl}/${mediaAttachment.id}/original.${originalFileExtension}`
         : null,
@@ -228,11 +300,14 @@ export class MediaService {
 
   async processSynchronously(
     file: Express.Multer.File,
-    thumbnail: Express.Multer.File | undefined,
-    accountId: number,
-    description: string,
-    focus: string,
+    options: {
+      thumbnail: Express.Multer.File | undefined;
+      accountId: number;
+      description: string;
+      focus: string;
+    },
   ) {
+    const { thumbnail, accountId, description, focus } = options;
     this.validateFile(file);
 
     const mediaId = uuidv4();
@@ -267,7 +342,7 @@ export class MediaService {
 
     if (type !== 'image') {
       throw new HttpException(
-        { error: 'Unsupported media type for synchronous processing' },
+        'Unsupported media type for synchronous processing',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
@@ -741,6 +816,21 @@ export class MediaService {
         return 4;
       default:
         return 0;
+    }
+  }
+
+  getTypeStr(type: number): string {
+    switch (type) {
+      case 1:
+        return 'image';
+      case 2:
+        return 'video';
+      case 3:
+        return 'gifv';
+      case 4:
+        return 'audio';
+      default:
+        return '';
     }
   }
 
