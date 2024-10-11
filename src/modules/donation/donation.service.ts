@@ -6,6 +6,7 @@ import {
   PreferenceRequest,
   PreferenceResponse,
 } from 'mercadopago/dist/clients/preference/commonTypes';
+import { NotificationRequestDto } from './dto/notification.dto';
 
 // TODO: Simplify this class and fix error handling
 @Injectable()
@@ -166,6 +167,7 @@ export class DonationService {
     } else {
       response = await this.requestGeneralDonation(requestDonationDto);
     }
+
     try {
       await this.prismaService.donation.create({
         data: {
@@ -189,7 +191,31 @@ export class DonationService {
     }
   }
 
-  async notifyDonation() {
-    return 'notify donation';
+  async notifyDonation(data: NotificationRequestDto) {
+    if (data.type !== 'payment') return;
+
+    const payment = await this.mercadopagoService.getPayment(data.data.id);
+    if (!payment) {
+      throw new HttpException(
+        'Pagamento não encontrado',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const statusMap = {
+      approved: 'APPROVED',
+      cancelled: 'CANCELED',
+      rejected: 'REJECTED',
+    };
+    if (statusMap[payment.status]) {
+      await this.prismaService.donation.update({
+        where: {
+          paymentTransactionId: String(payment.id),
+        },
+        data: {
+          status: statusMap[payment.status],
+        },
+      });
+    }
   }
 }
