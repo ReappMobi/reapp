@@ -368,7 +368,7 @@ describe('MediaService', () => {
     it('should return media attachment when processing is complete', async () => {
       prismaService.mediaAttachment.findUnique = jest.fn().mockResolvedValue({
         id: 'mock-uuid',
-        type: 'image',
+        type: 1,
         processing: 2,
         fileContentType: 'image/jpeg',
         thumbnailContentType: 'image/jpeg',
