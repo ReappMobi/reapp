@@ -49,6 +49,7 @@ model Donor {
   accountId Int        @unique
   donations Donation[]
   likes     Like[]
+  favorites       FavoriteProject[]
 }
 
 model Institution {
@@ -83,6 +84,8 @@ model Post {
   institutionId Int
   mediaId       String?         // Chave estrangeira para MediaAttachment (opcional)
   media         MediaAttachment? @relation(fields: [mediaId], references: [id])  // Relacionamento com MediaAttachment (opcional)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 }
 
 model Like {
@@ -103,13 +106,29 @@ model Comment {
 model Project {
   id            Int         @id @default(autoincrement())
   name          String      @db.VarChar(255)
-  description   String      @db.Text
-  mediaUrl      String?     @db.VarChar(255)
-  bannerUrl     String?     @db.VarChar(255)
+  description   String      @db.Text   
+  media         MediaAttachment? @relation(fields: [mediaId], references: [id])  // Relacionamento com MediaAttachment (opcional)
+  mediaId       String?      
   institutionId Int
   institution   Institution @relation(fields: [institutionId], references: [id])
   donations     Donation[]
-  categories    Category[]
+  subtitle      String 
+  category      Category            @relation(fields: [categoryId], references: [id])
+  categoryId Int
+  favorites      FavoriteProject[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+model FavoriteProject {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  donorId   Int
+  projectId Int
+  user      Donor     @relation(fields: [donorId], references: [id])
+  project   Project  @relation(fields: [projectId], references: [id])
+
+  @@unique([donorId, projectId]) // Garantir que um usuário possa favoritar um projeto apenas uma vez
 }
 
 model Donation {
@@ -131,11 +150,10 @@ model Donation {
 model Category {
   id            Int           @id @default(autoincrement())
   name          String        @unique @db.VarChar(255)
-  institutionId Int?
-  project       Project?      @relation(fields: [projectId], references: [id])
-  projectId     Int?
-  Institution   Institution[]
+  projects      Project[]     
+  institutions  Institution[] 
 }
+
 
 model InstitutionMember {
   id            Int                   @id @default(autoincrement())
@@ -172,4 +190,5 @@ model MediaAttachment {
   thumbnailRemoteUrl         String?
   account                    Account?  @relation(fields: [accountId], references: [id])
   posts                      Post[]    // Relacionamento inverso com Post
+  projects                   Project[]
 }
