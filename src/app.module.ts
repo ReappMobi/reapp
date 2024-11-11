@@ -5,6 +5,7 @@ import { MediaAttachmentModule } from './modules/mediaAttachment/media-attachmen
 import { BullModule } from '@nestjs/bull';
 import { MediaProcessingModule } from './modules/mediaAttachment/media-processing.module';
 import { PostModule } from './modules/post/post.module';
+import { ProjectModule } from './modules/project/project.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { PostModule } from './modules/post/post.module';
     MediaAttachmentModule,
     MediaProcessingModule,
     PostModule,
+    ProjectModule,
   ],
 })
 export class AppModule {}

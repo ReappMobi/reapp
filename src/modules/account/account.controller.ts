@@ -29,6 +29,16 @@ export class AccountController {
     return this.accountService.findOne(+id);
   }
 
+  @Get('institution/:id')
+  findOneInsitution(@Param('id') id: string) {
+    return this.accountService.findOneInstitution(+id);
+  }
+
+  @Get('donor/:id')
+  findOneDonor(@Param('id') id: string) {
+    return this.accountService.findOneDonor(+id);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.accountService.remove(+id);

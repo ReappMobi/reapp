@@ -239,6 +239,36 @@ export class AccountService {
     return account;
   }
 
+  async findOneInstitution(id: number) {
+    const institutionAccount = await this.prismaService.institution.findUnique({
+      where: { accountId: id },
+    });
+
+    if (!institutionAccount) {
+      throw new HttpException(
+        'conta da instituição não encontrada',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return institutionAccount;
+  }
+
+  async findOneDonor(id: number) {
+    const donorAccount = await this.prismaService.donor.findUnique({
+      where: { accountId: id },
+    });
+
+    if (!donorAccount) {
+      throw new HttpException(
+        'conta do doador não encontrada',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return donorAccount;
+  }
+
   async remove(id: number) {
     try {
       return await this.prismaService.account.delete({

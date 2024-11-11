@@ -245,6 +245,61 @@ export class MediaService {
     return response;
   }
 
+  async getMediaAttachmentsByIds(mediaIds: string[]) {
+    const mediaAttachments = await this.prismaService.mediaAttachment.findMany({
+      where: {
+        id: { in: mediaIds },
+      },
+    });
+
+    const baseUrl = `${process.env.BASE_URL}/uploads`;
+
+    const mediaAttachmentMap = new Map<string, any>();
+    mediaAttachments.forEach((mediaAttachment) => {
+      mediaAttachmentMap.set(mediaAttachment.id, mediaAttachment);
+    });
+
+    const mediaResponses = mediaIds.map((id) => {
+      const mediaAttachment = mediaAttachmentMap.get(id);
+
+      if (!mediaAttachment) {
+        return { mediaResponse: null, processing: null };
+      }
+
+      const processing = mediaAttachment.processing;
+      const isProcessed = processing === 2;
+
+      const originalFileExtension = mediaAttachment.fileContentType
+        ? mediaAttachment.fileContentType.split('/')[1]
+        : '';
+      const thumbnailFileExtension = mediaAttachment.thumbnailContentType
+        ? mediaAttachment.thumbnailContentType.split('/')[1]
+        : '';
+
+      const mediaResponse = {
+        id: mediaAttachment.id.toString(),
+        type: this.getTypeStr(mediaAttachment.type),
+        url:
+          isProcessed && originalFileExtension
+            ? `${baseUrl}/${mediaAttachment.id}/original.${originalFileExtension}`
+            : null,
+        preview_url:
+          isProcessed && thumbnailFileExtension
+            ? `${baseUrl}/${mediaAttachment.id}/thumbnail.${thumbnailFileExtension}`
+            : null,
+        remote_url: mediaAttachment.remoteUrl || null,
+        text_url: null,
+        meta: isProcessed ? mediaAttachment.fileMeta : null,
+        description: mediaAttachment.description,
+        blurhash: isProcessed ? mediaAttachment.blurhash : null,
+      };
+
+      return { mediaResponse, processing };
+    });
+
+    return mediaResponses;
+  }
+
   async getMediaAttachmentById(id: string) {
     const mediaAttachment = await this.prismaService.mediaAttachment.findUnique(
       {
