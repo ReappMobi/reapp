@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PostController } from '../post.controller';
 import { PostService } from '../post.service';
 import { AuthGuard } from '../../authentication/authentication.guard';
-import { HttpStatus, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 
 describe('PostController', () => {
   let controller: PostController;
@@ -59,10 +59,6 @@ describe('PostController', () => {
       const institution = { id: 1 };
       const userId = 1;
       const req = { user: { id: userId } };
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
-      };
 
       postService.findInstitutionByAccountId = jest
         .fn()
@@ -71,12 +67,11 @@ describe('PostController', () => {
         .fn()
         .mockResolvedValue({ id: 1, body: caption });
 
-      await controller.postPublication(
+      const result = await controller.postPublication(
         mockFile,
         caption,
         accountId,
         req as any,
-        res as any,
       );
 
       expect(postService.findInstitutionByAccountId).toHaveBeenCalledWith(
@@ -88,8 +83,8 @@ describe('PostController', () => {
         institution.id,
         accountId,
       );
-      expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(res.send).toHaveBeenCalledWith({ id: 1, body: caption });
+
+      expect(result).toEqual({ id: 1, body: caption });
     });
 
     it('should throw UnauthorizedException if user is not authorized', async () => {
@@ -109,57 +104,35 @@ describe('PostController', () => {
       const accountId = 1;
       const caption = 'Test caption';
       const req = { user: { id: 2 } }; // Different userId
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
-      };
 
       postService.findInstitutionByAccountId = jest
         .fn()
         .mockResolvedValue(null);
 
       await expect(
-        controller.postPublication(
-          mockFile,
-          caption,
-          accountId,
-          req as any,
-          res as any,
-        ),
+        controller.postPublication(mockFile, caption, accountId, req as any),
       ).rejects.toThrow(UnauthorizedException);
     });
   });
 
   describe('getAllPosts', () => {
     it('should return all posts with status 200', async () => {
-      const req = { user: { id: 1 } };
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
-
       const mockPosts = [
         { id: 1, body: 'Post 1' },
         { id: 2, body: 'Post 2' },
       ];
       postService.getAllPosts = jest.fn().mockResolvedValue(mockPosts);
 
-      await controller.getAllPosts(req as any, res as any);
+      const result = await controller.getAllPosts();
 
       expect(postService.getAllPosts).toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(res.json).toHaveBeenCalledWith(mockPosts);
+      expect(result).toEqual(mockPosts);
     });
   });
 
   describe('getPostsByInstitution', () => {
     it('should return posts for a specific institution with status 200', async () => {
       const institutionId = 1;
-      const req = { user: { id: 1 } };
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
 
       const mockPosts = [
         { id: 1, body: 'Post 1', institutionId },
@@ -169,17 +142,13 @@ describe('PostController', () => {
         .fn()
         .mockResolvedValue(mockPosts);
 
-      await controller.getPostsByInstitution(
-        institutionId,
-        req as any,
-        res as any,
-      );
+      const result = await controller.getPostsByInstitution(institutionId);
 
       expect(postService.getPostsByInstitution).toHaveBeenCalledWith(
         institutionId,
       );
-      expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(res.json).toHaveBeenCalledWith(mockPosts);
+
+      expect(result).toEqual(mockPosts);
     });
   });
 
@@ -187,20 +156,13 @@ describe('PostController', () => {
     it('should delete a post and return 204 status', async () => {
       const postId = 1;
       const req = { user: { id: 1 } };
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
 
       postService.deletePost = jest.fn().mockResolvedValue(undefined);
 
-      await controller.deletePost(postId, req as any, res as any);
+      const result = await controller.deletePost(postId, req as any);
 
       expect(postService.deletePost).toHaveBeenCalledWith(postId, 1);
-      expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(res.json).toHaveBeenCalledWith({
-        message: 'Post deleted successfully',
-      });
+      expect(result).toEqual({ message: 'Post deleted successfully' });
     });
   });
 
@@ -222,10 +184,6 @@ describe('PostController', () => {
       };
 
       const req = { user: { id: 1 } };
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
 
       const updatedPost = {
         id: postId,
@@ -234,12 +192,11 @@ describe('PostController', () => {
       };
       postService.updatePost = jest.fn().mockResolvedValue(updatedPost);
 
-      await controller.updatePost(
+      const result = await controller.updatePost(
         postId,
         caption,
         mockFile,
         req as any,
-        res as any,
       );
 
       expect(postService.updatePost).toHaveBeenCalledWith(
@@ -248,8 +205,8 @@ describe('PostController', () => {
         mockFile,
         1,
       );
-      expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(res.json).toHaveBeenCalledWith(updatedPost);
+
+      expect(result).toEqual(updatedPost);
     });
   });
 });
