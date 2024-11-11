@@ -3,13 +3,11 @@ import {
   Controller,
   Delete,
   Get,
-  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
   Post,
   Req,
-  Res,
   UnauthorizedException,
   UploadedFile,
   UseGuards,
@@ -37,7 +35,6 @@ export class PostController {
     @Body('caption') caption: string,
     @Body('accountId', ParseIntPipe) accountId: number,
     @Req() req: RequestWithUser,
-    @Res() res,
   ) {
     const institution =
       await this.postService.findInstitutionByAccountId(accountId);
@@ -55,26 +52,23 @@ export class PostController {
       institutionId,
       accountId,
     );
-
-    return res.status(200).send(post);
+    return post;
   }
 
   @Get()
   @UseGuards(AuthGuard)
-  async getAllPosts(@Req() req: RequestWithUser, @Res() res) {
+  async getAllPosts() {
     const posts = await this.postService.getAllPosts();
-    return res.status(HttpStatus.OK).json(posts);
+    return posts;
   }
 
   @Get('institution/:institutionId')
   @UseGuards(AuthGuard)
   async getPostsByInstitution(
     @Param('institutionId', ParseIntPipe) institutionId: number,
-    @Req() req: RequestWithUser,
-    @Res() res,
   ) {
     const posts = await this.postService.getPostsByInstitution(institutionId);
-    return res.status(HttpStatus.OK).json(posts);
+    return posts;
   }
 
   @Delete(':id')
@@ -82,13 +76,10 @@ export class PostController {
   async deletePost(
     @Param('id', ParseIntPipe) postId: number,
     @Req() req: RequestWithUser,
-    @Res() res,
   ) {
     const userId = req.user?.id;
     await this.postService.deletePost(postId, userId);
-    return res
-      .status(HttpStatus.OK)
-      .json({ message: 'Post deleted successfully' });
+    return { message: 'Post deleted successfully' };
   }
 
   @Patch(':id')
@@ -99,7 +90,6 @@ export class PostController {
     @Body('caption') caption: string,
     @UploadedFile() file: Express.Multer.File | null,
     @Req() req: RequestWithUser,
-    @Res() res,
   ) {
     const userId = req.user?.id;
     const updatedPost = await this.postService.updatePost(
@@ -108,6 +98,6 @@ export class PostController {
       file,
       userId,
     );
-    return res.status(HttpStatus.OK).json(updatedPost);
+    return updatedPost;
   }
 }
