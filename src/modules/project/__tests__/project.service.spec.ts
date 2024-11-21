@@ -6,7 +6,12 @@ import {
 } from '../project.service';
 import { PrismaService } from '../../../database/prisma.service';
 import { MediaService } from '../../mediaAttachment/media-attachment.service';
-import { HttpException, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpException,
+  NotFoundException,
+} from '@nestjs/common';
+import { UpdateProjectDto } from '../dto/updateProject.dto';
 
 jest.mock('../../mediaAttachment/media-attachment.service');
 
@@ -26,6 +31,8 @@ describe('ProjectService', () => {
               create: jest.fn(),
               findUnique: jest.fn(),
               findMany: jest.fn(),
+              update: jest.fn(),
+              delete: jest.fn(),
             },
             category: {
               findFirst: jest.fn(),
@@ -46,6 +53,7 @@ describe('ProjectService', () => {
             processMedia: jest.fn(),
             getMediaAttachmentById: jest.fn(),
             getMediaAttachmentsByIds: jest.fn(),
+            deleteMediaAttachment: jest.fn(),
           },
         },
       ],
@@ -283,6 +291,403 @@ describe('ProjectService', () => {
       await expect(service.postProjectService(data)).rejects.toThrow(
         'erro ao criar projeto',
       );
+    });
+  });
+
+  describe('deleteProjectService', () => {
+    it('should delete a project successfully', async () => {
+      const projectId = 1;
+      const accountId = 1;
+
+      const existingProject = {
+        id: projectId,
+        institutionId: 1,
+        mediaId: 'media-id',
+        institution: {
+          accountId: accountId,
+        },
+      };
+
+      prismaService.project.findUnique = jest
+        .fn()
+        .mockResolvedValue(existingProject);
+
+      prismaService.project.delete = jest.fn().mockResolvedValue(null);
+
+      mediaService.deleteMediaAttachment = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.deleteProjectService(projectId, accountId),
+      ).resolves.toEqual({ message: 'Projeto deletado com sucesso' });
+
+      expect(prismaService.project.findUnique).toHaveBeenCalledWith({
+        where: { id: projectId },
+        include: { institution: true },
+      });
+
+      expect(mediaService.deleteMediaAttachment).toHaveBeenCalledWith(
+        'media-id',
+      );
+
+      expect(prismaService.project.delete).toHaveBeenCalledWith({
+        where: { id: projectId },
+      });
+    });
+
+    it('should throw NotFoundException if project does not exist', async () => {
+      const projectId = 1;
+      const accountId = 1;
+
+      prismaService.project.findUnique = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.deleteProjectService(projectId, accountId),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(prismaService.project.findUnique).toHaveBeenCalledWith({
+        where: { id: projectId },
+        include: { institution: true },
+      });
+
+      expect(mediaService.deleteMediaAttachment).not.toHaveBeenCalled();
+      expect(prismaService.project.delete).not.toHaveBeenCalled();
+    });
+
+    it('should throw ForbiddenException if user is not the owner', async () => {
+      const projectId = 1;
+      const accountId = 1;
+
+      const existingProject = {
+        id: projectId,
+        institutionId: 1,
+        mediaId: 'media-id',
+        institution: {
+          accountId: 2, // Different accountId
+        },
+      };
+
+      prismaService.project.findUnique = jest
+        .fn()
+        .mockResolvedValue(existingProject);
+
+      await expect(
+        service.deleteProjectService(projectId, accountId),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(prismaService.project.findUnique).toHaveBeenCalledWith({
+        where: { id: projectId },
+        include: { institution: true },
+      });
+
+      expect(mediaService.deleteMediaAttachment).not.toHaveBeenCalled();
+      expect(prismaService.project.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateProjectService', () => {
+    it('should update a project successfully without changing media or category', async () => {
+      const projectId = 1;
+      const accountId = 1;
+
+      const existingProject = {
+        id: projectId,
+        institutionId: 1,
+        mediaId: 'media-id',
+        institution: {
+          accountId: accountId,
+        },
+        categoryId: 1,
+      };
+
+      const updateData: UpdateProjectDto & {
+        file?: Express.Multer.File;
+        accountId: number;
+      } = {
+        name: 'Updated Project Name',
+        description: 'Updated Description',
+        accountId: accountId,
+      };
+
+      prismaService.project.findUnique = jest
+        .fn()
+        .mockResolvedValue(existingProject);
+
+      prismaService.project.update = jest.fn().mockResolvedValue({
+        ...existingProject,
+        ...updateData,
+      });
+
+      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue({
+        mediaResponse: { id: 'media-id', url: 'http://example.com/media.jpg' },
+      });
+
+      const result = await service.updateProjectService(projectId, updateData);
+
+      expect(prismaService.project.findUnique).toHaveBeenCalledWith({
+        where: { id: projectId },
+        include: { institution: true },
+      });
+
+      expect(prismaService.project.update).toHaveBeenCalledWith({
+        where: { id: projectId },
+        data: {
+          name: updateData.name,
+          description: updateData.description,
+          media: { connect: { id: 'media-id' } }, // Atualizado
+          category: undefined,
+        },
+      });
+
+      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
+        'media-id',
+      );
+
+      expect(result).toEqual({
+        ...existingProject,
+        ...updateData,
+        media: { id: 'media-id', url: 'http://example.com/media.jpg' },
+      });
+    });
+
+    it('should update a project and replace media when file is provided', async () => {
+      const projectId = 1;
+      const accountId = 1;
+
+      const existingProject = {
+        id: projectId,
+        institutionId: 1,
+        mediaId: 'old-media-id',
+        institution: {
+          accountId: accountId,
+        },
+        categoryId: 1,
+      };
+
+      const mockFile: Express.Multer.File = {
+        fieldname: 'file',
+        originalname: 'new-image.jpg',
+        encoding: '7bit',
+        mimetype: 'image/jpeg',
+        buffer: Buffer.from(''),
+        size: 2048,
+        stream: null,
+        destination: '',
+        filename: '',
+        path: '',
+      };
+
+      const updateData: UpdateProjectDto & {
+        file?: Express.Multer.File;
+        accountId: number;
+      } = {
+        name: 'Updated Project Name',
+        description: 'Updated Description',
+        file: mockFile,
+        accountId: accountId,
+      };
+
+      prismaService.project.findUnique = jest
+        .fn()
+        .mockResolvedValue(existingProject);
+
+      mediaService.deleteMediaAttachment = jest.fn().mockResolvedValue(null);
+
+      mediaService.processMedia = jest
+        .fn()
+        .mockResolvedValue({ mediaAttachment: { id: 'new-media-id' } });
+
+      prismaService.project.update = jest.fn().mockResolvedValue({
+        ...existingProject,
+        ...updateData,
+        mediaId: 'new-media-id',
+      });
+
+      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue({
+        mediaResponse: {
+          id: 'new-media-id',
+          url: 'http://example.com/new-media.jpg',
+        },
+      });
+
+      const result = await service.updateProjectService(projectId, updateData);
+
+      expect(prismaService.project.findUnique).toHaveBeenCalledWith({
+        where: { id: projectId },
+        include: { institution: true },
+      });
+
+      expect(mediaService.deleteMediaAttachment).toHaveBeenCalledWith(
+        'old-media-id',
+      );
+
+      expect(mediaService.processMedia).toHaveBeenCalledWith(mockFile, {
+        accountId: accountId,
+      });
+
+      expect(prismaService.project.update).toHaveBeenCalledWith({
+        where: { id: projectId },
+        data: {
+          name: updateData.name,
+          description: updateData.description,
+          media: { connect: { id: 'new-media-id' } },
+          category: undefined,
+        },
+      });
+
+      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
+        'new-media-id',
+      );
+
+      expect(result).toEqual({
+        ...existingProject,
+        ...updateData,
+        mediaId: 'new-media-id',
+        media: {
+          id: 'new-media-id',
+          url: 'http://example.com/new-media.jpg',
+        },
+      });
+    });
+
+    it('should update a project and change category when provided', async () => {
+      const projectId = 1;
+      const accountId = 1;
+
+      const existingProject = {
+        id: projectId,
+        institutionId: 1,
+        mediaId: 'media-id',
+        institution: {
+          accountId: accountId,
+        },
+        categoryId: 1,
+      };
+
+      const updateData: UpdateProjectDto & {
+        file?: Express.Multer.File;
+        accountId: number;
+      } = {
+        category: 'New Category',
+        accountId: accountId,
+      };
+
+      const newCategory = { id: 2, name: 'New Category' };
+
+      prismaService.project.findUnique = jest
+        .fn()
+        .mockResolvedValue(existingProject);
+
+      prismaService.category.findFirst = jest.fn().mockResolvedValue(null);
+
+      prismaService.category.create = jest.fn().mockResolvedValue(newCategory);
+
+      prismaService.project.update = jest.fn().mockResolvedValue({
+        ...existingProject,
+        categoryId: newCategory.id,
+      });
+
+      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue({
+        mediaResponse: { id: 'media-id', url: 'http://example.com/media.jpg' },
+      });
+
+      const result = await service.updateProjectService(projectId, updateData);
+
+      expect(prismaService.project.findUnique).toHaveBeenCalledWith({
+        where: { id: projectId },
+        include: { institution: true },
+      });
+
+      expect(prismaService.category.findFirst).toHaveBeenCalledWith({
+        where: { name: 'New Category' },
+      });
+
+      expect(prismaService.category.create).toHaveBeenCalledWith({
+        data: { name: 'New Category' },
+      });
+
+      expect(prismaService.project.update).toHaveBeenCalledWith({
+        where: { id: projectId },
+        data: {
+          media: { connect: { id: 'media-id' } }, // Atualizado
+          category: { connect: { id: newCategory.id } },
+        },
+      });
+
+      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
+        'media-id',
+      );
+
+      expect(result).toEqual({
+        ...existingProject,
+        categoryId: newCategory.id,
+        media: { id: 'media-id', url: 'http://example.com/media.jpg' },
+      });
+    });
+
+    it('should throw NotFoundException if project does not exist', async () => {
+      const projectId = 1;
+      const accountId = 1;
+
+      const updateData: UpdateProjectDto & {
+        file?: Express.Multer.File;
+        accountId: number;
+      } = {
+        name: 'Updated Project Name',
+        accountId: accountId,
+      };
+
+      prismaService.project.findUnique = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.updateProjectService(projectId, updateData),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(prismaService.project.findUnique).toHaveBeenCalledWith({
+        where: { id: projectId },
+        include: { institution: true },
+      });
+
+      expect(prismaService.project.update).not.toHaveBeenCalled();
+      expect(mediaService.processMedia).not.toHaveBeenCalled();
+    });
+
+    it('should throw ForbiddenException if user is not the owner', async () => {
+      const projectId = 1;
+      const accountId = 1;
+
+      const existingProject = {
+        id: projectId,
+        institutionId: 1,
+        mediaId: 'media-id',
+        institution: {
+          accountId: 2, // Different accountId
+        },
+        categoryId: 1,
+      };
+
+      const updateData: UpdateProjectDto & {
+        file?: Express.Multer.File;
+        accountId: number;
+      } = {
+        name: 'Updated Project Name',
+        accountId: accountId,
+      };
+
+      prismaService.project.findUnique = jest
+        .fn()
+        .mockResolvedValue(existingProject);
+
+      await expect(
+        service.updateProjectService(projectId, updateData),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(prismaService.project.findUnique).toHaveBeenCalledWith({
+        where: { id: projectId },
+        include: { institution: true },
+      });
+
+      expect(prismaService.project.update).not.toHaveBeenCalled();
+      expect(mediaService.processMedia).not.toHaveBeenCalled();
     });
   });
 

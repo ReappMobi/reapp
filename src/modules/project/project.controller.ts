@@ -12,11 +12,14 @@ import {
   HttpStatus,
   ForbiddenException,
   ParseIntPipe,
+  Put,
+  Delete,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthGuard } from '../authentication/authentication.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateProjectDto } from './dto/createProject.dto';
+import { UpdateProjectDto } from './dto/updateProject.dto';
 import { ProjectService } from './project.service';
 import { AccountService } from '../account/account.service';
 
@@ -63,6 +66,42 @@ export class ProjectController {
     });
 
     return project;
+  }
+
+  @Put(':projectId')
+  @UseGuards(AuthGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  async updateProject(
+    @Param('projectId', ParseIntPipe) projectId: number,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() updateProjectDto: UpdateProjectDto,
+    @Req() req: RequestWithUser,
+  ) {
+    const accountId = req.user.id;
+    const institution = await this.accountService.findOneInstitution(accountId);
+
+    if (!institution || institution.accountId !== accountId) {
+      throw new ForbiddenException('Acesso não autorizado');
+    }
+
+    const project = await this.projectService.getProjectByIdService(projectId);
+
+    if (project.institutionId !== institution.id) {
+      throw new ForbiddenException(
+        'Você não tem permissão para editar este projeto',
+      );
+    }
+
+    const updatedProject = await this.projectService.updateProjectService(
+      projectId,
+      {
+        ...updateProjectDto,
+        file,
+        accountId,
+      },
+    );
+
+    return updatedProject;
   }
 
   @Post('toggle-favorite/:id')
@@ -119,5 +158,30 @@ export class ProjectController {
     const result =
       await this.projectService.getProjectsByInstitutionService(institutionId);
     return result;
+  }
+
+  @Delete(':projectId')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteProject(
+    @Param('projectId', ParseIntPipe) projectId: number,
+    @Req() req: RequestWithUser,
+  ) {
+    const accountId = req.user.id;
+    const institution = await this.accountService.findOneInstitution(accountId);
+
+    if (!institution || institution.accountId !== accountId) {
+      throw new ForbiddenException('Acesso não autorizado');
+    }
+
+    const project = await this.projectService.getProjectByIdService(projectId);
+
+    if (project.institutionId !== institution.id) {
+      throw new ForbiddenException(
+        'Você não tem permissão para deletar este projeto',
+      );
+    }
+
+    await this.projectService.deleteProjectService(projectId, accountId);
   }
 }

@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import * as path from 'path';
 import { PrismaService } from '../../database/prisma.service';
 import * as fs from 'fs';
@@ -95,6 +100,45 @@ export class MediaService {
 
       return { isSynchronous: false, mediaAttachment };
     }
+  }
+
+  async deleteMediaAttachment(id: string): Promise<void> {
+    const mediaAttachment = await this.prismaService.mediaAttachment.findUnique(
+      {
+        where: { id },
+      },
+    );
+
+    if (!mediaAttachment) {
+      throw new NotFoundException('Media attachment não encontrado');
+    }
+
+    // Determina os caminhos dos arquivos
+    const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads');
+    const mediaDir = path.join(uploadsDir, mediaAttachment.id);
+
+    // Remove os arquivos associados ao media attachment
+    try {
+      // Verifica se o diretório existe
+      await promisify(fs.access)(mediaDir, fs.constants.F_OK);
+
+      // Remove o diretório e seu conteúdo
+      await promisify(fs.rm)(mediaDir, { recursive: true, force: true });
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        console.error(`Erro ao deletar os arquivos de mídia: ${error}`);
+        throw new HttpException(
+          'Falha ao deletar os arquivos de mídia',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      // Se o erro for ENOENT (diretório não existe), continua
+    }
+
+    // Deleta o registro do media attachment no banco de dados
+    await this.prismaService.mediaAttachment.delete({
+      where: { id },
+    });
   }
 
   private validateFiles(
