@@ -4,6 +4,7 @@ import { ProjectService } from '../project.service';
 import { AccountService } from '../../account/account.service';
 import { AuthGuard } from '../../authentication/authentication.guard';
 import { ForbiddenException } from '@nestjs/common';
+import { UpdateProjectDto } from '../dto/updateProject.dto';
 
 describe('ProjectController', () => {
   let controller: ProjectController;
@@ -24,6 +25,8 @@ describe('ProjectController', () => {
             getProjectCategoriesService: jest.fn(),
             getProjectByIdService: jest.fn(),
             getProjectsByInstitutionService: jest.fn(),
+            updateProjectService: jest.fn(),
+            deleteProjectService: jest.fn(),
           },
         },
         {
@@ -170,6 +173,374 @@ describe('ProjectController', () => {
     });
   });
 
+  describe('updateProject', () => {
+    it('should update a project and return it', async () => {
+      const projectId = 1;
+      const accountId = 1;
+      const institution = {
+        id: 1,
+        accountId: accountId,
+        cnpj: '12345678901234',
+        phone: '1234567890',
+        categoryId: 2,
+      };
+      const project = {
+        id: projectId,
+        name: 'Old Project Name',
+        description: 'Old Description',
+        subtitle: 'Old Subtitle',
+        categoryId: 1,
+        institutionId: institution.id,
+        mediaId: 'old-media-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        media: {
+          id: 'old-media-id',
+          type: 'image',
+          url: 'http://example.com/old-image.jpg',
+          preview_url: 'http://example.com/old-preview.jpg',
+          remote_url: null,
+          text_url: null,
+          meta: null,
+          description: 'Old Media description',
+          blurhash: 'old-blurhash-string',
+        },
+      };
+
+      const updatedProjectData: UpdateProjectDto = {
+        name: 'New Project Name',
+        description: 'New Description',
+        subtitle: 'New Subtitle',
+        category: 'New Category',
+      };
+
+      const mockFile: Express.Multer.File = {
+        fieldname: 'file',
+        originalname: 'test.jpg',
+        encoding: '7bit',
+        mimetype: 'image/jpeg',
+        buffer: Buffer.from(''),
+        size: 1024,
+        stream: null,
+        destination: '',
+        filename: '',
+        path: '',
+      };
+
+      const updatedProject = {
+        ...project,
+        ...updatedProjectData,
+        media: {
+          id: 'new-media-id',
+          type: 'image',
+          url: 'http://example.com/new-image.jpg',
+          preview_url: 'http://example.com/new-preview.jpg',
+          remote_url: null,
+          text_url: null,
+          meta: null,
+          description: 'New Media description',
+          blurhash: 'new-blurhash-string',
+        },
+        mediaId: 'new-media-id',
+      };
+
+      const req = { user: { id: accountId } };
+
+      jest
+        .spyOn(accountService, 'findOneInstitution')
+        .mockResolvedValue(institution);
+      jest
+        .spyOn(projectService, 'getProjectByIdService')
+        .mockResolvedValue(project);
+      jest
+        .spyOn(projectService, 'updateProjectService')
+        .mockResolvedValue(updatedProject);
+
+      const result = await controller.updateProject(
+        projectId,
+        mockFile,
+        updatedProjectData,
+        req as any,
+      );
+
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId);
+      expect(projectService.getProjectByIdService).toHaveBeenCalledWith(
+        projectId,
+      );
+      expect(projectService.updateProjectService).toHaveBeenCalledWith(
+        projectId,
+        {
+          ...updatedProjectData,
+          file: mockFile,
+          accountId,
+        },
+      );
+      expect(result).toEqual(updatedProject);
+    });
+
+    it('should throw ForbiddenException if institution accountId does not match user id', async () => {
+      const projectId = 1;
+      const accountId = 1;
+      const institution = {
+        id: 1,
+        accountId: 2, // accountId diferente
+        cnpj: '12345678901234',
+        phone: '1234567890',
+        categoryId: 2,
+      };
+
+      const updatedProjectData: UpdateProjectDto = {
+        name: 'New Project Name',
+      };
+
+      const mockFile: Express.Multer.File = {
+        fieldname: 'file',
+        originalname: 'test.jpg',
+        encoding: '7bit',
+        mimetype: 'image/jpeg',
+        buffer: Buffer.from(''),
+        size: 1024,
+        stream: null,
+        destination: '',
+        filename: '',
+        path: '',
+      };
+
+      const req = { user: { id: accountId } };
+
+      jest
+        .spyOn(accountService, 'findOneInstitution')
+        .mockResolvedValue(institution);
+
+      await expect(
+        controller.updateProject(
+          projectId,
+          mockFile,
+          updatedProjectData,
+          req as any,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId);
+      expect(projectService.getProjectByIdService).not.toHaveBeenCalled();
+      expect(projectService.updateProjectService).not.toHaveBeenCalled();
+    });
+
+    it('should throw ForbiddenException if project institutionId does not match institution id', async () => {
+      const projectId = 1;
+      const accountId = 1;
+      const institution = {
+        id: 1,
+        accountId: accountId,
+        cnpj: '12345678901234',
+        phone: '1234567890',
+        categoryId: 2,
+      };
+      const project = {
+        id: projectId,
+        name: 'Old Project Name',
+        description: 'Old Description',
+        subtitle: 'Old Subtitle',
+        categoryId: 1,
+        institutionId: 2,
+        mediaId: 'old-media-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        media: {
+          id: 'old-media-id',
+          type: 'image',
+          url: 'http://example.com/old-image.jpg',
+          preview_url: 'http://example.com/old-preview.jpg',
+          remote_url: null,
+          text_url: null,
+          meta: null,
+          description: 'Old Media description',
+          blurhash: 'old-blurhash-string',
+        },
+      };
+
+      const updatedProjectData: UpdateProjectDto = {
+        name: 'New Project Name',
+      };
+
+      const mockFile: Express.Multer.File = {
+        fieldname: 'file',
+        originalname: 'test.jpg',
+        encoding: '7bit',
+        mimetype: 'image/jpeg',
+        buffer: Buffer.from(''),
+        size: 1024,
+        stream: null,
+        destination: '',
+        filename: '',
+        path: '',
+      };
+
+      const req = { user: { id: accountId } };
+
+      jest
+        .spyOn(accountService, 'findOneInstitution')
+        .mockResolvedValue(institution);
+      jest
+        .spyOn(projectService, 'getProjectByIdService')
+        .mockResolvedValue(project);
+
+      await expect(
+        controller.updateProject(
+          projectId,
+          mockFile,
+          updatedProjectData,
+          req as any,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId);
+      expect(projectService.getProjectByIdService).toHaveBeenCalledWith(
+        projectId,
+      );
+      expect(projectService.updateProjectService).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteProject', () => {
+    it('should delete a project', async () => {
+      const projectId = 1;
+      const accountId = 1;
+      const institution = {
+        id: 1,
+        accountId: accountId,
+        cnpj: '12345678901234',
+        phone: '1234567890',
+        categoryId: 2,
+      };
+      const project = {
+        id: projectId,
+        name: 'Project Name',
+        description: 'Description',
+        subtitle: 'Subtitle',
+        categoryId: 1,
+        institutionId: institution.id,
+        mediaId: 'media-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        media: {
+          id: 'old-media-id',
+          type: 'image',
+          url: 'http://example.com/old-image.jpg',
+          preview_url: 'http://example.com/old-preview.jpg',
+          remote_url: null,
+          text_url: null,
+          meta: null,
+          description: 'Old Media description',
+          blurhash: 'old-blurhash-string',
+        },
+      };
+
+      const req = { user: { id: accountId } };
+
+      jest
+        .spyOn(accountService, 'findOneInstitution')
+        .mockResolvedValue(institution);
+      jest
+        .spyOn(projectService, 'getProjectByIdService')
+        .mockResolvedValue(project);
+      jest
+        .spyOn(projectService, 'deleteProjectService')
+        .mockResolvedValue({ message: 'Projeto deletado com sucesso' });
+
+      const result = await controller.deleteProject(projectId, req as any);
+
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId);
+      expect(projectService.getProjectByIdService).toHaveBeenCalledWith(
+        projectId,
+      );
+      expect(projectService.deleteProjectService).toHaveBeenCalledWith(
+        projectId,
+        accountId,
+      );
+      expect(result).toBeUndefined();
+    });
+
+    it('should throw ForbiddenException if institution accountId does not match user id', async () => {
+      const projectId = 1;
+      const accountId = 1;
+      const institution = {
+        id: 1,
+        accountId: 2, // accountId diferente
+        cnpj: '12345678901234',
+        phone: '1234567890',
+        categoryId: 2,
+      };
+
+      const req = { user: { id: accountId } };
+
+      jest
+        .spyOn(accountService, 'findOneInstitution')
+        .mockResolvedValue(institution);
+
+      await expect(
+        controller.deleteProject(projectId, req as any),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId);
+      expect(projectService.getProjectByIdService).not.toHaveBeenCalled();
+      expect(projectService.deleteProjectService).not.toHaveBeenCalled();
+    });
+
+    it('should throw ForbiddenException if project institutionId does not match institution id', async () => {
+      const projectId = 1;
+      const accountId = 1;
+      const institution = {
+        id: 1,
+        accountId: accountId,
+        cnpj: '12345678901234',
+        phone: '1234567890',
+        categoryId: 2,
+      };
+      const project = {
+        id: projectId,
+        name: 'Project Name',
+        description: 'Description',
+        subtitle: 'Subtitle',
+        categoryId: 1,
+        institutionId: 2, // institutionId diferente
+        mediaId: 'media-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        media: {
+          id: 'old-media-id',
+          type: 'image',
+          url: 'http://example.com/old-image.jpg',
+          preview_url: 'http://example.com/old-preview.jpg',
+          remote_url: null,
+          text_url: null,
+          meta: null,
+          description: 'Old Media description',
+          blurhash: 'old-blurhash-string',
+        },
+      };
+
+      const req = { user: { id: accountId } };
+
+      jest
+        .spyOn(accountService, 'findOneInstitution')
+        .mockResolvedValue(institution);
+      jest
+        .spyOn(projectService, 'getProjectByIdService')
+        .mockResolvedValue(project);
+
+      await expect(
+        controller.deleteProject(projectId, req as any),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId);
+      expect(projectService.getProjectByIdService).toHaveBeenCalledWith(
+        projectId,
+      );
+      expect(projectService.deleteProjectService).not.toHaveBeenCalled();
+    });
+  });
+
   describe('toggleFavorite', () => {
     it('should toggle favorite and return the result', async () => {
       const projectId = '1';
@@ -206,6 +577,7 @@ describe('ProjectController', () => {
           description: 'Description of Project 1',
           mediaId: 'media-id-1',
           institutionId: 1,
+          categoryId: 1,
           subtitle: 'Subtitle of Project 1',
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -251,6 +623,7 @@ describe('ProjectController', () => {
           description: 'Description of Project 1',
           mediaId: 'media-id-1',
           institutionId: 1,
+          categoryId: 1,
           subtitle: 'Subtitle of Project 1',
           createdAt: new Date(),
           updatedAt: new Date(),
