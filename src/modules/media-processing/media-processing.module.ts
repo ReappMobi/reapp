@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { MediaProcessingService } from './media-processing.service';
 import { PrismaService } from 'src/database/prisma.service';
-import { MediaService } from './media-attachment.service';
+import { MediaService } from '../media-attachment/media-attachment.service';
 
 @Module({
   imports: [

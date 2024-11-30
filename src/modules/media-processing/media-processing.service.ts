@@ -1,6 +1,6 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Job } from 'bull';
-import { MediaService } from './media-attachment.service';
+import { MediaService } from '../media-attachment/media-attachment.service';
 
 @Processor('media-processing')
 export class MediaProcessingService {
