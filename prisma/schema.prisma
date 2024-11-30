@@ -7,93 +7,128 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Account {
-  id             Int          @id @default(autoincrement())
-  name           String       @db.VarChar(255)
-  email          String       @unique @db.VarChar(255)
-  passwordHash   String       @db.Char(60)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  avatar         String?      @db.VarChar(255)
-  accountType    AccountType  @default(DONOR)
-  follwingCount  Int          @default(0)
-  followersCount Int          @default(0)
-  Institution    Institution?
-  Admin          Admin?
-  Donor          Donor?
+enum AccountType {
+  ADMIN
+  DONOR
+  INSTITUTION
 }
 
-model Admin {
-  id        Int     @id @default(autoincrement())
-  accountId Int     @unique
-  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+enum DonationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FAILED
+  CANCELED
+}
+
+enum InstitutionMemberType {
+  PARTNER
+  VOLUNTEER
+  COLLABORATOR
+}
+
+model Account {
+  id               Int               @id @default(autoincrement())
+  name             String            @db.VarChar(255)
+  email            String            @unique @db.VarChar(255)
+  passwordHash     String            @db.Char(60)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  avatar           String?           @db.VarChar(255)
+  accountType      AccountType       @default(DONOR)
+  followingCount   Int               @default(0)
+  followersCount   Int               @default(0)
+  institution      Institution?
+  donor            Donor?
+  mediaAttachments MediaAttachment[] // Relacionamento inverso com MediaAttachment
 }
 
 model Donor {
-  id        Int        @id @default(autoincrement())
-  accountId Int        @unique
-  account   Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  Donations Donation[]
-  Like      Like[]
+  id        Int               @id @default(autoincrement())
+  account   Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId Int               @unique
+  donations Donation[]
+  likes     Like[]
+  favorites FavoriteProject[]
 }
 
 model Institution {
-  id            Int            @id @default(autoincrement())
-  accountId     Int            @unique
-  categories    Category[]
-  account       Account        @relation(fields: [accountId], references: [id])
-  Fields        Field[]
-  Posts         Post[]
-  Projects      Project[]
-  Donations     Donation[]
-  Partners      Partner[]
-  Volunteers    Volunteer[]
-  Collaborators Collaborator[]
+  id         Int                 @id @default(autoincrement())
+  cnpj       String              @unique
+  phone      String              @db.VarChar(20)
+  account    Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId  Int                 @unique
+  category   Category            @relation(fields: [categoryId], references: [id])
+  categoryId Int
+  fields     InstitutionField[]
+  posts      Post[]
+  projects   Project[]
+  donations  Donation[]
+  members    InstitutionMember[]
 }
 
-model Field {
+model InstitutionField {
   id            Int         @id @default(autoincrement())
   name          String      @unique @db.VarChar(255)
   value         String      @db.VarChar(255)
   institutionId Int
-  Institution   Institution @relation(fields: [institutionId], references: [id])
+  institution   Institution @relation(fields: [institutionId], references: [id])
 }
 
 model Post {
-  id            Int         @id @default(autoincrement())
-  body          String      @db.Text
-  mediaUrl      String?     @db.VarChar(255)
-  Comments      Comment[]
-  Likes         Like[]
-  Institution   Institution @relation(fields: [institutionId], references: [id])
+  id            Int              @id @default(autoincrement())
+  body          String           @db.Text
+  comments      Comment[]
+  likes         Like[]
+  institution   Institution      @relation(fields: [institutionId], references: [id])
   institutionId Int
+  mediaId       String? // Chave estrangeira para MediaAttachment (opcional)
+  media         MediaAttachment? @relation(fields: [mediaId], references: [id]) // Relacionamento com MediaAttachment (opcional)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 }
 
 model Like {
   id      Int   @id @default(autoincrement())
-  Post    Post  @relation(fields: [postId], references: [id])
+  post    Post  @relation(fields: [postId], references: [id])
   postId  Int
-  Donor   Donor @relation(fields: [donorId], references: [id])
+  donor   Donor @relation(fields: [donorId], references: [id])
   donorId Int
 }
 
 model Comment {
   id     Int    @id @default(autoincrement())
   body   String @db.Text
-  Post   Post   @relation(fields: [postId], references: [id])
+  post   Post   @relation(fields: [postId], references: [id])
   postId Int
 }
 
 model Project {
-  id            Int         @id @default(autoincrement())
-  name          String      @db.VarChar(255)
-  description   String      @db.Text
-  mediaUrl      String?     @db.VarChar(255)
-  bannerUrl     String?     @db.VarChar(255)
+  id            Int               @id @default(autoincrement())
+  name          String            @db.VarChar(255)
+  description   String            @db.Text
+  media         MediaAttachment?  @relation(fields: [mediaId], references: [id]) // Relacionamento com MediaAttachment (opcional)
+  mediaId       String?
   institutionId Int
-  Institution   Institution @relation(fields: [institutionId], references: [id])
-  Donations     Donation[]
-  Categories    Category[]
+  institution   Institution       @relation(fields: [institutionId], references: [id])
+  donations     Donation[]
+  subtitle      String
+  category      Category          @relation(fields: [categoryId], references: [id])
+  categoryId    Int
+  favorites     FavoriteProject[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model FavoriteProject {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  donorId   Int
+  projectId Int
+  user      Donor    @relation(fields: [donorId], references: [id])
+  project   Project  @relation(fields: [projectId], references: [id])
+
+  @@unique([donorId, projectId]) // Garantir que um usuário possa favoritar um projeto apenas uma vez
 }
 
 model Donation {
@@ -105,54 +140,54 @@ model Donation {
   paymentTransactionId String         @unique
   paymentCheckoutUrl   String
   projectId            Int?
-  Project              Project?       @relation(fields: [projectId], references: [id])
+  project              Project?       @relation(fields: [projectId], references: [id])
   institutionId        Int?
   Institution          Institution?   @relation(fields: [institutionId], references: [id])
   donorId              Int
-  Donor                Donor          @relation(fields: [donorId], references: [id])
+  donor                Donor          @relation(fields: [donorId], references: [id])
 }
 
 model Category {
-  id            Int          @id @default(autoincrement())
-  name          String       @unique @db.VarChar(255)
-  Institution   Institution? @relation(fields: [institutionId], references: [id])
-  institutionId Int?
-  Project       Project?     @relation(fields: [projectId], references: [id])
-  projectId     Int?
+  id           Int           @id @default(autoincrement())
+  name         String        @unique @db.VarChar(255)
+  projects     Project[]
+  institutions Institution[]
 }
 
-model Partner {
-  id            Int          @id @default(autoincrement())
-  name          String       @unique @db.VarChar(255)
-  avatar        String       @db.VarChar(255)
-  Institution   Institution? @relation(fields: [institutionId], references: [id])
-  institutionId Int?
-}
-
-model Volunteer {
-  id            Int          @id @default(autoincrement())
-  name          String       @db.VarChar(255)
-  avatar        String       @db.VarChar(255)
-  Institution   Institution? @relation(fields: [institutionId], references: [id])
+model InstitutionMember {
+  id            Int                   @id @default(autoincrement())
+  name          String                @db.VarChar(50)
+  avatar        String                @db.VarChar(255)
+  memberType    InstitutionMemberType
+  institution   Institution?          @relation(fields: [institutionId], references: [id])
   institutionId Int?
 }
 
-model Collaborator {
-  id            Int          @id @default(autoincrement())
-  name          String       @db.VarChar(255)
-  avatar        String       @db.VarChar(255)
-  Institution   Institution? @relation(fields: [institutionId], references: [id])
-  institutionId Int?
-}
-
-enum AccountType {
-  ADMIN
-  DONOR
-  INSTITUTION
-}
-
-enum DonationStatus {
-  PENDING
-  APPROVED
-  REJECTED
+model MediaAttachment {
+  id                       String    @id
+  statusId                 BigInt?
+  fileFileName             String?
+  fileContentType          String?
+  fileFileSize             Int?
+  fileUpdatedAt            DateTime?
+  remoteUrl                String    @default("")
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  shortcode                String?
+  type                     Int       @default(0)
+  fileMeta                 Json?
+  accountId                Int? // Chave estrangeira para Account
+  description              String?
+  scheduledStatusId        BigInt?
+  blurhash                 String?
+  processing               Int?
+  fileStorageSchemaVersion Int?
+  thumbnailFileName        String?
+  thumbnailContentType     String?
+  thumbnailFileSize        Int?
+  thumbnailUpdatedAt       DateTime?
+  thumbnailRemoteUrl       String?
+  account                  Account?  @relation(fields: [accountId], references: [id])
+  posts                    Post[] // Relacionamento inverso com Post
+  projects                 Project[]
 }
