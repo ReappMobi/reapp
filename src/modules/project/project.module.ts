@@ -3,7 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ProjectController } from './project.controller';
 import { ProjectService } from './project.service';
 import { PrismaService } from 'src/database/prisma.service';
-import { AuthGuard } from '../authentication/authentication.guard';
+import { AuthGuard } from '../auth/auth.guard';
 import { MediaService } from '../media-attachment/media-attachment.service';
 import { BullModule } from '@nestjs/bull';
 import { AccountService } from '../account/account.service';

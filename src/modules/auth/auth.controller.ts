@@ -1,5 +1,5 @@
 import { Controller, Post, Body, HttpStatus } from '@nestjs/common';
-import { AuthService } from './authentication.service';
+import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { LoginGoogleDto } from './dto/loginGoogle.dto';
 import { HttpException } from '@nestjs/common';

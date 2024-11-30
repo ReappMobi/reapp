@@ -16,7 +16,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { AuthGuard } from '../authentication/authentication.guard';
+import { AuthGuard } from '../auth/auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateProjectDto } from './dto/createProject.dto';
 import { UpdateProjectDto } from './dto/updateProject.dto';

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccountModule } from './modules/account/account.module';
-import { AuthenticationModule } from './modules/authentication/authentication.module';
+import { AuthenticationModule } from './modules/auth/auth.module';
 import { DonationModule } from './modules/donation/donation.module';
 import { MediaAttachmentModule } from './modules/media-attachment/media-attachment.module';
 import { BullModule } from '@nestjs/bull';
