@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MediaAttachmentController } from '../media-attachment.controller';
 import { MediaService } from '../media-attachment.service';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { AuthGuard } from '../../authentication/authentication.guard';
+import { AuthGuard } from '../../auth/auth.guard';
 
 describe('MediaAttachmentController', () => {
   let controller: MediaAttachmentController;

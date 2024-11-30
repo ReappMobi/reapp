@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PostController } from '../post.controller';
 import { PostService } from '../post.service';
-import { AuthGuard } from '../../authentication/authentication.guard';
+import { AuthGuard } from '../../auth/auth.guard';
 import { UnauthorizedException } from '@nestjs/common';
 
 describe('PostController', () => {
