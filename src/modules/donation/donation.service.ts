@@ -191,9 +191,61 @@ export class DonationService {
     }
   }
 
+  async getAllDonations(page: number, limit: number) {
+    const donations = await this.prismaService.donation.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return donations;
+  }
+
+  async getDonationsByInstitution(
+    institutionId: number,
+    page: number,
+    limit: number,
+  ) {
+    const donations = await this.prismaService.donation.findMany({
+      where: {
+        institutionId,
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return donations;
+  }
+
+  async getDonationsByProject(projectId: number, page: number, limit: number) {
+    const donations = await this.prismaService.donation.findMany({
+      where: {
+        projectId,
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return donations;
+  }
+
+  async getDonationsByDonor(
+    donorId: number,
+    page: number,
+    limit: number,
+    institutionId: number = null,
+    projectId: number = null,
+  ) {
+    const donations = await this.prismaService.donation.findMany({
+      where: {
+        donorId,
+        projectId: projectId ? projectId : undefined,
+        institutionId: institutionId ? institutionId : undefined,
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return donations;
+  }
+
   async notifyDonation(data: NotificationRequestDto) {
     if (data.type !== 'payment') return;
-
     const payment = await this.mercadopagoService.getPayment(data.data.id);
     if (!payment) {
       throw new HttpException(
