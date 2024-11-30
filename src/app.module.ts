@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AccountModule } from './modules/account/account.module';
 import { AuthenticationModule } from './modules/authentication/authentication.module';
+import { DonationModule } from './modules/donation/donation.module';
 import { MediaAttachmentModule } from './modules/media-attachment/media-attachment.module';
 import { BullModule } from '@nestjs/bull';
 import { MediaProcessingModule } from './modules/media-processing/media-processing.module';
@@ -17,6 +18,7 @@ import { ProjectModule } from './modules/project/project.module';
     }),
     AccountModule,
     AuthenticationModule,
+    DonationModule,
     MediaAttachmentModule,
     MediaProcessingModule,
     PostModule,
