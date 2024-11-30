@@ -3,7 +3,7 @@ import { AccountModule } from './modules/account/account.module';
 import { AuthenticationModule } from './modules/authentication/authentication.module';
 import { MediaAttachmentModule } from './modules/mediaAttachment/media-attachment.module';
 import { BullModule } from '@nestjs/bull';
-import { MediaProcessingModule } from './modules/mediaAttachment/media-processing.module';
+import { MediaProcessingModule } from './modules/media-processing/media-processing.module';
 
 @Module({
   imports: [
