@@ -4,7 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { MediaService } from '../mediaAttachment/media-attachment.service';
+import { MediaService } from '../media-attachment/media-attachment.service';
 import { Institution } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 

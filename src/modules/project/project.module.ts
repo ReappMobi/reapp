@@ -4,7 +4,7 @@ import { ProjectController } from './project.controller';
 import { ProjectService } from './project.service';
 import { PrismaService } from 'src/database/prisma.service';
 import { AuthGuard } from '../authentication/authentication.guard';
-import { MediaService } from '../mediaAttachment/media-attachment.service';
+import { MediaService } from '../media-attachment/media-attachment.service';
 import { BullModule } from '@nestjs/bull';
 import { AccountService } from '../account/account.service';
 

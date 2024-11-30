@@ -3,7 +3,7 @@ import { PrismaService } from 'src/database/prisma.service';
 import { PostController } from './post.controller';
 import { PostService } from './post.service';
 import { AuthGuard } from '../authentication/authentication.guard';
-import { MediaService } from '../mediaAttachment/media-attachment.service';
+import { MediaService } from '../media-attachment/media-attachment.service';
 import { JwtModule } from '@nestjs/jwt';
 import { BullModule } from '@nestjs/bull';
 

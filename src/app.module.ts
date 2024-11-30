@@ -4,6 +4,8 @@ import { AuthenticationModule } from './modules/authentication/authentication.mo
 import { MediaAttachmentModule } from './modules/media-attachment/media-attachment.module';
 import { BullModule } from '@nestjs/bull';
 import { MediaProcessingModule } from './modules/media-processing/media-processing.module';
+import { PostModule } from './modules/post/post.module';
+import { ProjectModule } from './modules/project/project.module';
 
 @Module({
   imports: [
