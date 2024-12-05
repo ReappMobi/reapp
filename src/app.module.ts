@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AccountModule } from './modules/account/account.module';
-import { AuthenticationModule } from './modules/authentication/authentication.module';
-import { MediaAttachmentModule } from './modules/mediaAttachment/media-attachment.module';
+import { AuthenticationModule } from './modules/auth/auth.module';
+import { DonationModule } from './modules/donation/donation.module';
+import { MediaAttachmentModule } from './modules/media-attachment/media-attachment.module';
 import { BullModule } from '@nestjs/bull';
-import { MediaProcessingModule } from './modules/mediaAttachment/media-processing.module';
+import { MediaProcessingModule } from './modules/media-processing/media-processing.module';
 import { PostModule } from './modules/post/post.module';
 import { ProjectModule } from './modules/project/project.module';
 import { InstitutionMemberModule } from './modules/institutionMember/institutionMember.module';
@@ -18,6 +19,7 @@ import { InstitutionMemberModule } from './modules/institutionMember/institution
     }),
     AccountModule,
     AuthenticationModule,
+    DonationModule,
     MediaAttachmentModule,
     MediaProcessingModule,
     PostModule,

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from '../authentication.service';
+import { AuthService } from '../auth.service';
 import { PrismaService } from '../../../database/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';

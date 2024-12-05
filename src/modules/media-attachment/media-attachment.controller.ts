@@ -15,7 +15,7 @@ import {
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { MediaService } from './media-attachment.service';
-import { AuthGuard } from '../authentication/authentication.guard';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('media')
 export class MediaAttachmentController {

@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PostService } from '../post.service';
 import { PrismaService } from '../../../database/prisma.service';
-import { MediaService } from '../../mediaAttachment/media-attachment.service';
+import { MediaService } from '../../media-attachment/media-attachment.service';
 import { HttpException, UnauthorizedException } from '@nestjs/common';
 
-jest.mock('../../mediaAttachment/media-attachment.service');
+jest.mock('../../media-attachment/media-attachment.service');
 
 describe('PostService', () => {
   let service: PostService;

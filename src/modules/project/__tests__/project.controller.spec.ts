@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProjectController } from '../project.controller';
 import { ProjectService } from '../project.service';
 import { AccountService } from '../../account/account.service';
-import { AuthGuard } from '../../authentication/authentication.guard';
+import { AuthGuard } from '../../auth/auth.guard';
 import { ForbiddenException } from '@nestjs/common';
 import { UpdateProjectDto } from '../dto/updateProject.dto';
 

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthenticationController } from '../authentication.controller';
-import { AuthService } from '../authentication.service';
+import { AuthenticationController } from '../auth.controller';
+import { AuthService } from '../auth.service';
 import { LoginDto } from '../dto/login.dto';
 import { LoginGoogleDto } from '../dto/loginGoogle.dto';
 

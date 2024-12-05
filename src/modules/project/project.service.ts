@@ -6,7 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
-import { MediaService } from '../mediaAttachment/media-attachment.service';
+import { MediaService } from '../media-attachment/media-attachment.service';
 import { UpdateProjectDto } from './dto/updateProject.dto';
 
 export type PostProjectData = {

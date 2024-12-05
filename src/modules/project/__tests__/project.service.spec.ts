@@ -5,7 +5,7 @@ import {
   FavoriteProjectData,
 } from '../project.service';
 import { PrismaService } from '../../../database/prisma.service';
-import { MediaService } from '../../mediaAttachment/media-attachment.service';
+import { MediaService } from '../../media-attachment/media-attachment.service';
 import {
   ForbiddenException,
   HttpException,
@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { UpdateProjectDto } from '../dto/updateProject.dto';
 
-jest.mock('../../mediaAttachment/media-attachment.service');
+jest.mock('../../media-attachment/media-attachment.service');
 
 describe('ProjectService', () => {
   let service: ProjectService;
