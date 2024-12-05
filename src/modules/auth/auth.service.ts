@@ -77,7 +77,7 @@ export class AuthService {
         id: true,
         email: true,
         name: true,
-        avatar: true,
+        media: true,
         accountType: true,
         followingCount: true,
         followersCount: true,
