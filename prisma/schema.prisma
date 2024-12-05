@@ -34,14 +34,19 @@ model Account {
   passwordHash     String            @db.Char(60)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
-  avatar           String?           @db.VarChar(255)
+
+  media            MediaAttachment?  @relation(name: "AccountAvatar", fields: [avatarId], references: [id])
+  avatarId         String?           @unique @db.VarChar(255)
+  
   accountType      AccountType       @default(DONOR)
   followingCount   Int               @default(0)
   followersCount   Int               @default(0)
   institution      Institution?
   donor            Donor?
-  mediaAttachments MediaAttachment[] // Relacionamento inverso com MediaAttachment
+
+  mediaAttachments MediaAttachment[] @relation(name: "AccountMediaAttachments")
 }
+
 
 model Donor {
   id        Int               @id @default(autoincrement())
@@ -188,8 +193,9 @@ model MediaAttachment {
   thumbnailFileSize          Int?
   thumbnailUpdatedAt         DateTime?
   thumbnailRemoteUrl         String?
-  account                    Account?  @relation(fields: [accountId], references: [id])
+  account                    Account?  @relation(name: "AccountMediaAttachments", fields: [accountId], references: [id])
   posts                      Post[]    // Relacionamento inverso com Post
   projects                   Project[]
   institutionMember          InstitutionMember[]
+  accountAvatar              Account?  @relation(name: "AccountAvatar")
 }
