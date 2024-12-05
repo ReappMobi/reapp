@@ -157,37 +157,39 @@ model Category {
 model InstitutionMember {
   id            Int                   @id @default(autoincrement())
   name          String                @db.VarChar(50)
-  avatar        String                @db.VarChar(255)
+  media         MediaAttachment? @relation(fields: [avatarId], references: [id])
+  avatarId      String?                @db.VarChar(255)
   memberType    InstitutionMemberType
   institution   Institution?          @relation(fields: [institutionId], references: [id])
   institutionId Int?
 }
 
 model MediaAttachment {
-  id                       String    @id
-  statusId                 BigInt?
-  fileFileName             String?
-  fileContentType          String?
-  fileFileSize             Int?
-  fileUpdatedAt            DateTime?
-  remoteUrl                String    @default("")
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
-  shortcode                String?
-  type                     Int       @default(0)
-  fileMeta                 Json?
-  accountId                Int? // Chave estrangeira para Account
-  description              String?
-  scheduledStatusId        BigInt?
-  blurhash                 String?
-  processing               Int?
-  fileStorageSchemaVersion Int?
-  thumbnailFileName        String?
-  thumbnailContentType     String?
-  thumbnailFileSize        Int?
-  thumbnailUpdatedAt       DateTime?
-  thumbnailRemoteUrl       String?
-  account                  Account?  @relation(fields: [accountId], references: [id])
-  posts                    Post[] // Relacionamento inverso com Post
-  projects                 Project[]
+  id                         String    @id
+  statusId                   BigInt?
+  fileFileName               String?
+  fileContentType            String?
+  fileFileSize               Int?
+  fileUpdatedAt              DateTime?
+  remoteUrl                  String    @default("")
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+  shortcode                  String?
+  type                       Int       @default(0)
+  fileMeta                   Json?
+  accountId                  Int?      // Chave estrangeira para Account
+  description                String?
+  scheduledStatusId          BigInt?
+  blurhash                   String?
+  processing                 Int?
+  fileStorageSchemaVersion   Int?
+  thumbnailFileName          String?
+  thumbnailContentType       String?
+  thumbnailFileSize          Int?
+  thumbnailUpdatedAt         DateTime?
+  thumbnailRemoteUrl         String?
+  account                    Account?  @relation(fields: [accountId], references: [id])
+  posts                      Post[]    // Relacionamento inverso com Post
+  projects                   Project[]
+  institutionMember          InstitutionMember[]
 }

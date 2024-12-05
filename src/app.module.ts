@@ -7,6 +7,7 @@ import { BullModule } from '@nestjs/bull';
 import { MediaProcessingModule } from './modules/media-processing/media-processing.module';
 import { PostModule } from './modules/post/post.module';
 import { ProjectModule } from './modules/project/project.module';
+import { InstitutionMemberModule } from './modules/institutionMember/institutionMember.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ProjectModule } from './modules/project/project.module';
     MediaProcessingModule,
     PostModule,
     ProjectModule,
+    InstitutionMemberModule,
   ],
 })
 export class AppModule {}

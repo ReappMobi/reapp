@@ -33,15 +33,17 @@ export class PostController {
   async postPublication(
     @UploadedFile() file: Express.Multer.File,
     @Body('caption') caption: string,
-    @Body('accountId', ParseIntPipe) accountId: number,
     @Req() req: RequestWithUser,
   ) {
+    const accountId = req.user?.id;
+
+    if (!accountId) {
+      throw new UnauthorizedException();
+    }
     const institution =
       await this.postService.findInstitutionByAccountId(accountId);
 
-    const userId = req.user?.id;
-
-    if (userId !== accountId || !institution) {
+    if (!institution) {
       throw new UnauthorizedException();
     }
 
@@ -79,7 +81,7 @@ export class PostController {
   ) {
     const userId = req.user?.id;
     await this.postService.deletePost(postId, userId);
-    return { message: 'Post deleted successfully' };
+    return { message: 'Post deletado com sucesso' };
   }
 
   @Patch(':id')
