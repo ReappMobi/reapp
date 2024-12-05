@@ -158,7 +158,8 @@ model Category {
 model InstitutionMember {
   id            Int                   @id @default(autoincrement())
   name          String                @db.VarChar(50)
-  avatar        String                @db.VarChar(255)
+  media         MediaAttachment? @relation(fields: [avatarId], references: [id])
+  avatarId      String?                @db.VarChar(255)
   memberType    InstitutionMemberType
   institution   Institution?          @relation(fields: [institutionId], references: [id])
   institutionId Int?
@@ -191,4 +192,5 @@ model MediaAttachment {
   account                    Account?  @relation(fields: [accountId], references: [id])
   posts                      Post[]    // Relacionamento inverso com Post
   projects                   Project[]
+  institutionMember          InstitutionMember[]
 }
