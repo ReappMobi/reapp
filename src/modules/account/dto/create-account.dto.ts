@@ -10,11 +10,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-
-export enum AccountType {
-  DONOR = 'donor',
-  INSTITUTION = 'institution',
-}
+import { AccountType } from '@prisma/client';
 
 abstract class AccountField {
   @Expose()
@@ -73,11 +69,6 @@ export abstract class CreateAccountDto {
   @Type(() => AccountField)
   @IsOptional()
   fields?: AccountField[];
-
-  @Expose()
-  @IsOptional()
-  @IsString({ message: 'O avatar deve ser uma string.' })
-  avatar?: string;
 }
 
 export abstract class CreateAccountGoogleDto {
