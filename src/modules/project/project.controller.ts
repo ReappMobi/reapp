@@ -51,7 +51,7 @@ export class ProjectController {
       Number(accountId),
     );
 
-    if (institution.accountId != req.user?.id) {
+    if (institution.account.id != req.user?.id) {
       throw new ForbiddenException('Acesso não autorizado');
     }
 
@@ -80,7 +80,7 @@ export class ProjectController {
     const accountId = req.user.id;
     const institution = await this.accountService.findOneInstitution(accountId);
 
-    if (!institution || institution.accountId !== accountId) {
+    if (!institution || institution.account.id !== accountId) {
       throw new ForbiddenException('Acesso não autorizado');
     }
 
@@ -170,7 +170,7 @@ export class ProjectController {
     const accountId = req.user.id;
     const institution = await this.accountService.findOneInstitution(accountId);
 
-    if (!institution || institution.accountId !== accountId) {
+    if (!institution || institution.account.id !== accountId) {
       throw new ForbiddenException('Acesso não autorizado');
     }
 
