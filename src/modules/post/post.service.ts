@@ -68,7 +68,6 @@ export class PostService {
 
     const postsWithMedia = await Promise.all(
       posts.map(async (post) => {
-        console.log(post.mediaId);
         const media = await this.mediaService.getMediaAttachmentById(
           post.mediaId,
         );
