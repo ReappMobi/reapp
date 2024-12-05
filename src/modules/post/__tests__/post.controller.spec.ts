@@ -160,7 +160,7 @@ describe('PostController', () => {
       const result = await controller.deletePost(postId, req as any);
 
       expect(postService.deletePost).toHaveBeenCalledWith(postId, 1);
-      expect(result).toEqual({ message: 'Post deleted successfully' });
+      expect(result).toEqual({ message: 'Post deletado com sucesso' });
     });
   });
 
