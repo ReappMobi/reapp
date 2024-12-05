@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { InstitutionMemberController } from '../institutionMember.controller';
 import { InstitutionMemberService } from '../institutionMember.service';
 import { AccountService } from '../../account/account.service';
-import { AuthGuard } from '../../authentication/authentication.guard';
+import { AuthGuard } from '../../auth/auth.guard';
 import { UnauthorizedException } from '@nestjs/common';
 import { CreateInstitutionMemberDto } from '../dto/createInstitutionMember.dto';
 import { UpdateInstitutionMemberDto } from '../dto/updateInstitutionMember.dto';

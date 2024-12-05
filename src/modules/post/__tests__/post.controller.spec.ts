@@ -70,7 +70,6 @@ describe('PostController', () => {
       const result = await controller.postPublication(
         mockFile,
         caption,
-        accountId,
         req as any,
       );
 
@@ -101,7 +100,6 @@ describe('PostController', () => {
         path: '',
       };
 
-      const accountId = 1;
       const caption = 'Test caption';
       const req = { user: { id: 2 } }; // Different userId
 
@@ -110,7 +108,7 @@ describe('PostController', () => {
         .mockResolvedValue(null);
 
       await expect(
-        controller.postPublication(mockFile, caption, accountId, req as any),
+        controller.postPublication(mockFile, caption, req as any),
       ).rejects.toThrow(UnauthorizedException);
     });
   });

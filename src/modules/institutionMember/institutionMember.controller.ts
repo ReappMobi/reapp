@@ -17,7 +17,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { InstitutionMemberService } from './institutionMember.service';
 import { AccountService } from '../account/account.service';
-import { AuthGuard } from '../authentication/authentication.guard';
+import { AuthGuard } from '../auth/auth.guard';
 import { InstitutionMemberType } from '@prisma/client';
 import { CreateInstitutionMemberDto } from './dto/createInstitutionMember.dto';
 import { UpdateInstitutionMemberDto } from './dto/updateInstitutionMember.dto';

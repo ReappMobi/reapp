@@ -2,7 +2,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InstitutionMemberService } from '../institutionMember.service';
 import { PrismaService } from '../../../database/prisma.service';
-import { MediaService } from '../../mediaAttachment/media-attachment.service';
+import { MediaService } from '../../media-attachment/media-attachment.service';
 import { InstitutionMemberType } from '@prisma/client';
 import { NotFoundException } from '@nestjs/common';
 
