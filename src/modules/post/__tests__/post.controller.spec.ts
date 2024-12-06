@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PostController } from '../post.controller';
 import { PostService } from '../post.service';
 import { AuthGuard } from '../../auth/auth.guard';
-import { UnauthorizedException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 describe('PostController', () => {
   let controller: PostController;
@@ -21,6 +25,9 @@ describe('PostController', () => {
             getPostsByInstitution: jest.fn(),
             deletePost: jest.fn(),
             updatePost: jest.fn(),
+            addComment: jest.fn(),
+            likePost: jest.fn(),
+            unlikePost: jest.fn(),
           },
         },
       ],
@@ -205,6 +212,97 @@ describe('PostController', () => {
       );
 
       expect(result).toEqual(updatedPost);
+    });
+  });
+
+  describe('addComment', () => {
+    it('should add a comment and return it', async () => {
+      const postId = 1;
+      const body = 'My comment';
+      const req = { user: { id: 1 } };
+      const mockComment = { id: 10, body: 'My comment', postId: 1 };
+
+      (postService.addComment as jest.Mock).mockResolvedValue(mockComment);
+
+      const result = await controller.addComment(postId, body, req as any);
+
+      expect(postService.addComment).toHaveBeenCalledWith(postId, 1, body);
+      expect(result).toEqual(mockComment);
+    });
+
+    it('should throw if addComment fails with an HttpException', async () => {
+      const postId = 1;
+      const body = 'Fail comment';
+      const req = { user: { id: 1 } };
+
+      (postService.addComment as jest.Mock).mockRejectedValue(
+        new HttpException('Post não encontrado', HttpStatus.NOT_FOUND),
+      );
+
+      await expect(
+        controller.addComment(postId, body, req as any),
+      ).rejects.toThrow('Post não encontrado');
+    });
+  });
+
+  describe('likePost', () => {
+    it('should like a post and return the like object', async () => {
+      const postId = 1;
+      const req = { user: { id: 2 } };
+      const mockLike = { id: 5, postId, donorId: 2 };
+
+      (postService.likePost as jest.Mock).mockResolvedValue(mockLike);
+
+      const result = await controller.likePost(postId, req as any);
+
+      expect(postService.likePost).toHaveBeenCalledWith(postId, 2);
+      expect(result).toEqual(mockLike);
+    });
+
+    it('should throw if likePost fails with an HttpException', async () => {
+      const postId = 2;
+      const req = { user: { id: 3 } };
+
+      (postService.likePost as jest.Mock).mockRejectedValue(
+        new HttpException(
+          'Post já curtido pelo usuário',
+          HttpStatus.BAD_REQUEST,
+        ),
+      );
+
+      await expect(controller.likePost(postId, req as any)).rejects.toThrow(
+        'Post já curtido pelo usuário',
+      );
+    });
+  });
+
+  describe('unlikePost', () => {
+    it('should unlike a post and return success message', async () => {
+      const postId = 1;
+      const req = { user: { id: 2 } };
+
+      (postService.unlikePost as jest.Mock).mockResolvedValue(undefined);
+
+      const result = await controller.unlikePost(postId, req as any);
+
+      expect(postService.unlikePost).toHaveBeenCalledWith(postId, 2);
+      expect(result).toEqual({ message: 'Post descurtido com sucesso' });
+    });
+
+    it('should throw if unlikePost fails with an HttpException', async () => {
+      const postId = 1;
+      const req = { user: { id: 2 } };
+
+      (postService.unlikePost as jest.Mock).mockRejectedValue(
+        new HttpException(
+          'Esse usuário não curtiu este post',
+          HttpStatus.BAD_REQUEST,
+        ),
+      );
+
+      await expect(controller.unlikePost(postId, req as any)).rejects.toThrow(
+        'Esse usuário não curtiu este post',
+      );
     });
   });
 });

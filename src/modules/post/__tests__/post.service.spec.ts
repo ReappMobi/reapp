@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PostService } from '../post.service';
 import { PrismaService } from '../../../database/prisma.service';
 import { MediaService } from '../../media-attachment/media-attachment.service';
+import { AccountService } from '../../account/account.service';
 import { HttpException, UnauthorizedException } from '@nestjs/common';
 
 jest.mock('../../media-attachment/media-attachment.service');
@@ -28,6 +29,14 @@ describe('PostService', () => {
             institution: {
               findUnique: jest.fn(),
             },
+            comment: {
+              create: jest.fn(),
+            },
+            like: {
+              findFirst: jest.fn(),
+              create: jest.fn(),
+              delete: jest.fn(),
+            },
           },
         },
         {
@@ -35,6 +44,12 @@ describe('PostService', () => {
           useValue: {
             processMedia: jest.fn(),
             getMediaAttachmentById: jest.fn(),
+          },
+        },
+        {
+          provide: AccountService,
+          useValue: {
+            findOneDonor: jest.fn(),
           },
         },
       ],
@@ -135,9 +150,35 @@ describe('PostService', () => {
       });
       expect(prismaService.post.create).toHaveBeenCalledWith({
         data: {
-          body: caption,
-          institutionId,
+          body: 'Test caption',
+          institutionId: 1,
           mediaId: 'mock-media-id',
+        },
+        select: {
+          body: true,
+          comments: true,
+          createdAt: true,
+          id: true,
+          institution: {
+            select: {
+              account: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              category: {
+                select: {
+                  name: true,
+                },
+              },
+              id: true,
+            },
+          },
+          likes: true,
+          media: true,
+          mediaId: true,
+          updatedAt: true,
         },
       });
       expect(result).toEqual({
@@ -204,6 +245,32 @@ describe('PostService', () => {
 
       expect(prismaService.post.findMany).toHaveBeenCalledWith({
         where: { institutionId },
+        select: {
+          body: true,
+          comments: true,
+          createdAt: true,
+          id: true,
+          institution: {
+            select: {
+              account: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              category: {
+                select: {
+                  name: true,
+                },
+              },
+              id: true,
+            },
+          },
+          likes: true,
+          media: true,
+          mediaId: true,
+          updatedAt: true,
+        },
       });
       expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
         'media-1',
@@ -234,7 +301,18 @@ describe('PostService', () => {
       const postId = 1;
       const userId = 1;
       const institution = { id: 1 };
-      const post = { id: 1, institutionId: 1 };
+
+      const post = {
+        id: postId,
+        body: 'some body',
+        institution: { id: 1, category: { name: 'Educação' }, account: {} },
+        mediaId: 'some-media-id',
+        media: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        comments: [],
+        likes: [],
+      };
 
       prismaService.institution.findUnique = jest
         .fn()
@@ -269,14 +347,30 @@ describe('PostService', () => {
 
       const userId = 1;
       const institution = { id: 1 };
-      const post = { id: postId, institutionId: 1 };
+      const post = {
+        id: postId,
+        body: 'some body',
+        institution: { id: 1, category: { name: 'Educação' }, account: {} },
+        mediaId: 'some-media-id',
+        media: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        comments: [],
+        likes: [],
+      };
       const mediaResponse = {
         mediaAttachment: { id: 'new-media-id' },
       };
       const updatedPost = {
         id: postId,
         body: newCaption,
-        mediaId: 'new-media-id',
+        institution: { id: 1, category: { name: 'Educação' }, account: {} },
+        mediaId: 'some-media-id',
+        media: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        comments: [],
+        likes: [],
       };
       const media = { id: 'new-media-id', url: 'http://example.com/media.jpg' };
 
@@ -301,11 +395,229 @@ describe('PostService', () => {
           body: newCaption,
           mediaId: 'new-media-id',
         },
+        select: {
+          body: true,
+          comments: true,
+          createdAt: true,
+          id: true,
+          institution: {
+            select: {
+              account: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              category: {
+                select: {
+                  name: true,
+                },
+              },
+              id: true,
+            },
+          },
+          likes: true,
+          media: true,
+          mediaId: true,
+          updatedAt: true,
+        },
       });
       expect(result).toEqual({
         ...updatedPost,
         media,
       });
+    });
+  });
+
+  describe('addComment', () => {
+    const postId = 1;
+    const accountId = 2;
+    const body = 'Meu comentário';
+    const donor = { id: 10 };
+    const post = {
+      id: postId,
+      body: 'some body',
+      institution: {
+        id: 1,
+        category: { name: 'Educação' },
+        account: { id: accountId, name: 'instituicao' },
+      },
+      mediaId: 'some-media-id',
+      media: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      comments: [],
+      likes: [],
+    };
+
+    it('should add a comment successfully', async () => {
+      (service as any).accountService.findOneDonor.mockResolvedValue(donor);
+      jest.spyOn(service, 'findPostById').mockResolvedValue(post);
+      (prismaService.comment.create as jest.Mock).mockResolvedValue({
+        id: 100,
+        body,
+        postId,
+        donorId: donor.id,
+      });
+
+      const result = await service.addComment(postId, accountId, body);
+
+      expect((service as any).accountService.findOneDonor).toHaveBeenCalledWith(
+        accountId,
+      );
+      expect(service.findPostById).toHaveBeenCalledWith(postId);
+      expect(prismaService.comment.create).toHaveBeenCalledWith({
+        data: {
+          body,
+          postId: post.id,
+          donorId: donor.id,
+        },
+      });
+      expect(result).toEqual({
+        id: 100,
+        body,
+        postId,
+        donorId: donor.id,
+      });
+    });
+
+    it('should throw BAD_REQUEST if body is empty', async () => {
+      await expect(service.addComment(postId, accountId, '')).rejects.toThrow(
+        'Por favor, insira o texto do comentário.',
+      );
+    });
+
+    it('should throw NOT_FOUND if donor not found', async () => {
+      (service as any).accountService.findOneDonor.mockResolvedValue(null);
+
+      await expect(service.addComment(postId, accountId, body)).rejects.toThrow(
+        'Não foi possível encontrar a conta do doador associada a este ID.',
+      );
+    });
+
+    it('should throw NOT_FOUND if post not found', async () => {
+      (service as any).accountService.findOneDonor.mockResolvedValue(donor);
+      jest.spyOn(service, 'findPostById').mockResolvedValue(null);
+
+      await expect(service.addComment(postId, accountId, body)).rejects.toThrow(
+        'Não foi possível encontrar o post associado a este ID.',
+      );
+    });
+  });
+
+  describe('likePost', () => {
+    const postId = 1;
+    const accountId = 3;
+    const donor = { id: 20 };
+    const post = {
+      id: postId,
+      body: 'some body',
+      institution: {
+        id: 1,
+        category: { name: 'Educação' },
+        account: { id: accountId, name: 'instituicao' },
+      },
+      mediaId: 'some-media-id',
+      media: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      comments: [],
+      likes: [],
+    };
+    const like = { id: 200, postId, donorId: donor.id };
+
+    it('should like the post successfully', async () => {
+      (service as any).accountService.findOneDonor.mockResolvedValue(donor);
+      jest.spyOn(service, 'findPostById').mockResolvedValue(post);
+      (prismaService.like.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.like.create as jest.Mock).mockResolvedValue(like);
+
+      const result = await service.likePost(postId, accountId);
+
+      expect((service as any).accountService.findOneDonor).toHaveBeenCalledWith(
+        accountId,
+      );
+      expect(service.findPostById).toHaveBeenCalledWith(postId);
+      expect(prismaService.like.findFirst).toHaveBeenCalledWith({
+        where: { postId, donorId: donor.id },
+      });
+      expect(prismaService.like.create).toHaveBeenCalledWith({
+        data: { postId, donorId: donor.id },
+      });
+      expect(result).toEqual(like);
+    });
+
+    it('should throw NOT_FOUND if donor not found', async () => {
+      (service as any).accountService.findOneDonor.mockResolvedValue(null);
+
+      await expect(service.likePost(postId, accountId)).rejects.toThrow(
+        'Usuário doador não encontrado',
+      );
+    });
+
+    it('should throw NOT_FOUND if post not found', async () => {
+      (service as any).accountService.findOneDonor.mockResolvedValue(donor);
+      jest.spyOn(service, 'findPostById').mockResolvedValue(null);
+
+      await expect(service.likePost(postId, accountId)).rejects.toThrow(
+        'Post não encontrado',
+      );
+    });
+
+    it('should throw BAD_REQUEST if post already liked by user', async () => {
+      (service as any).accountService.findOneDonor.mockResolvedValue(donor);
+      jest.spyOn(service, 'findPostById').mockResolvedValue(post);
+      (prismaService.like.findFirst as jest.Mock).mockResolvedValue({
+        id: 300,
+      });
+
+      await expect(service.likePost(postId, accountId)).rejects.toThrow(
+        'Post já curtido pelo usuário',
+      );
+    });
+  });
+
+  describe('unlikePost', () => {
+    const postId = 1;
+    const accountId = 4;
+    const donor = { id: 30 };
+
+    it('should unlike the post successfully', async () => {
+      (service as any).accountService.findOneDonor.mockResolvedValue(donor);
+      (prismaService.like.findFirst as jest.Mock).mockResolvedValue({
+        id: 400,
+        postId,
+        donorId: donor.id,
+      });
+
+      await service.unlikePost(postId, accountId);
+
+      expect((service as any).accountService.findOneDonor).toHaveBeenCalledWith(
+        accountId,
+      );
+      expect(prismaService.like.findFirst).toHaveBeenCalledWith({
+        where: { postId, donorId: donor.id },
+      });
+      expect(prismaService.like.delete).toHaveBeenCalledWith({
+        where: { id: 400 },
+      });
+    });
+
+    it('should throw NOT_FOUND if donor not found', async () => {
+      (service as any).accountService.findOneDonor.mockResolvedValue(null);
+
+      await expect(service.unlikePost(postId, accountId)).rejects.toThrow(
+        'Usuário doador não encontrado',
+      );
+    });
+
+    it('should throw BAD_REQUEST if user never liked the post', async () => {
+      (service as any).accountService.findOneDonor.mockResolvedValue(donor);
+      (prismaService.like.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.unlikePost(postId, accountId)).rejects.toThrow(
+        'Esse usuário não curtiu este post',
+      );
     });
   });
 });
