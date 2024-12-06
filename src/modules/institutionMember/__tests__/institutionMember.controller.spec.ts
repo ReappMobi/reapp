@@ -63,10 +63,19 @@ describe('InstitutionMemberController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
       const createdMember = {
         id: 1,
@@ -224,10 +233,19 @@ describe('InstitutionMemberController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
       const member = {
         id: memberId,
@@ -281,10 +299,19 @@ describe('InstitutionMemberController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
 
       jest
@@ -310,10 +337,19 @@ describe('InstitutionMemberController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
       const member = {
         id: memberId,
@@ -354,10 +390,19 @@ describe('InstitutionMemberController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
       const member = {
         id: memberId,
@@ -443,10 +488,19 @@ describe('InstitutionMemberController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
 
       jest
@@ -484,10 +538,19 @@ describe('InstitutionMemberController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
       const member = {
         id: memberId,
@@ -531,10 +594,19 @@ describe('InstitutionMemberController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
       const member = {
         id: memberId,
@@ -594,10 +666,19 @@ describe('InstitutionMemberController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
 
       jest
@@ -626,11 +707,21 @@ describe('InstitutionMemberController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
+
       const member = {
         id: memberId,
         institutionId: 2,

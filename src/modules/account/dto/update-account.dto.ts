@@ -1,7 +1,5 @@
 import { Expose, Type } from 'class-transformer';
 import {
-  IsEmail,
-  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -24,39 +22,21 @@ abstract class AccountField {
   value: string;
 }
 
-export abstract class CreateAccountDto {
+export abstract class UpdateAccountDto {
   @Expose()
-  @IsNotEmpty({ message: 'O tipo de conta é obrigatório.' })
-  @IsEnum(AccountType, { message: 'Tipo de conta inválido.' })
-  accountType: AccountType;
-
-  @Expose()
-  @IsEmail({}, { message: 'O formato de email é inválido.' })
-  @IsNotEmpty({ message: 'O email é obrigatório.' })
-  email: string;
-
-  @Expose()
-  @IsNotEmpty({ message: 'A senha é obrigatória.' })
-  @MinLength(8, { message: 'A senha deve ter no mínimo 8 caracteres.' })
-  password: string;
-
-  @Expose()
+  @IsOptional()
   @IsNotEmpty({ message: 'O nome é obrigatório.' })
-  name: string;
+  name?: string;
 
   @Expose()
   @ValidateIf((o) => o.accountType === AccountType.INSTITUTION)
+  @IsOptional()
   @IsNotEmpty({ message: 'O telefone é obrigatório para instituições.' })
   phone?: string;
 
   @Expose()
   @ValidateIf((o) => o.accountType === AccountType.INSTITUTION)
-  @IsNotEmpty({ message: 'O CNPJ é obrigatório para instituições.' })
-  @MinLength(14, { message: 'O CNPJ deve ter no mínimo 14 caracteres.' })
-  cnpj?: string;
-
-  @Expose()
-  @ValidateIf((o) => o.accountType === AccountType.INSTITUTION)
+  @IsOptional()
   @IsNotEmpty({ message: 'A categoria é obrigatória para instituições.' })
   @IsString({ message: 'A categoria deve ser uma string.' })
   @MinLength(3, { message: 'A categoria deve ter no mínimo 3 caracteres.' })
@@ -69,10 +49,4 @@ export abstract class CreateAccountDto {
   @Type(() => AccountField)
   @IsOptional()
   fields?: AccountField[];
-}
-
-export abstract class CreateAccountGoogleDto {
-  @Expose()
-  @IsNotEmpty({ message: 'O token é obrigatório.' })
-  idToken: string;
 }
