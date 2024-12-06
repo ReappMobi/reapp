@@ -76,13 +76,24 @@ describe('ProjectController', () => {
       };
 
       const accountId = 1;
+
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
+
       const req = { user: { id: accountId } };
 
       const project = {
@@ -156,11 +167,21 @@ describe('ProjectController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: 2,
+        account: {
+          id: 2,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
+
       const req = { user: { id: accountId } };
 
       jest
@@ -179,11 +200,21 @@ describe('ProjectController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
+
       const project = {
         id: projectId,
         name: 'Old Project Name',
@@ -281,12 +312,22 @@ describe('ProjectController', () => {
     it('should throw ForbiddenException if institution accountId does not match user id', async () => {
       const projectId = 1;
       const accountId = 1;
+
       const institution = {
         id: 1,
-        accountId: 2, // accountId diferente
+        account: {
+          id: 2,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
 
       const updatedProjectData: UpdateProjectDto = {
@@ -331,11 +372,21 @@ describe('ProjectController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
+
       const project = {
         id: projectId,
         name: 'Old Project Name',
@@ -408,11 +459,21 @@ describe('ProjectController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
+
       const project = {
         id: projectId,
         name: 'Project Name',
@@ -466,10 +527,19 @@ describe('ProjectController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: 2, // accountId diferente
+        account: {
+          id: 2,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
 
       const req = { user: { id: accountId } };
@@ -492,11 +562,21 @@ describe('ProjectController', () => {
       const accountId = 1;
       const institution = {
         id: 1,
-        accountId: accountId,
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+          email: 'instituicao@gmail.com',
+        },
         cnpj: '12345678901234',
         phone: '1234567890',
-        categoryId: 2,
+        category: {
+          name: 'infancia',
+        },
+        fields: [],
       };
+
       const project = {
         id: projectId,
         name: 'Project Name',
@@ -545,7 +625,19 @@ describe('ProjectController', () => {
     it('should toggle favorite and return the result', async () => {
       const projectId = '1';
       const accountId = 1;
-      const donor = { id: 2, accountId: accountId };
+
+      const donor = {
+        id: 2,
+        account: {
+          id: accountId,
+          name: 'Gabriel',
+          email: 'instituto@gmail.com',
+          media: null,
+          avatarId: null,
+        },
+        donations: [],
+      };
+
       const req = { user: { id: accountId } };
       const toggleResult = { message: 'Favorite toggled' };
 
@@ -568,8 +660,17 @@ describe('ProjectController', () => {
   describe('getAllProjects', () => {
     it('should return all projects', async () => {
       const accountId = 1;
-      const donor = { id: 2, accountId: accountId };
-      const req = { user: { id: accountId } };
+      const donor = {
+        id: 2,
+        account: {
+          id: accountId,
+          name: 'Gabriel',
+          email: 'instituto@gmail.com',
+          media: null,
+          avatarId: null,
+        },
+        donations: [],
+      };
       const projects = [
         {
           id: 1,
@@ -599,11 +700,11 @@ describe('ProjectController', () => {
         },
       ];
 
+      const req = { user: { id: 1 } };
       jest.spyOn(accountService, 'findOneDonor').mockResolvedValue(donor);
       jest
         .spyOn(projectService, 'getAllProjectsService')
         .mockResolvedValue(projects);
-
       const result = await controller.getAllProjects(req as any);
 
       expect(accountService.findOneDonor).toHaveBeenCalledWith(accountId);
@@ -661,7 +762,17 @@ describe('ProjectController', () => {
   describe('getFavoriteProjects', () => {
     it('should return favorite projects', async () => {
       const accountId = 1;
-      const donor = { id: 2, accountId: accountId };
+      const donor = {
+        id: 2,
+        account: {
+          id: accountId,
+          name: 'Gabriel',
+          email: 'instituto@gmail.com',
+          media: null,
+          avatarId: null,
+        },
+        donations: [],
+      };
       const req = { user: { id: accountId } };
       const favoriteProjects = [
         {
