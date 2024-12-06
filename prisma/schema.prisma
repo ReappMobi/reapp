@@ -54,6 +54,7 @@ model Donor {
   accountId Int               @unique
   donations Donation[]
   likes     Like[]
+  comments  Comment[]
   favorites FavoriteProject[]
 }
 
@@ -106,6 +107,8 @@ model Comment {
   body   String @db.Text
   post   Post   @relation(fields: [postId], references: [id])
   postId Int
+  donor   Donor @relation(fields: [donorId], references: [id])
+  donorId Int
 }
 
 model Project {
