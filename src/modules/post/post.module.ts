@@ -6,6 +6,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { MediaService } from '../media-attachment/media-attachment.service';
 import { JwtModule } from '@nestjs/jwt';
 import { BullModule } from '@nestjs/bull';
+import { AccountService } from '../account/account.service';
 
 @Module({
   imports: [
@@ -18,6 +19,12 @@ import { BullModule } from '@nestjs/bull';
     }),
   ],
   controllers: [PostController],
-  providers: [PostService, PrismaService, AuthGuard, MediaService],
+  providers: [
+    PostService,
+    PrismaService,
+    AuthGuard,
+    MediaService,
+    AccountService,
+  ],
 })
 export class PostModule {}
