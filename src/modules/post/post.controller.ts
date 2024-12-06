@@ -102,4 +102,39 @@ export class PostController {
     );
     return updatedPost;
   }
+
+  @Post(':id/comment')
+  @UseGuards(AuthGuard)
+  async addComment(
+    @Param('id', ParseIntPipe) postId: number,
+    @Body('body') body: string,
+    @Req() req: RequestWithUser,
+  ) {
+    console.log('aqui');
+    const userId = req.user?.id;
+    const comment = await this.postService.addComment(postId, userId, body);
+    return comment;
+  }
+
+  @Post(':id/like')
+  @UseGuards(AuthGuard)
+  async likePost(
+    @Param('id', ParseIntPipe) postId: number,
+    @Req() req: RequestWithUser,
+  ) {
+    const userId = req.user?.id;
+    const like = await this.postService.likePost(postId, userId);
+    return like;
+  }
+
+  @Delete(':id/like')
+  @UseGuards(AuthGuard)
+  async unlikePost(
+    @Param('id', ParseIntPipe) postId: number,
+    @Req() req: RequestWithUser,
+  ) {
+    const userId = req.user?.id;
+    await this.postService.unlikePost(postId, userId);
+    return { message: 'Post descurtido com sucesso' };
+  }
 }

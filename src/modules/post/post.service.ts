@@ -7,12 +7,41 @@ import {
 import { MediaService } from '../media-attachment/media-attachment.service';
 import { Institution } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
+import { AccountService } from '../account/account.service';
+
+const postResponseFields = {
+  id: true,
+  body: true,
+  institution: {
+    select: {
+      id: true,
+      category: {
+        select: {
+          name: true,
+        },
+      },
+      account: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  },
+  mediaId: true,
+  media: true,
+  createdAt: true,
+  updatedAt: true,
+  comments: true,
+  likes: true,
+};
 
 @Injectable()
 export class PostService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly mediaService: MediaService,
+    private readonly accountService: AccountService,
   ) {}
 
   async postPublication(
@@ -56,6 +85,7 @@ export class PostService {
         institutionId,
         mediaId,
       },
+      select: postResponseFields,
     });
     return {
       ...post,
@@ -64,7 +94,9 @@ export class PostService {
   }
 
   async getAllPosts() {
-    const posts = await this.prismaService.post.findMany();
+    const posts = await this.prismaService.post.findMany({
+      select: postResponseFields,
+    });
 
     const postsWithMedia = await Promise.all(
       posts.map(async (post) => {
@@ -86,6 +118,7 @@ export class PostService {
       where: {
         institutionId,
       },
+      select: postResponseFields,
     });
 
     const postsWithMedia = await Promise.all(
@@ -112,6 +145,7 @@ export class PostService {
   async findPostById(postId: number) {
     return this.prismaService.post.findUnique({
       where: { id: postId },
+      select: postResponseFields,
     });
   }
 
@@ -126,7 +160,7 @@ export class PostService {
     const institutionId = institution.id;
 
     const post = await this.findPostById(postId);
-    if (!post || post.institutionId !== institutionId) {
+    if (!post || post.institution.id !== institutionId) {
       throw new UnauthorizedException(
         'You are not authorized to delete this post.',
       );
@@ -153,7 +187,7 @@ export class PostService {
     const institutionId = institution.id;
 
     const post = await this.findPostById(postId);
-    if (!post || post.institutionId !== institutionId) {
+    if (!post || post.institution.id !== institutionId) {
       throw new UnauthorizedException(
         'You are not authorized to update this post.',
       );
@@ -176,6 +210,7 @@ export class PostService {
           body: newCaption,
           mediaId,
         },
+        select: postResponseFields,
       });
     } else {
       updatedPost = await this.prismaService.post.update({
@@ -183,6 +218,7 @@ export class PostService {
         data: {
           mediaId,
         },
+        select: postResponseFields,
       });
     }
 
@@ -192,5 +228,97 @@ export class PostService {
       ...updatedPost,
       media,
     };
+  }
+
+  async addComment(postId: number, accountId: number, body: string) {
+    if (!body) {
+      throw new HttpException(
+        'Por favor, insira o texto do comentário.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const donor = await this.accountService.findOneDonor(accountId);
+    if (!donor) {
+      throw new HttpException(
+        'Não foi possível encontrar a conta do doador associada a este ID.',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const post = await this.findPostById(postId);
+    if (!post) {
+      throw new HttpException(
+        'Não foi possível encontrar o post associado a este ID.',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const comment = await this.prismaService.comment.create({
+      data: {
+        body,
+        postId: post.id,
+        donorId: donor.id,
+      },
+    });
+
+    return comment;
+  }
+
+  async likePost(postId: number, accountId: number) {
+    const donor = await this.accountService.findOneDonor(accountId);
+    if (!donor) {
+      throw new HttpException(
+        'Usuário doador não encontrado',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const post = await this.findPostById(postId);
+    if (!post) {
+      throw new HttpException('Post não encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    const existingLike = await this.prismaService.like.findFirst({
+      where: { postId, donorId: donor.id },
+    });
+
+    if (existingLike) {
+      throw new HttpException(
+        'Post já curtido pelo usuário',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const like = await this.prismaService.like.create({
+      data: { postId, donorId: donor.id },
+    });
+
+    return like;
+  }
+
+  async unlikePost(postId: number, accountId: number) {
+    const donor = await this.accountService.findOneDonor(accountId);
+    if (!donor) {
+      throw new HttpException(
+        'Usuário doador não encontrado',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const existingLike = await this.prismaService.like.findFirst({
+      where: { postId, donorId: donor.id },
+    });
+
+    if (!existingLike) {
+      throw new HttpException(
+        'Esse usuário não curtiu este post',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await this.prismaService.like.delete({
+      where: { id: existingLike.id },
+    });
   }
 }
