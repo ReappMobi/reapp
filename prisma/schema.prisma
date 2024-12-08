@@ -30,23 +30,20 @@ enum InstitutionMemberType {
 model Account {
   id               Int               @id @default(autoincrement())
   name             String            @db.VarChar(255)
-  email            String            @unique @db.VarChar(255)
+  email            String            @unique @db.VarChar(200)
+  note             String?           @db.VarChar(255)
   passwordHash     String            @db.Char(60)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
-
   media            MediaAttachment?  @relation(name: "AccountAvatar", fields: [avatarId], references: [id])
   avatarId         String?           @unique @db.VarChar(255)
-  
   accountType      AccountType       @default(DONOR)
   followingCount   Int               @default(0)
   followersCount   Int               @default(0)
   institution      Institution?
   donor            Donor?
-
   mediaAttachments MediaAttachment[] @relation(name: "AccountMediaAttachments")
 }
-
 
 model Donor {
   id        Int               @id @default(autoincrement())
@@ -103,11 +100,11 @@ model Like {
 }
 
 model Comment {
-  id     Int    @id @default(autoincrement())
-  body   String @db.Text
-  post   Post   @relation(fields: [postId], references: [id])
-  postId Int
-  donor   Donor @relation(fields: [donorId], references: [id])
+  id      Int    @id @default(autoincrement())
+  body    String @db.Text
+  post    Post   @relation(fields: [postId], references: [id])
+  postId  Int
+  donor   Donor  @relation(fields: [donorId], references: [id])
   donorId Int
 }
 
@@ -165,40 +162,40 @@ model Category {
 model InstitutionMember {
   id            Int                   @id @default(autoincrement())
   name          String                @db.VarChar(50)
-  media         MediaAttachment? @relation(fields: [avatarId], references: [id])
-  avatarId      String?                @db.VarChar(255)
+  media         MediaAttachment?      @relation(fields: [avatarId], references: [id])
+  avatarId      String?               @db.VarChar(255)
   memberType    InstitutionMemberType
   institution   Institution?          @relation(fields: [institutionId], references: [id])
   institutionId Int?
 }
 
 model MediaAttachment {
-  id                         String    @id
-  statusId                   BigInt?
-  fileFileName               String?
-  fileContentType            String?
-  fileFileSize               Int?
-  fileUpdatedAt              DateTime?
-  remoteUrl                  String    @default("")
-  createdAt                  DateTime  @default(now())
-  updatedAt                  DateTime  @updatedAt
-  shortcode                  String?
-  type                       Int       @default(0)
-  fileMeta                   Json?
-  accountId                  Int?      // Chave estrangeira para Account
-  description                String?
-  scheduledStatusId          BigInt?
-  blurhash                   String?
-  processing                 Int?
-  fileStorageSchemaVersion   Int?
-  thumbnailFileName          String?
-  thumbnailContentType       String?
-  thumbnailFileSize          Int?
-  thumbnailUpdatedAt         DateTime?
-  thumbnailRemoteUrl         String?
-  account                    Account?  @relation(name: "AccountMediaAttachments", fields: [accountId], references: [id])
-  posts                      Post[]    // Relacionamento inverso com Post
-  projects                   Project[]
-  institutionMember          InstitutionMember[]
-  accountAvatar              Account?  @relation(name: "AccountAvatar")
+  id                       String              @id
+  statusId                 BigInt?
+  fileFileName             String?
+  fileContentType          String?
+  fileFileSize             Int?
+  fileUpdatedAt            DateTime?
+  remoteUrl                String              @default("")
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  shortcode                String?
+  type                     Int                 @default(0)
+  fileMeta                 Json?
+  accountId                Int? // Chave estrangeira para Account
+  description              String?
+  scheduledStatusId        BigInt?
+  blurhash                 String?
+  processing               Int?
+  fileStorageSchemaVersion Int?
+  thumbnailFileName        String?
+  thumbnailContentType     String?
+  thumbnailFileSize        Int?
+  thumbnailUpdatedAt       DateTime?
+  thumbnailRemoteUrl       String?
+  account                  Account?            @relation(name: "AccountMediaAttachments", fields: [accountId], references: [id])
+  posts                    Post[] // Relacionamento inverso com Post
+  projects                 Project[]
+  institutionMember        InstitutionMember[]
+  accountAvatar            Account?            @relation(name: "AccountAvatar")
 }
