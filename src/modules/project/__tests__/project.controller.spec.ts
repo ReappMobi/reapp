@@ -634,6 +634,7 @@ describe('ProjectController', () => {
           email: 'instituto@gmail.com',
           media: null,
           avatarId: null,
+          note: null,
         },
         donations: [],
       };
@@ -668,6 +669,7 @@ describe('ProjectController', () => {
           email: 'instituto@gmail.com',
           media: null,
           avatarId: null,
+          note: null,
         },
         donations: [],
       };
@@ -770,6 +772,7 @@ describe('ProjectController', () => {
           email: 'instituto@gmail.com',
           media: null,
           avatarId: null,
+          note: null,
         },
         donations: [],
       };
