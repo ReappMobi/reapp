@@ -444,7 +444,7 @@ export class AccountService {
 
     const media = data.avatarId
       ? (await this.mediaService.getMediaAttachmentById(data.avatarId))
-        .mediaResponse
+          .mediaResponse
       : null;
 
     return {
