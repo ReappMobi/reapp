@@ -249,6 +249,7 @@ export class AccountService {
         accountType: true,
         avatarId: true,
         media: true,
+        note: true,
       },
     });
 
@@ -306,6 +307,7 @@ export class AccountService {
             email: true,
             avatarId: true,
             media: true,
+            note: true,
           },
         },
         donations: true,
@@ -442,7 +444,7 @@ export class AccountService {
 
     const media = data.avatarId
       ? (await this.mediaService.getMediaAttachmentById(data.avatarId))
-          .mediaResponse
+        .mediaResponse
       : null;
 
     return {

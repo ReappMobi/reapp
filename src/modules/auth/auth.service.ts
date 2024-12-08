@@ -81,6 +81,7 @@ export class AuthService {
         accountType: true,
         followingCount: true,
         followersCount: true,
+        note: true,
       },
     });
 
