@@ -165,6 +165,8 @@ describe('PostService', () => {
                 select: {
                   id: true,
                   name: true,
+                  avatarId: true,
+                  media: true,
                 },
               },
               category: {
@@ -189,35 +191,105 @@ describe('PostService', () => {
   });
 
   describe('getAllPosts', () => {
-    it('should return all posts with media', async () => {
+    it('should return all posts with media and avatars', async () => {
       const mockPosts = [
-        { id: 1, body: 'Post 1', mediaId: 'media-1' },
-        { id: 2, body: 'Post 2', mediaId: 'media-2' },
+        {
+          id: 1,
+          body: 'Post 1',
+          mediaId: 'media-1',
+          institution: {
+            account: { avatarId: 'avatar-1' },
+          },
+        },
+        {
+          id: 2,
+          body: 'Post 2',
+          mediaId: 'media-2',
+          institution: {
+            account: { avatarId: 'avatar-2' },
+          },
+        },
       ];
-      const media1 = { id: 'media-1', url: 'http://example.com/media1.jpg' };
-      const media2 = { id: 'media-2', url: 'http://example.com/media2.jpg' };
+
+      const mediaResponses = [
+        {
+          mediaResponse: {
+            id: 'media-1',
+            url: 'http://example.com/media1.jpg',
+          },
+        },
+        {
+          mediaResponse: {
+            id: 'media-2',
+            url: 'http://example.com/media2.jpg',
+          },
+        },
+      ];
+
+      const avatarMediaResponses = [
+        {
+          mediaResponse: {
+            id: 'avatar-1',
+            url: 'http://example.com/avatar1.jpg',
+          },
+        },
+        {
+          mediaResponse: {
+            id: 'avatar-2',
+            url: 'http://example.com/avatar2.jpg',
+          },
+        },
+      ];
 
       prismaService.post.findMany = jest.fn().mockResolvedValue(mockPosts);
-      mediaService.getMediaAttachmentById = jest
+
+      mediaService.getMediaAttachmentsByIds = jest
         .fn()
-        .mockImplementation((mediaId) => {
-          if (mediaId === 'media-1') return Promise.resolve(media1);
-          if (mediaId === 'media-2') return Promise.resolve(media2);
-          return Promise.resolve(null);
+        .mockImplementation((mediaIds: string[]) => {
+          if (mediaIds.includes('media-1') || mediaIds.includes('media-2')) {
+            return Promise.resolve(mediaResponses);
+          }
+          if (mediaIds.includes('avatar-1') || mediaIds.includes('avatar-2')) {
+            return Promise.resolve(avatarMediaResponses);
+          }
+          return Promise.resolve([]);
         });
 
       const result = await service.getAllPosts();
 
       expect(prismaService.post.findMany).toHaveBeenCalled();
-      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
+
+      expect(mediaService.getMediaAttachmentsByIds).toHaveBeenCalledWith([
         'media-1',
-      );
-      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
         'media-2',
-      );
+      ]);
+
+      expect(mediaService.getMediaAttachmentsByIds).toHaveBeenCalledWith([
+        'avatar-1',
+        'avatar-2',
+      ]);
+
       expect(result).toEqual([
-        { ...mockPosts[0], media: media1 },
-        { ...mockPosts[1], media: media2 },
+        {
+          ...mockPosts[0],
+          media: mediaResponses[0].mediaResponse,
+          institution: {
+            account: {
+              avatarId: 'avatar-1',
+              media: avatarMediaResponses[0].mediaResponse,
+            },
+          },
+        },
+        {
+          ...mockPosts[1],
+          media: mediaResponses[1].mediaResponse,
+          institution: {
+            account: {
+              avatarId: 'avatar-2',
+              media: avatarMediaResponses[1].mediaResponse,
+            },
+          },
+        },
       ]);
     });
   });
@@ -256,6 +328,8 @@ describe('PostService', () => {
                 select: {
                   id: true,
                   name: true,
+                  avatarId: true,
+                  media: true,
                 },
               },
               category: {
@@ -406,6 +480,8 @@ describe('PostService', () => {
                 select: {
                   id: true,
                   name: true,
+                  avatarId: true,
+                  media: true,
                 },
               },
               category: {
@@ -440,7 +516,12 @@ describe('PostService', () => {
       institution: {
         id: 1,
         category: { name: 'Educação' },
-        account: { id: accountId, name: 'instituicao' },
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+        },
       },
       mediaId: 'some-media-id',
       media: null,
@@ -515,7 +596,12 @@ describe('PostService', () => {
       institution: {
         id: 1,
         category: { name: 'Educação' },
-        account: { id: accountId, name: 'instituicao' },
+        account: {
+          id: accountId,
+          name: 'instituicao',
+          avatarId: null,
+          media: null,
+        },
       },
       mediaId: 'some-media-id',
       media: null,

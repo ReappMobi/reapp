@@ -39,6 +39,11 @@ export class AccountController {
     return this.accountService.findAll();
   }
 
+  @Get('institution')
+  findAllInstitutions() {
+    return this.accountService.findAllInstitutions();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.accountService.findOne(+id);

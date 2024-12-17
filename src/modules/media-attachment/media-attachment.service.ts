@@ -573,7 +573,6 @@ export class MediaService {
     }
 
     let thumbnailFileSize: number | undefined;
-    console.log(thumbnailBuffer);
     if (thumbnailBuffer) {
       thumbnailFileSize = thumbnailBuffer.byteLength;
     }

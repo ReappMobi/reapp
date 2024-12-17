@@ -24,6 +24,8 @@ const postResponseFields = {
         select: {
           id: true,
           name: true,
+          avatarId: true,
+          media: true,
         },
       },
     },
@@ -94,23 +96,52 @@ export class PostService {
   }
 
   async getAllPosts() {
-    const posts = await this.prismaService.post.findMany({
+    const allPosts = await this.prismaService.post.findMany({
       select: postResponseFields,
     });
 
-    const postsWithMedia = await Promise.all(
-      posts.map(async (post) => {
-        const media = await this.mediaService.getMediaAttachmentById(
-          post.mediaId,
-        );
-        return {
-          ...post,
-          media,
-        };
-      }),
+    const mediaIds = new Set<string>();
+    const avatarMediaIds = new Set<string>();
+
+    allPosts.forEach((post) => {
+      if (post.mediaId) mediaIds.add(post.mediaId);
+      if (post.institution?.account?.avatarId)
+        avatarMediaIds.add(post.institution.account.avatarId);
+    });
+
+    const [mediaResponses, avatarMediaResponses] = await Promise.all([
+      this.mediaService.getMediaAttachmentsByIds(Array.from(mediaIds)),
+      this.mediaService.getMediaAttachmentsByIds(Array.from(avatarMediaIds)),
+    ]);
+
+    const mediaMap = new Map<string, any>(
+      mediaResponses.map(({ mediaResponse }) => [
+        mediaResponse.id,
+        mediaResponse,
+      ]),
     );
 
-    return postsWithMedia;
+    const avatarMediaMap = new Map<string, any>(
+      avatarMediaResponses.map(({ mediaResponse }) => [
+        mediaResponse.id,
+        mediaResponse,
+      ]),
+    );
+
+    const posts = allPosts.map((post) => {
+      const media = post.mediaId ? mediaMap.get(post.mediaId) : null;
+      const avatarMedia = post.institution?.account?.avatarId
+        ? avatarMediaMap.get(post.institution.account.avatarId)
+        : null;
+
+      if (post.institution?.account) {
+        post.institution.account.media = avatarMedia;
+      }
+
+      return { ...post, media };
+    });
+
+    return posts;
   }
 
   async getPostsByInstitution(institutionId: number) {

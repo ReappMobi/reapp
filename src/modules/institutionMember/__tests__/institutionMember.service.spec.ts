@@ -479,8 +479,6 @@ describe('InstitutionMemberService', () => {
 
       const result = await service.updateInstitutionMember(memberId, data);
 
-      console.log(result);
-
       expect(service.findInstitutionMemberById).toHaveBeenCalledWith(memberId);
       expect(mediaService.deleteMediaAttachment).not.toHaveBeenCalled();
       expect(mediaService.processMedia).not.toHaveBeenCalled();

@@ -378,9 +378,9 @@ describe('MediaService', () => {
         blurhash: 'blurhash',
       });
 
-      process.env.BASE_URL = 'http://localhost:3000';
-
       const result = await service.getMediaAttachmentById('mock-uuid');
+
+      const baseUrl = `${process.env.BASE_URL}/uploads/mock-uuid`;
 
       expect(prismaService.mediaAttachment.findUnique).toHaveBeenCalledWith({
         where: { id: 'mock-uuid' },
@@ -390,8 +390,8 @@ describe('MediaService', () => {
         mediaResponse: {
           id: 'mock-uuid',
           type: 'image',
-          url: 'http://localhost:3000/uploads/mock-uuid/original.jpeg',
-          preview_url: 'http://localhost:3000/uploads/mock-uuid/thumbnail.jpeg',
+          url: `${baseUrl}/original.jpeg`,
+          preview_url: `${baseUrl}/thumbnail.jpeg`,
           remote_url: null,
           text_url: null,
           meta: {},

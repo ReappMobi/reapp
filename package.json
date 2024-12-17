@@ -98,6 +98,7 @@
       ".module.ts",
       ".dto.ts",
       "main.ts"
-    ]
+    ],
+    "setupFiles": ["dotenv/config"]
   }
 }
