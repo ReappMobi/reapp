@@ -122,7 +122,6 @@ export class AccountService {
 
       return account;
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         'erro ao criar conta',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -258,6 +257,33 @@ export class AccountService {
     }
 
     return account;
+  }
+
+  async findAllInstitutions() {
+    const institutions = await this.prismaService.institution.findMany({
+      select: {
+        id: true,
+        cnpj: true,
+        phone: true,
+        category: {
+          select: {
+            name: true,
+          },
+        },
+        fields: true,
+        account: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarId: true,
+            media: true,
+          },
+        },
+      },
+    });
+
+    return institutions;
   }
 
   async findOneInstitution(id: number) {
