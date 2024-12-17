@@ -35,7 +35,17 @@ const postResponseFields = {
   createdAt: true,
   updatedAt: true,
   comments: true,
-  likes: true,
+  likes: {
+    select: {
+      id: true,
+      donorId: true,
+      donor: {
+        select: {
+          accountId: true,
+        },
+      },
+    },
+  },
 };
 
 @Injectable()
