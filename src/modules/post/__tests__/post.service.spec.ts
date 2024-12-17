@@ -177,7 +177,17 @@ describe('PostService', () => {
               id: true,
             },
           },
-          likes: true,
+          likes: {
+            select: {
+              id: true,
+              donorId: true,
+              donor: {
+                select: {
+                  accountId: true,
+                },
+              },
+            },
+          },
           media: true,
           mediaId: true,
           updatedAt: true,
@@ -340,7 +350,17 @@ describe('PostService', () => {
               id: true,
             },
           },
-          likes: true,
+          likes: {
+            select: {
+              id: true,
+              donorId: true,
+              donor: {
+                select: {
+                  accountId: true,
+                },
+              },
+            },
+          },
           media: true,
           mediaId: true,
           updatedAt: true,
@@ -492,7 +512,17 @@ describe('PostService', () => {
               id: true,
             },
           },
-          likes: true,
+          likes: {
+            select: {
+              id: true,
+              donorId: true,
+              donor: {
+                select: {
+                  accountId: true,
+                },
+              },
+            },
+          },
           media: true,
           mediaId: true,
           updatedAt: true,
