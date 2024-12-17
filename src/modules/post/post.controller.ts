@@ -110,7 +110,6 @@ export class PostController {
     @Body('body') body: string,
     @Req() req: RequestWithUser,
   ) {
-    console.log('aqui');
     const userId = req.user?.id;
     const comment = await this.postService.addComment(postId, userId, body);
     return comment;

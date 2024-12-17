@@ -245,7 +245,6 @@ export class ProjectService {
 
       return { message: 'Status de favorito alterado com sucesso' };
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         'erro ao favoritar projeto',
         HttpStatus.INTERNAL_SERVER_ERROR,
