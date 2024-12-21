@@ -115,6 +115,16 @@ export class MediaService {
     return mediaType === 'image';
   }
 
+  private getMediaTypeFromMime(mimeType: string): string {
+    if (SUPPORTED_IMAGE_MIME_TYPES.includes(mimeType)) {
+      if (mimeType === 'image/gif') return 'gifv';
+      return 'image';
+    }
+    if (VIDEO_MIME_TYPES.includes(mimeType)) return 'video';
+    if (AUDIO_MIME_TYPES.includes(mimeType)) return 'audio';
+    return 'unknown';
+  }
+
 
   async processMedia(file: Express.Multer.File, options: UploadOptions) {
     const { thumbnail, accountId, description, focus } = options;
