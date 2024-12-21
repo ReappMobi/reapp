@@ -92,6 +92,24 @@ export class MediaService {
     }
   }
 
+  private validateThumbnailFile(thumbnailFile?: Express.Multer.File) {
+    if (thumbnailFile && thumbnailFile.mimetype) {
+      if (!SUPPORTED_IMAGE_MIME_TYPES.includes(thumbnailFile.mimetype)) {
+        throw new HttpException(
+          'Formato de arquivo de miniatura não suportado',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
+      }
+
+      if (thumbnailFile.size > MAX_THUMBNAIL_SIZE) {
+        throw new HttpException(
+          'Tamanho do arquivo de miniatura excede o limite',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
+      }
+    }
+  }
+
   async processMedia(file: Express.Multer.File, options: UploadOptions) {
     const { thumbnail, accountId, description, focus } = options;
 
