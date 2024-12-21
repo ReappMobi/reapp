@@ -1,7 +1,8 @@
 export const MAX_DESCRIPTION_LENGTH = 1500;
 
-export const IMAGE_LIMIT = 16 * 1024 * 1024; // 16 MB
-export const VIDEO_LIMIT = 99 * 1024 * 1024; // 99 MB
+export const MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024; // 5 MB
+export const MAX_IMAGE_SIZE = 16 * 1024 * 1024; // 16 MB
+export const MAX_VIDEO_SIZE = 99 * 1024 * 1024; // 99 MB
 
 export const MAX_VIDEO_MATRIX_LIMIT = 3840 * 2160; // 8,294,400 pixels
 export const MAX_VIDEO_FRAME_RATE = 120;
@@ -17,7 +18,9 @@ export const IMAGE_FILE_EXTENSIONS = [
   '.heif',
   '.avif',
 ];
+
 export const VIDEO_FILE_EXTENSIONS = ['.webm', '.mp4', '.m4v', '.mov'];
+
 export const AUDIO_FILE_EXTENSIONS = [
   '.ogg',
   '.oga',
@@ -31,21 +34,21 @@ export const AUDIO_FILE_EXTENSIONS = [
   '.wma',
 ];
 
-export const IMAGE_MIME_TYPES = [
+export const SUPPORTED_IMAGE_MIME_TYPES = [
   'image/jpeg',
   'image/png',
   'image/gif',
-  'image/heic',
-  'image/heif',
   'image/webp',
-  'image/avif',
 ];
+
 export const VIDEO_MIME_TYPES = [
   'video/webm',
   'video/mp4',
   'video/quicktime',
   'video/ogg',
+  'video/x-matroska',
 ];
+
 export const AUDIO_MIME_TYPES = [
   'audio/wave',
   'audio/wav',
@@ -67,9 +70,8 @@ export const AUDIO_MIME_TYPES = [
 ];
 
 export const SUPPORTED_MIME_TYPES = [
-  ...IMAGE_MIME_TYPES,
+  ...SUPPORTED_IMAGE_MIME_TYPES,
   ...VIDEO_MIME_TYPES,
-  ...AUDIO_MIME_TYPES,
 ];
 export const SUPPORTED_FILE_EXTENSIONS = [
   ...IMAGE_FILE_EXTENSIONS,

@@ -1,31 +1,32 @@
+import { InjectQueue } from '@nestjs/bull';
 import {
   HttpException,
   HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import * as path from 'path';
-import { PrismaService } from '../../database/prisma.service';
-import * as fs from 'fs';
-import * as sharp from 'sharp';
 import { encode } from 'blurhash';
-import { v4 as uuidv4 } from 'uuid';
-import { promisify } from 'util';
-import * as os from 'os';
-import * as ffmpeg from 'fluent-ffmpeg';
-import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import * as ffmpeg from 'fluent-ffmpeg';
 import * as mime from 'mime-types';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import { promisify } from 'node:util';
+import * as sharp from 'sharp';
+import { v4 as uuidv4 } from 'uuid';
+import { PrismaService } from '../../database/prisma.service';
 
 import {
-  IMAGE_LIMIT,
-  VIDEO_LIMIT,
-  IMAGE_MIME_TYPES,
-  VIDEO_MIME_TYPES,
   AUDIO_MIME_TYPES,
-  SUPPORTED_MIME_TYPES,
-  MAX_VIDEO_MATRIX_LIMIT,
+  MAX_IMAGE_SIZE,
+  MAX_THUMBNAIL_SIZE,
   MAX_VIDEO_FRAME_RATE,
+  MAX_VIDEO_MATRIX_LIMIT,
+  MAX_VIDEO_SIZE,
+  SUPPORTED_IMAGE_MIME_TYPES,
+  SUPPORTED_MIME_TYPES,
+  VIDEO_MIME_TYPES,
 } from './media-attachment.constants';
 
 interface VideoMetadata {
@@ -48,38 +49,278 @@ interface VideoMetadata {
   };
 }
 
+type UploadOptions = {
+  thumbnail?: Express.Multer.File;
+  accountId: number;
+  description?: string;
+  focus?: string;
+};
+
 @Injectable()
 export class MediaService {
   constructor(
     private readonly prismaService: PrismaService,
     @InjectQueue('media-processing') private mediaQueue: Queue,
   ) {}
-  async processMedia(
+
+  private validateMediaFile(file: Express.Multer.File) {
+    if (!file || !file.mimetype) {
+      throw new HttpException(
+        'Arquivo inválido',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    // Only include image or video files
+    if (!SUPPORTED_MIME_TYPES.includes(file.mimetype)) {
+      throw new HttpException(
+        'Formato de arquivo não suportado',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    let fileSizeLimit = MAX_VIDEO_SIZE;
+    if (SUPPORTED_IMAGE_MIME_TYPES.includes(file.mimetype)) {
+      fileSizeLimit = MAX_IMAGE_SIZE;
+    }
+
+    if (file.size > fileSizeLimit) {
+      throw new HttpException(
+        'Tamanho do arquivo excede o limite',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+  }
+
+  private validateThumbnailFile(thumbnailFile?: Express.Multer.File) {
+    if (thumbnailFile && thumbnailFile.mimetype) {
+      if (!SUPPORTED_IMAGE_MIME_TYPES.includes(thumbnailFile.mimetype)) {
+        throw new HttpException(
+          'Formato de arquivo de miniatura não suportado',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
+      }
+
+      if (thumbnailFile.size > MAX_THUMBNAIL_SIZE) {
+        throw new HttpException(
+          'Tamanho do arquivo de miniatura excede o limite',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
+      }
+    }
+  }
+
+  private isSynchronous(file: Express.Multer.File): boolean {
+    const mediaType = this.getMediaTypeFromMime(file.mimetype);
+    return mediaType === 'image';
+  }
+
+  private getMediaTypeFromMime(mimeType: string): string {
+    if (SUPPORTED_IMAGE_MIME_TYPES.includes(mimeType)) {
+      if (mimeType === 'image/gif') return 'gifv';
+      return 'image';
+    }
+    if (VIDEO_MIME_TYPES.includes(mimeType)) return 'video';
+    if (AUDIO_MIME_TYPES.includes(mimeType)) return 'audio';
+    return 'unknown';
+  }
+
+  private async processImage(
     file: Express.Multer.File,
-    options: {
-      thumbnail?: Express.Multer.File;
-      accountId: number;
-      description?: string;
-      focus?: string;
-    },
+    filePath: string,
+    isThumbnail = false,
+  ): Promise<sharp.OutputInfo> {
+    if (isThumbnail) {
+      return await sharp(file.buffer)
+        .resize(480, 270, { fit: 'inside' })
+        .toFile(filePath);
+    }
+    return await sharp(file.buffer).toFile(filePath);
+  }
+
+  private async createMediaMetadata(
+    file: Express.Multer.File,
+    focus: string,
+    type: string,
   ) {
+    let meta = {};
+    const focusPoint = this.parseFocus(focus);
+
+    if (type === 'image' || type === 'gifv') {
+      try {
+        const originalMetadata = await sharp(file.buffer).metadata();
+        const originalMeta = {
+          width: originalMetadata.width,
+          height: originalMetadata.height,
+          size: `${originalMetadata.width}x${originalMetadata.height}`,
+          aspect: originalMetadata.width / originalMetadata.height,
+        };
+
+        meta = {
+          focus: focusPoint,
+          original: originalMeta,
+        };
+      } catch (error) {
+        console.error('Error extracting original image metadata:', error);
+        meta = {
+          focus: focusPoint,
+        };
+      }
+    } else if (type === 'video') {
+      try {
+        const videoMeta = await this.getVideoMetadata(file.buffer);
+        meta = {
+          ...videoMeta,
+          focus: focusPoint,
+        };
+      } catch (error) {
+        console.error('Error extracting video metadata:', error);
+        meta = {
+          focus: focusPoint,
+        };
+      }
+    }
+
+    return meta;
+  }
+
+  private getTypeEnum(type: string): number {
+    const getTypeEnum = {
+      image: 1,
+      video: 2,
+      gifv: 3,
+      audio: 4,
+    };
+    return getTypeEnum[type] || 0;
+  }
+
+  private async processSynchronously(
+    file: Express.Multer.File,
+    options: UploadOptions,
+  ) {
+    const fileType = this.getFileType(file.mimetype);
+
+    if (fileType !== 'image') {
+      throw new HttpException(
+        'O processamento síncrono é suportado apenas para imagens',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
     const { thumbnail, accountId, description, focus } = options;
+
+    const mediaId = uuidv4();
+    const uploadDir =
+      process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+
+    const mediaDir = path.join(uploadDir, mediaId);
+
+    fs.mkdirSync(mediaDir, { recursive: true });
+
+    const originalExtension = mime.extension(file.mimetype);
+
+    const extension = originalExtension && `.${originalExtension}`;
+
+    const originalFileName = `original${extension}`;
+
+    const originalFilePath = path.join(mediaDir, originalFileName);
+
+    const fileInfo = await this.processImage(file, originalFilePath);
+
+    const fileBlurhash = await this.generateBlurhash(file.buffer);
+
+    const fileMeta = await this.createMediaMetadata(file, focus, fileType);
+
+    const uploadBaseUrl = `${process.env.BASE_URL}/uploads`;
+    const mediaUploadUrl = `${uploadBaseUrl}/${mediaId}/`;
+    const mediaUrl = `${mediaUploadUrl}/${originalFileName}`;
+
+    let thumbnailData = {};
+    if (thumbnail) {
+      const thumbnailFileExtension = mime.extension(thumbnail.mimetype);
+      const thumbnailExtension = thumbnailFileExtension
+        ? `.${thumbnailFileExtension}`
+        : '.png';
+
+      const thumbnailFileName = `thumbnail.${thumbnailExtension}`;
+      const thumbnailFilePath = path.join(mediaDir, thumbnailFileName);
+      const thumbnailUpdatedAt: Date = new Date();
+      const thumbnailContentType: string = thumbnail
+        ? thumbnail.mimetype
+        : 'image/png';
+      const thumb = await this.processImage(thumbnail, thumbnailFilePath, true);
+      const thumbnailFileSize = thumb.size;
+      const thumbnailMeta = await this.createMediaMetadata(
+        thumbnail,
+        focus,
+        'image',
+      );
+
+      const thumbnailRemoteUrl = `${uploadBaseUrl}/${mediaId}/thumbnail.${thumbnailExtension}`;
+      fileMeta['small'] = thumbnailMeta;
+
+      thumbnailData = {
+        thumbnailFileName,
+        thumbnailContentType,
+        thumbnailFileSize,
+        thumbnailUpdatedAt,
+        thumbnailRemoteUrl,
+      };
+    }
+
+    const mediaAttachment = await this.prismaService.mediaAttachment.create({
+      data: {
+        id: mediaId,
+        fileFileName: file.originalname,
+        fileContentType: file.mimetype,
+        fileFileSize: fileInfo.size,
+        accountId,
+        remoteUrl: mediaUrl,
+        shortcode: uuidv4(),
+        type: this.getTypeEnum(fileType),
+        fileMeta: fileMeta,
+        description: description,
+        blurhash: fileBlurhash,
+        processing: 2,
+        fileStorageSchemaVersion: 1,
+        ...thumbnailData,
+      },
+      select: {
+        id: true,
+        type: true,
+        remoteUrl: true,
+        description: true,
+        blurhash: true,
+        fileMeta: true,
+        thumbnailFileName: true,
+        thumbnailRemoteUrl: true,
+        thumbnailContentType: true,
+      },
+    });
+
+    return mediaAttachment;
+  }
+
+  async processMedia(file: Express.Multer.File, options: UploadOptions) {
+    const { thumbnail, accountId, description, focus } = options;
+
     if (!file) {
       throw new HttpException(
-        'File is required',
+        'O arquivo é obrigatório',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
 
     if (!accountId) {
       throw new HttpException(
-        'Account ID is required',
+        'A conta é obrigatória',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
 
-    // Move validation logic here
-    this.validateFiles(file, thumbnail);
+    this.validateMediaFile(file);
+    this.validateThumbnailFile(thumbnail);
+
     const isSynchronous = this.isSynchronous(file);
 
     if (isSynchronous) {
@@ -89,17 +330,16 @@ export class MediaService {
         description,
         focus,
       });
-      return { isSynchronous: true, mediaAttachment };
-    } else {
-      const mediaAttachment = await this.enqueueMediaProcessing(file, {
-        thumbnail,
-        accountId,
-        description,
-        focus,
-      });
-
-      return { isSynchronous: false, mediaAttachment };
+      return { isSynchronous, mediaAttachment };
     }
+
+    const mediaAttachment = await this.enqueueMediaProcessing(file, {
+      thumbnail,
+      accountId,
+      description,
+      focus,
+    });
+    return { isSynchronous, mediaAttachment };
   }
 
   async deleteMediaAttachment(id: string): Promise<void> {
@@ -113,16 +353,12 @@ export class MediaService {
       throw new NotFoundException('Media attachment não encontrado');
     }
 
-    // Determina os caminhos dos arquivos
     const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads');
     const mediaDir = path.join(uploadsDir, mediaAttachment.id);
 
-    // Remove os arquivos associados ao media attachment
     try {
-      // Verifica se o diretório existe
       await promisify(fs.access)(mediaDir, fs.constants.F_OK);
 
-      // Remove o diretório e seu conteúdo
       await promisify(fs.rm)(mediaDir, { recursive: true, force: true });
     } catch (error) {
       if (error.code !== 'ENOENT') {
@@ -132,65 +368,11 @@ export class MediaService {
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
-      // Se o erro for ENOENT (diretório não existe), continua
     }
 
-    // Deleta o registro do media attachment no banco de dados
     await this.prismaService.mediaAttachment.delete({
       where: { id },
     });
-  }
-
-  private validateFiles(
-    file: Express.Multer.File,
-    thumbnail: Express.Multer.File | undefined,
-  ) {
-    const allowedImageTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-    ];
-    const allowedVideoTypes = ['video/mp4', 'video/x-matroska', 'video/webm'];
-
-    const imageSizeLimit = 16 * 1024 * 1024; // 16MB for images
-    const videoSizeLimit = 99 * 1024 * 1024; // 99MB for videos
-    const thumbnailSizeLimit = 5 * 1024 * 1024; // 5MB for thumbnails
-
-    let mainFileSizeLimit = 0;
-    if (allowedImageTypes.includes(file.mimetype)) {
-      mainFileSizeLimit = imageSizeLimit;
-    } else if (allowedVideoTypes.includes(file.mimetype)) {
-      mainFileSizeLimit = videoSizeLimit;
-    } else {
-      throw new HttpException(
-        'Invalid file type for main file',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
-    if (file.size > mainFileSizeLimit) {
-      throw new HttpException(
-        'Main file size exceeds the limit',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
-    if (thumbnail) {
-      if (!allowedImageTypes.includes(thumbnail.mimetype)) {
-        throw new HttpException(
-          'Invalid file type for thumbnail',
-          HttpStatus.UNPROCESSABLE_ENTITY,
-        );
-      }
-
-      if (thumbnail.size > thumbnailSizeLimit) {
-        throw new HttpException(
-          'Thumbnail size exceeds the limit',
-          HttpStatus.UNPROCESSABLE_ENTITY,
-        );
-      }
-    }
   }
 
   async enqueueMediaProcessing(
@@ -203,7 +385,7 @@ export class MediaService {
     },
   ) {
     const { thumbnail, accountId, description, focus } = options;
-    this.validateFile(file);
+    this.validateMediaFile(file);
 
     const mediaId = uuidv4();
     const tempDir = path.join(
@@ -214,6 +396,7 @@ export class MediaService {
       'temp_uploads',
       mediaId,
     );
+
     fs.mkdirSync(tempDir, { recursive: true });
     const originalExtension = mime.extension(file.mimetype);
     const originalExtensionWithDot = originalExtension
@@ -238,7 +421,7 @@ export class MediaService {
       fs.writeFileSync(thumbnailFilePath, thumbnail.buffer);
     }
 
-    const type = this.determineMediaType(file.mimetype);
+    const type = this.getMediaTypeFromMime(file.mimetype);
 
     const mediaAttachment = await this.prismaService.mediaAttachment.create({
       data: {
@@ -380,133 +563,6 @@ export class MediaService {
     };
 
     return { mediaResponse, processing };
-  }
-
-  isSynchronous(file: Express.Multer.File): boolean {
-    const mediaType = this.determineMediaType(file.mimetype);
-    return mediaType === 'image';
-  }
-
-  determineMediaType(mimeType: string): string {
-    if (IMAGE_MIME_TYPES.includes(mimeType)) {
-      if (mimeType === 'image/gif') return 'gifv'; // Mastodon treats GIFs as 'gifv'
-      return 'image';
-    }
-    if (VIDEO_MIME_TYPES.includes(mimeType)) return 'video';
-    if (AUDIO_MIME_TYPES.includes(mimeType)) return 'audio';
-    return 'unknown';
-  }
-
-  async processSynchronously(
-    file: Express.Multer.File,
-    options: {
-      thumbnail: Express.Multer.File | undefined;
-      accountId: number;
-      description: string;
-      focus: string;
-    },
-  ) {
-    const { thumbnail, accountId, description, focus } = options;
-    this.validateFile(file);
-
-    const mediaId = uuidv4();
-    const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads');
-    const mediaDir = path.join(uploadDir, mediaId.toString());
-
-    fs.mkdirSync(mediaDir, { recursive: true });
-
-    const originalExtension = mime.extension(file.mimetype);
-    const originalExtensionWithDot = originalExtension
-      ? `.${originalExtension}`
-      : '';
-
-    const originalFileName = `original${originalExtensionWithDot}`;
-
-    const originalFilePath = path.join(mediaDir, originalFileName);
-
-    let thumbnailExtension = 'png';
-    if (thumbnail) {
-      const thumbExtension = mime.extension(thumbnail.mimetype);
-      if (thumbExtension) {
-        thumbnailExtension = `.${thumbExtension}`;
-      }
-    }
-
-    const thumbnailFileName = `thumbnail.${thumbnailExtension}`;
-    const thumbnailFilePath = path.join(mediaDir, thumbnailFileName);
-
-    fs.writeFileSync(originalFilePath, file.buffer);
-
-    const type = this.determineMediaType(file.mimetype);
-
-    if (type !== 'image') {
-      throw new HttpException(
-        'Unsupported media type for synchronous processing',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
-    const thumbnailUpdatedAt: Date = new Date();
-
-    await this.processImage(file, thumbnail, thumbnailFilePath);
-    const thumbnailContentType: string = thumbnail
-      ? thumbnail.mimetype
-      : 'image/png';
-    const thumbnailFileSize: number = fs.statSync(thumbnailFilePath).size;
-
-    const baseUrl = `${process.env.BASE_URL}/uploads`;
-    const url = `${baseUrl}/${mediaId}/original.${originalExtension}`;
-    const preview_url = `${baseUrl}/${mediaId}/thumbnail.${thumbnailExtension}`;
-    const text_url = `${baseUrl}/${mediaId}`;
-
-    const meta = await this.generateMeta(file, thumbnailFilePath, focus, type);
-
-    let blurhash: string | null = null;
-    if (type === 'image' || type === 'video' || type === 'gifv') {
-      const blurhashBuffer =
-        thumbnail && thumbnail.buffer ? thumbnail.buffer : file.buffer;
-      blurhash = await this.generateBlurhash(blurhashBuffer);
-    }
-
-    const mediaAttachment = await this.prismaService.mediaAttachment.create({
-      data: {
-        id: mediaId,
-        fileFileName: file.originalname,
-        fileContentType: file.mimetype,
-        fileFileSize: file.size,
-        fileUpdatedAt: new Date(),
-        accountId,
-        remoteUrl: '',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        shortcode: uuidv4(),
-        type: this.getTypeEnum(type),
-        fileMeta: meta,
-        description: description || null,
-        blurhash: blurhash,
-        processing: 2, // 2 indicates processing is complete
-        fileStorageSchemaVersion: 1,
-        thumbnailFileName: thumbnail ? thumbnail.originalname : 'thumbnail',
-        thumbnailContentType: thumbnailContentType,
-        thumbnailFileSize: thumbnailFileSize,
-        thumbnailUpdatedAt: thumbnailUpdatedAt,
-        thumbnailRemoteUrl: '',
-      },
-    });
-
-    const response = {
-      id: mediaAttachment.id.toString(),
-      type: type,
-      url: url,
-      preview_url: preview_url,
-      remote_url: mediaAttachment.remoteUrl || null,
-      text_url: text_url,
-      meta: meta,
-      description: mediaAttachment.description,
-      blurhash: blurhash,
-    };
-
-    return response;
   }
 
   async processAsynchronously(
@@ -844,51 +900,6 @@ export class MediaService {
     });
   }
 
-  async processImage(
-    file: Express.Multer.File,
-    thumbnail: Express.Multer.File | undefined,
-    thumbnailFilePath: string,
-  ) {
-    if (thumbnail && thumbnail.mimetype) {
-      // User provided a custom thumbnail
-      fs.writeFileSync(thumbnailFilePath, thumbnail.buffer);
-    } else {
-      // Generate a thumbnail from the original file
-      await sharp(file.buffer)
-        .resize(640, 360, { fit: 'inside' })
-        .png() // Specify output format as PNG
-        .toFile(thumbnailFilePath);
-    }
-  }
-
-  validateFile(file: Express.Multer.File) {
-    if (!file || !file.mimetype) {
-      throw new HttpException(
-        { error: 'Validation failed: File is invalid' },
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
-    const isValidContentType = SUPPORTED_MIME_TYPES.includes(file.mimetype);
-    if (!isValidContentType) {
-      throw new HttpException(
-        { error: 'Validation failed: Unsupported file type' },
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
-    const isValidSize =
-      this.isLargerMediaFormat(file.mimetype) && file.size <= VIDEO_LIMIT
-        ? true
-        : file.size <= IMAGE_LIMIT;
-    if (!isValidSize) {
-      throw new HttpException(
-        { error: 'Validation failed: File size exceeds limit' },
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-  }
-
   isLargerMediaFormat(mimeType: string): boolean {
     return (
       VIDEO_MIME_TYPES.includes(mimeType) || AUDIO_MIME_TYPES.includes(mimeType)
@@ -899,22 +910,6 @@ export class MediaService {
     if (!focus) return { x: 0, y: 0 };
     const [x, y] = focus.split(',').map(Number);
     return { x, y };
-  }
-
-  getTypeEnum(type: string): number {
-    // Assuming: 0 - unknown, 1 - image, 2 - video, 3 - gifv, 4 - audio
-    switch (type) {
-      case 'image':
-        return 1;
-      case 'video':
-        return 2;
-      case 'gifv':
-        return 3;
-      case 'audio':
-        return 4;
-      default:
-        return 0;
-    }
   }
 
   getTypeStr(type: number): string {
@@ -937,76 +932,6 @@ export class MediaService {
     if (mimeType.startsWith('video/')) return 'video';
     if (mimeType.startsWith('audio/')) return 'audio';
     return 'unknown';
-  }
-
-  async generateMeta(
-    originalFile: Express.Multer.File,
-    thumbnailFilePath: string,
-    focus: string,
-    type: string,
-  ) {
-    let meta = {};
-    const focusPoint = this.parseFocus(focus);
-
-    // Thumbnail metadata
-    let smallMeta = {};
-    try {
-      const thumbnailBuffer = fs.readFileSync(thumbnailFilePath);
-      const thumbnailMetadata = await sharp(thumbnailBuffer).metadata();
-      smallMeta = {
-        width: thumbnailMetadata.width,
-        height: thumbnailMetadata.height,
-        size: `${thumbnailMetadata.width}x${thumbnailMetadata.height}`,
-        aspect: thumbnailMetadata.width / thumbnailMetadata.height,
-      };
-    } catch (error) {
-      console.error('Error extracting thumbnail metadata:', error);
-      smallMeta = null;
-    }
-
-    if (type === 'image' || type === 'gifv') {
-      // Process image or gifv metadata
-      try {
-        const originalMetadata = await sharp(originalFile.buffer).metadata();
-        const originalMeta = {
-          width: originalMetadata.width,
-          height: originalMetadata.height,
-          size: `${originalMetadata.width}x${originalMetadata.height}`,
-          aspect: originalMetadata.width / originalMetadata.height,
-        };
-
-        meta = {
-          focus: focusPoint,
-          original: originalMeta,
-          small: smallMeta,
-        };
-      } catch (error) {
-        console.error('Error extracting original image metadata:', error);
-        meta = {
-          focus: focusPoint,
-          original: null,
-          small: smallMeta,
-        };
-      }
-    } else if (type === 'video') {
-      // Process video metadata
-      try {
-        const videoMeta = await this.getVideoMetadata(originalFile.buffer);
-        meta = {
-          ...videoMeta,
-          small: smallMeta,
-          focus: focusPoint,
-        };
-      } catch (error) {
-        console.error('Error extracting video metadata:', error);
-        meta = {
-          small: smallMeta,
-          focus: focusPoint,
-        };
-      }
-    }
-
-    return meta;
   }
 
   async getVideoMetadata(buffer: Buffer) {

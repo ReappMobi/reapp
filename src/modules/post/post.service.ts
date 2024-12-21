@@ -57,101 +57,60 @@ export class PostService {
   ) {}
 
   async postPublication(
-    caption: string,
-    file: Express.Multer.File,
+    content: string,
+    media: Express.Multer.File,
     institutionId: number,
     accountId: number,
   ) {
-    if (!file) {
+    if (!content) {
       throw new HttpException(
-        'File is required',
-        HttpStatus.UNPROCESSABLE_ENTITY,
+        'O conteúdo da publicação não pode estar vazio',
+        HttpStatus.BAD_REQUEST,
       );
     }
 
-    if (!caption) {
-      throw new HttpException(
-        'Caption is required',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+    let mediaId: string | null = null;
+
+    if (media) {
+      if (!media.mimetype.startsWith('image/')) {
+        throw new HttpException(
+          'Only image files are allowed for posts',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
+      }
+
+      const mediaAttachment = await this.mediaService.processMedia(media, {
+        accountId,
+      });
+
+      mediaId = mediaAttachment.mediaAttachment.id;
     }
-
-    if (!file.mimetype.startsWith('image/')) {
-      throw new HttpException(
-        'Only image files are allowed for posts',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
-    const mediaAttachment = await this.mediaService.processMedia(file, {
-      accountId,
-    });
-
-    const mediaId = mediaAttachment.mediaAttachment.id;
-
-    const media = await this.mediaService.getMediaAttachmentById(mediaId);
 
     const post = await this.prismaService.post.create({
       data: {
-        body: caption,
-        institutionId,
-        mediaId,
+        body: content,
+        institution: {
+          connect: {
+            id: institutionId,
+          },
+        },
+        media: mediaId ? { connect: { id: mediaId } } : undefined,
       },
-      select: postResponseFields,
+      select: { ...postResponseFields, media: true },
     });
-    return {
-      ...post,
-      media,
-    };
+
+    return post;
   }
 
   async getAllPosts() {
     const allPosts = await this.prismaService.post.findMany({
       select: postResponseFields,
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
-    const mediaIds = new Set<string>();
-    const avatarMediaIds = new Set<string>();
-
-    allPosts.forEach((post) => {
-      if (post.mediaId) mediaIds.add(post.mediaId);
-      if (post.institution?.account?.avatarId)
-        avatarMediaIds.add(post.institution.account.avatarId);
-    });
-
-    const [mediaResponses, avatarMediaResponses] = await Promise.all([
-      this.mediaService.getMediaAttachmentsByIds(Array.from(mediaIds)),
-      this.mediaService.getMediaAttachmentsByIds(Array.from(avatarMediaIds)),
-    ]);
-
-    const mediaMap = new Map<string, any>(
-      mediaResponses.map(({ mediaResponse }) => [
-        mediaResponse.id,
-        mediaResponse,
-      ]),
-    );
-
-    const avatarMediaMap = new Map<string, any>(
-      avatarMediaResponses.map(({ mediaResponse }) => [
-        mediaResponse.id,
-        mediaResponse,
-      ]),
-    );
-
-    const posts = allPosts.map((post) => {
-      const media = post.mediaId ? mediaMap.get(post.mediaId) : null;
-      const avatarMedia = post.institution?.account?.avatarId
-        ? avatarMediaMap.get(post.institution.account.avatarId)
-        : null;
-
-      if (post.institution?.account) {
-        post.institution.account.media = avatarMedia;
-      }
-
-      return { ...post, media };
-    });
-
-    return posts;
+    return allPosts;
   }
 
   async getPostsByInstitution(institutionId: number) {

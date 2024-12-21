@@ -29,32 +29,32 @@ export class PostController {
 
   @Post()
   @UseGuards(AuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('media'))
   async postPublication(
-    @UploadedFile() file: Express.Multer.File,
-    @Body('caption') caption: string,
+    @UploadedFile() media: Express.Multer.File,
+    @Body('content') content: string,
     @Req() req: RequestWithUser,
   ) {
     const accountId = req.user?.id;
 
     if (!accountId) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Usuário não autenticado');
     }
+
     const institution =
       await this.postService.findInstitutionByAccountId(accountId);
 
     if (!institution) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Usuário não é uma instituição');
     }
 
     const institutionId = institution.id;
-    const post = await this.postService.postPublication(
-      caption,
-      file,
+    return this.postService.postPublication(
+      content,
+      media,
       institutionId,
       accountId,
     );
-    return post;
   }
 
   @Get()
