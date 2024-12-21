@@ -110,6 +110,12 @@ export class MediaService {
     }
   }
 
+  private isSynchronous(file: Express.Multer.File): boolean {
+    const mediaType = this.getMediaTypeFromMime(file.mimetype);
+    return mediaType === 'image';
+  }
+
+
   async processMedia(file: Express.Multer.File, options: UploadOptions) {
     const { thumbnail, accountId, description, focus } = options;
 
