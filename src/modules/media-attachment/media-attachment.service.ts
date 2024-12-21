@@ -184,6 +184,15 @@ export class MediaService {
     return meta;
   }
 
+  private getTypeEnum(type: string): number {
+    const getTypeEnum = {
+      image: 1,
+      video: 2,
+      gifv: 3,
+      audio: 4,
+    };
+    return getTypeEnum[type] || 0;
+  }
 
   async processMedia(file: Express.Multer.File, options: UploadOptions) {
     const { thumbnail, accountId, description, focus } = options;
