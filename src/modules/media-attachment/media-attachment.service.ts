@@ -1,31 +1,31 @@
+import { InjectQueue } from '@nestjs/bull';
 import {
   HttpException,
   HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import * as path from 'path';
-import { PrismaService } from '../../database/prisma.service';
-import * as fs from 'fs';
-import * as sharp from 'sharp';
 import { encode } from 'blurhash';
-import { v4 as uuidv4 } from 'uuid';
-import { promisify } from 'util';
-import * as os from 'os';
-import * as ffmpeg from 'fluent-ffmpeg';
-import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import * as ffmpeg from 'fluent-ffmpeg';
 import * as mime from 'mime-types';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { promisify } from 'node:util';
+import sharp from 'sharp';
+import { v4 as uuidv4 } from 'uuid';
+import { PrismaService } from '../../database/prisma.service';
 
 import {
-  IMAGE_LIMIT,
-  VIDEO_LIMIT,
-  IMAGE_MIME_TYPES,
-  VIDEO_MIME_TYPES,
   AUDIO_MIME_TYPES,
-  SUPPORTED_MIME_TYPES,
-  MAX_VIDEO_MATRIX_LIMIT,
+  IMAGE_LIMIT,
+  IMAGE_MIME_TYPES,
   MAX_VIDEO_FRAME_RATE,
+  MAX_VIDEO_MATRIX_LIMIT,
+  SUPPORTED_MIME_TYPES,
+  VIDEO_LIMIT,
+  VIDEO_MIME_TYPES,
 } from './media-attachment.constants';
 
 interface VideoMetadata {
@@ -54,6 +54,7 @@ export class MediaService {
     private readonly prismaService: PrismaService,
     @InjectQueue('media-processing') private mediaQueue: Queue,
   ) {}
+
   async processMedia(
     file: Express.Multer.File,
     options: {
