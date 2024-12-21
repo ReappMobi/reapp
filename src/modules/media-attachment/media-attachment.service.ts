@@ -138,6 +138,52 @@ export class MediaService {
     return await sharp(file.buffer).toFile(filePath);
   }
 
+  private async createMediaMetadata(
+    file: Express.Multer.File,
+    focus: string,
+    type: string,
+  ) {
+    let meta = {};
+    const focusPoint = this.parseFocus(focus);
+
+    if (type === 'image' || type === 'gifv') {
+      try {
+        const originalMetadata = await sharp(file.buffer).metadata();
+        const originalMeta = {
+          width: originalMetadata.width,
+          height: originalMetadata.height,
+          size: `${originalMetadata.width}x${originalMetadata.height}`,
+          aspect: originalMetadata.width / originalMetadata.height,
+        };
+
+        meta = {
+          focus: focusPoint,
+          original: originalMeta,
+        };
+      } catch (error) {
+        console.error('Error extracting original image metadata:', error);
+        meta = {
+          focus: focusPoint,
+        };
+      }
+    } else if (type === 'video') {
+      try {
+        const videoMeta = await this.getVideoMetadata(file.buffer);
+        meta = {
+          ...videoMeta,
+          focus: focusPoint,
+        };
+      } catch (error) {
+        console.error('Error extracting video metadata:', error);
+        meta = {
+          focus: focusPoint,
+        };
+      }
+    }
+
+    return meta;
+  }
+
 
   async processMedia(file: Express.Multer.File, options: UploadOptions) {
     const { thumbnail, accountId, description, focus } = options;
