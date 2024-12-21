@@ -307,6 +307,8 @@ export class MediaService {
     }
 
     this.validateMediaFile(file);
+    this.validateThumbnailFile(thumbnail);
+
     const isSynchronous = this.isSynchronous(file);
 
     if (isSynchronous) {
@@ -316,17 +318,16 @@ export class MediaService {
         description,
         focus,
       });
-      return { isSynchronous: true, mediaAttachment };
-    } else {
-      const mediaAttachment = await this.enqueueMediaProcessing(file, {
-        thumbnail,
-        accountId,
-        description,
-        focus,
-      });
-
-      return { isSynchronous: false, mediaAttachment };
+      return { isSynchronous, mediaAttachment };
     }
+
+    const mediaAttachment = await this.enqueueMediaProcessing(file, {
+      thumbnail,
+      accountId,
+      description,
+      focus,
+    });
+    return { isSynchronous, mediaAttachment };
   }
 
   async deleteMediaAttachment(id: string): Promise<void> {
