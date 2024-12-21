@@ -3,15 +3,35 @@ import { MediaService } from '../media-attachment.service';
 import { PrismaService } from '../../../database/prisma.service';
 import { Queue } from 'bull';
 import { HttpException } from '@nestjs/common';
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import * as sharp from 'sharp';
 import * as mime from 'mime-types';
 
-jest.mock('fs');
-jest.mock('sharp');
+jest.mock('fs', () => ({
+  mkdirSync: jest.fn(),
+  writeFileSync: jest.fn(),
+  existsSync: jest.fn().mockReturnValue(false),
+}));
+
+jest.mock('sharp', () =>
+  jest.fn().mockReturnValue({
+    raw: jest.fn().mockReturnThis(),
+    ensureAlpha: jest.fn().mockReturnThis(),
+    resize: jest.fn().mockReturnThis(),
+    toBuffer: jest.fn().mockResolvedValue({
+      data: new Uint8ClampedArray(32 * 32 * 4),
+      info: { width: 32, height: 32, channels: 4 },
+    }),
+    toFile: jest.fn().mockReturnValue({
+      size: 512,
+    }),
+  }),
+);
+
 jest.mock('uuid', () => ({
   v4: jest.fn().mockReturnValue('mock-uuid'),
 }));
+
 jest.mock('bull');
 jest.mock('fluent-ffmpeg');
 jest.mock('mime-types', () => ({
@@ -20,9 +40,9 @@ jest.mock('mime-types', () => ({
 }));
 
 describe('MediaService', () => {
-  let service: MediaService;
-  let prismaService: PrismaService;
-  let mediaQueue: Queue;
+  let service = null;
+  let prismaService = null;
+  let mediaQueue = null;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -69,7 +89,7 @@ describe('MediaService', () => {
         HttpException,
       );
       await expect(service.processMedia(file, options)).rejects.toThrow(
-        'File is required',
+        'O arquivo é obrigatório',
       );
     });
 
@@ -91,7 +111,7 @@ describe('MediaService', () => {
         HttpException,
       );
       await expect(service.processMedia(file, options)).rejects.toThrow(
-        'Account ID is required',
+        'A conta é obrigatória',
       );
     });
 
@@ -113,7 +133,7 @@ describe('MediaService', () => {
         HttpException,
       );
       await expect(service.processMedia(file, options)).rejects.toThrow(
-        'Invalid file type for main file',
+        'Formato de arquivo não suportado',
       );
     });
 
@@ -135,7 +155,7 @@ describe('MediaService', () => {
         HttpException,
       );
       await expect(service.processMedia(file, options)).rejects.toThrow(
-        'Main file size exceeds the limit',
+        'Tamanho do arquivo excede o limite',
       );
     });
 
@@ -255,8 +275,8 @@ describe('MediaService', () => {
         focus: '0.0,0.0',
       };
 
-      (fs.mkdirSync as jest.Mock).mockReturnValue(undefined);
-      (fs.writeFileSync as jest.Mock).mockReturnValue(undefined);
+      jest.spyOn(fs, 'mkdirSync').mockResolvedValue('mock-dir' as never);
+      jest.spyOn(fs, 'writeFileSync').mockResolvedValue(undefined as never);
       (mime.extension as jest.Mock).mockReturnValue('mp4');
 
       prismaService.mediaAttachment.create = jest.fn().mockResolvedValue({
@@ -297,49 +317,52 @@ describe('MediaService', () => {
       } as Express.Multer.File;
 
       const options = {
-        thumbnail: undefined,
+        thumbnail: null,
         accountId: 1,
         description: 'Test image',
         focus: '0.0,0.0',
       };
 
-      (fs.mkdirSync as jest.Mock).mockReturnValue(undefined);
-      (fs.writeFileSync as jest.Mock).mockReturnValue(undefined);
-      (fs.statSync as jest.Mock).mockReturnValue({ size: 512 });
       (mime.extension as jest.Mock).mockReturnValue('jpg');
-
-      jest.spyOn(service, 'processImage').mockResolvedValue(undefined);
-      jest.spyOn(service, 'generateMeta').mockResolvedValue({});
+      jest.spyOn(fs, 'mkdirSync').mockResolvedValue(undefined as never);
+      jest.spyOn(service, 'createMediaMetadata').mockResolvedValue({});
       jest.spyOn(service, 'generateBlurhash').mockResolvedValue('blurhash');
+      jest.spyOn(service, 'processImage').mockResolvedValue(sharp().toFile);
 
       prismaService.mediaAttachment.create = jest.fn().mockResolvedValue({
         id: 'mock-uuid',
+        type: 'image',
+        remoteUrl: 'mock-url',
+        blurhash: 'blurhash',
         description: options.description,
-        remoteUrl: '',
+        fileMeta: {},
+        thumbnailFileName: null,
+        thumbnailRemoteUrl: null,
+        thumbnailContentType: null,
       });
 
-      const result = await service.processSynchronously(file, options);
+      const actual = await service.processSynchronously(file, options);
 
       expect(fs.mkdirSync).toHaveBeenCalled();
-      expect(fs.writeFileSync).toHaveBeenCalled();
       expect(service.processImage).toHaveBeenCalled();
-      expect(service.generateMeta).toHaveBeenCalled();
+      expect(service.createMediaMetadata).toHaveBeenCalled();
       expect(service.generateBlurhash).toHaveBeenCalled();
       expect(prismaService.mediaAttachment.create).toHaveBeenCalled();
 
-      expect(result).toEqual({
+      const expectedMediaAttachment = {
         id: 'mock-uuid',
         type: 'image',
-        url: expect.any(String),
-        preview_url: expect.any(String),
-        remote_url: null,
-        text_url: expect.any(String),
-        meta: {},
-        description: options.description,
+        remoteUrl: expect.any(String),
+        description: expect.any(String),
         blurhash: 'blurhash',
-      });
-    });
+        fileMeta: expect.any(Object),
+        thumbnailFileName: null,
+        thumbnailRemoteUrl: null,
+        thumbnailContentType: null,
+      };
 
+      expect(actual).toEqual(expectedMediaAttachment);
+    });
     it('should throw error for unsupported media type', async () => {
       const file = {
         mimetype: 'video/mp4',
@@ -359,7 +382,7 @@ describe('MediaService', () => {
         HttpException,
       );
       await expect(service.processSynchronously(file, options)).rejects.toThrow(
-        'Unsupported media type for synchronous processing',
+        'O processamento síncrono é suportado apenas para imagens',
       );
     });
   });
@@ -437,40 +460,30 @@ describe('MediaService', () => {
 
   describe('determineMediaType', () => {
     it('should return "image" for image mimetypes', () => {
-      expect(service.determineMediaType('image/jpeg')).toBe('image');
-      expect(service.determineMediaType('image/png')).toBe('image');
+      expect(service.getMediaTypeFromMime('image/jpeg')).toBe('image');
+      expect(service.getMediaTypeFromMime('image/png')).toBe('image');
     });
 
     it('should return "video" for video mimetypes', () => {
-      expect(service.determineMediaType('video/mp4')).toBe('video');
+      expect(service.getMediaTypeFromMime('video/mp4')).toBe('video');
     });
 
     it('should return "audio" for audio mimetypes', () => {
-      expect(service.determineMediaType('audio/mpeg')).toBe('audio');
+      expect(service.getMediaTypeFromMime('audio/mpeg')).toBe('audio');
     });
 
     it('should return "gifv" for image/gif mimetype', () => {
-      expect(service.determineMediaType('image/gif')).toBe('gifv');
+      expect(service.getMediaTypeFromMime('image/gif')).toBe('gifv');
     });
 
     it('should return "unknown" for unsupported mimetypes', () => {
-      expect(service.determineMediaType('application/pdf')).toBe('unknown');
+      expect(service.getMediaTypeFromMime('application/pdf')).toBe('unknown');
     });
   });
 
   describe('generateBlurhash', () => {
     it('should generate a blurhash string', async () => {
       const imageBuffer = Buffer.from('image data');
-
-      (sharp as any).mockReturnValue({
-        raw: jest.fn().mockReturnThis(),
-        ensureAlpha: jest.fn().mockReturnThis(),
-        resize: jest.fn().mockReturnThis(),
-        toBuffer: jest.fn().mockResolvedValue({
-          data: new Uint8ClampedArray(32 * 32 * 4),
-          info: { width: 32, height: 32, channels: 4 },
-        }),
-      });
 
       const blurhash = await service.generateBlurhash(imageBuffer);
 
