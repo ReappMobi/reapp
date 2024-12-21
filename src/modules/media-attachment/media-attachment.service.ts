@@ -48,6 +48,13 @@ interface VideoMetadata {
   };
 }
 
+type UploadOptions = {
+  thumbnail?: Express.Multer.File;
+  accountId: number;
+  description?: string;
+  focus?: string;
+};
+
 @Injectable()
 export class MediaService {
   constructor(
@@ -55,16 +62,9 @@ export class MediaService {
     @InjectQueue('media-processing') private mediaQueue: Queue,
   ) {}
 
-  async processMedia(
-    file: Express.Multer.File,
-    options: {
-      thumbnail?: Express.Multer.File;
-      accountId: number;
-      description?: string;
-      focus?: string;
-    },
-  ) {
+  async processMedia(file: Express.Multer.File, options: UploadOptions) {
     const { thumbnail, accountId, description, focus } = options;
+
     if (!file) {
       throw new HttpException(
         'File is required',
