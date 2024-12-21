@@ -9,23 +9,23 @@ import { encode } from 'blurhash';
 import { Queue } from 'bull';
 import * as ffmpeg from 'fluent-ffmpeg';
 import * as mime from 'mime-types';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { promisify } from 'node:util';
-import sharp from 'sharp';
+import * as sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../../database/prisma.service';
 
 import {
   AUDIO_MIME_TYPES,
   MAX_IMAGE_SIZE,
-  SUPPORTED_IMAGE_MIME_TYPES,
+  MAX_THUMBNAIL_SIZE,
   MAX_VIDEO_FRAME_RATE,
   MAX_VIDEO_MATRIX_LIMIT,
-  SUPPORTED_MIME_TYPES,
-  MAX_THUMBNAIL_SIZE,
   MAX_VIDEO_SIZE,
+  SUPPORTED_IMAGE_MIME_TYPES,
+  SUPPORTED_MIME_TYPES,
   VIDEO_MIME_TYPES,
 } from './media-attachment.constants';
 
@@ -285,6 +285,17 @@ export class MediaService {
         fileStorageSchemaVersion: 1,
         ...thumbnailData,
       },
+      select: {
+        id: true,
+        type: true,
+        remoteUrl: true,
+        description: true,
+        blurhash: true,
+        fileMeta: true,
+        thumbnailFileName: true,
+        thumbnailRemoteUrl: true,
+        thumbnailContentType: true,
+      },
     });
 
     return mediaAttachment;
@@ -385,6 +396,7 @@ export class MediaService {
       'temp_uploads',
       mediaId,
     );
+
     fs.mkdirSync(tempDir, { recursive: true });
     const originalExtension = mime.extension(file.mimetype);
     const originalExtensionWithDot = originalExtension
