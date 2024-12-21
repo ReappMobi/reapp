@@ -431,7 +431,7 @@ export class MediaService {
     },
   ) {
     const { thumbnail, accountId, description, focus } = options;
-    this.validateFile(file);
+    this.validateMediaFile(file);
 
     const mediaId = uuidv4();
     const tempDir = path.join(
@@ -466,7 +466,7 @@ export class MediaService {
       fs.writeFileSync(thumbnailFilePath, thumbnail.buffer);
     }
 
-    const type = this.determineMediaType(file.mimetype);
+    const type = this.getMediaTypeFromMime(file.mimetype);
 
     const mediaAttachment = await this.prismaService.mediaAttachment.create({
       data: {
