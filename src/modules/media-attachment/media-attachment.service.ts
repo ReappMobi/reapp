@@ -294,20 +294,19 @@ export class MediaService {
 
     if (!file) {
       throw new HttpException(
-        'File is required',
+        'O arquivo é obrigatório',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
 
     if (!accountId) {
       throw new HttpException(
-        'Account ID is required',
+        'A conta é obrigatória',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
 
-    // Move validation logic here
-    this.validateFiles(file, thumbnail);
+    this.validateMediaFile(file);
     const isSynchronous = this.isSynchronous(file);
 
     if (isSynchronous) {
