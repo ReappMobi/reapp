@@ -193,6 +193,101 @@ export class MediaService {
     };
     return getTypeEnum[type] || 0;
   }
+  private async processSynchronously(
+    file: Express.Multer.File,
+    options: UploadOptions,
+  ) {
+    const fileType = this.getFileType(file.mimetype);
+
+    if (fileType !== 'image') {
+      throw new HttpException(
+        'O processamento síncrono é suportado apenas para imagens',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const { thumbnail, accountId, description, focus } = options;
+
+    const mediaId = uuidv4();
+    const uploadDir =
+      process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+
+    const mediaDir = path.join(uploadDir, mediaId);
+
+    fs.mkdirSync(mediaDir, { recursive: true });
+
+    const originalExtension = mime.extension(file.mimetype);
+
+    const extension = originalExtension && `.${originalExtension}`;
+
+    const originalFileName = `original${extension}`;
+
+    const originalFilePath = path.join(mediaDir, originalFileName);
+
+    const fileInfo = await this.processImage(file, originalFilePath);
+
+    const fileBlurhash = await this.generateBlurhash(file.buffer);
+
+    const fileMeta = await this.createMediaMetadata(file, focus, fileType);
+
+    const uploadBaseUrl = `${process.env.BASE_URL}/uploads`;
+    const mediaUploadUrl = `${uploadBaseUrl}/${mediaId}/`;
+    const mediaUrl = `${mediaUploadUrl}/${originalFileName}`;
+
+    let thumbnailData = {};
+    if (thumbnail) {
+      const thumbnailFileExtension = mime.extension(thumbnail.mimetype);
+      const thumbnailExtension = thumbnailFileExtension
+        ? `.${thumbnailFileExtension}`
+        : '.png';
+
+      const thumbnailFileName = `thumbnail.${thumbnailExtension}`;
+      const thumbnailFilePath = path.join(mediaDir, thumbnailFileName);
+      const thumbnailUpdatedAt: Date = new Date();
+      const thumbnailContentType: string = thumbnail
+        ? thumbnail.mimetype
+        : 'image/png';
+      const thumb = await this.processImage(thumbnail, thumbnailFilePath, true);
+      const thumbnailFileSize = thumb.size;
+      const thumbnailMeta = await this.createMediaMetadata(
+        thumbnail,
+        focus,
+        'image',
+      );
+
+      const thumbnailRemoteUrl = `${uploadBaseUrl}/${mediaId}/thumbnail.${thumbnailExtension}`;
+      fileMeta['small'] = thumbnailMeta;
+
+      thumbnailData = {
+        thumbnailFileName,
+        thumbnailContentType,
+        thumbnailFileSize,
+        thumbnailUpdatedAt,
+        thumbnailRemoteUrl,
+      };
+    }
+
+    const mediaAttachment = await this.prismaService.mediaAttachment.create({
+      data: {
+        id: mediaId,
+        fileFileName: file.originalname,
+        fileContentType: file.mimetype,
+        fileFileSize: fileInfo.size,
+        accountId,
+        remoteUrl: mediaUrl,
+        shortcode: uuidv4(),
+        type: this.getTypeEnum(fileType),
+        fileMeta: fileMeta,
+        description: description,
+        blurhash: fileBlurhash,
+        processing: 2,
+        fileStorageSchemaVersion: 1,
+        ...thumbnailData,
+      },
+    });
+
+    return mediaAttachment;
+  }
 
   async processMedia(file: Express.Multer.File, options: UploadOptions) {
     const { thumbnail, accountId, description, focus } = options;
