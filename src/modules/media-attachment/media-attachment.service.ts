@@ -19,12 +19,13 @@ import { PrismaService } from '../../database/prisma.service';
 
 import {
   AUDIO_MIME_TYPES,
-  IMAGE_LIMIT,
-  IMAGE_MIME_TYPES,
+  MAX_IMAGE_SIZE,
+  SUPPORTED_IMAGE_MIME_TYPES,
   MAX_VIDEO_FRAME_RATE,
   MAX_VIDEO_MATRIX_LIMIT,
   SUPPORTED_MIME_TYPES,
-  VIDEO_LIMIT,
+  MAX_THUMBNAIL_SIZE,
+  MAX_VIDEO_SIZE,
   VIDEO_MIME_TYPES,
 } from './media-attachment.constants';
 
@@ -61,6 +62,35 @@ export class MediaService {
     private readonly prismaService: PrismaService,
     @InjectQueue('media-processing') private mediaQueue: Queue,
   ) {}
+
+  private validateMediaFile(file: Express.Multer.File) {
+    if (!file || !file.mimetype) {
+      throw new HttpException(
+        'Arquivo inválido',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    // Only include image or video files
+    if (!SUPPORTED_MIME_TYPES.includes(file.mimetype)) {
+      throw new HttpException(
+        'Formato de arquivo não suportado',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    let fileSizeLimit = MAX_VIDEO_SIZE;
+    if (SUPPORTED_IMAGE_MIME_TYPES.includes(file.mimetype)) {
+      fileSizeLimit = MAX_IMAGE_SIZE;
+    }
+
+    if (file.size > fileSizeLimit) {
+      throw new HttpException(
+        'Tamanho do arquivo excede o limite',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+  }
 
   async processMedia(file: Express.Multer.File, options: UploadOptions) {
     const { thumbnail, accountId, description, focus } = options;
