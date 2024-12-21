@@ -125,6 +125,19 @@ export class MediaService {
     return 'unknown';
   }
 
+  private async processImage(
+    file: Express.Multer.File,
+    filePath: string,
+    isThumbnail = false,
+  ): Promise<sharp.OutputInfo> {
+    if (isThumbnail) {
+      return await sharp(file.buffer)
+        .resize(480, 270, { fit: 'inside' })
+        .toFile(filePath);
+    }
+    return await sharp(file.buffer).toFile(filePath);
+  }
+
 
   async processMedia(file: Express.Multer.File, options: UploadOptions) {
     const { thumbnail, accountId, description, focus } = options;
