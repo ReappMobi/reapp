@@ -193,6 +193,7 @@ export class MediaService {
     };
     return getTypeEnum[type] || 0;
   }
+
   private async processSynchronously(
     file: Express.Multer.File,
     options: UploadOptions,
