@@ -65,20 +65,7 @@ describe('PostService', () => {
   });
 
   describe('postPublication', () => {
-    it('should throw an error if file is missing', async () => {
-      const caption = 'Test caption';
-      const institutionId = 1;
-      const accountId = 1;
-
-      await expect(
-        service.postPublication(caption, null, institutionId, accountId),
-      ).rejects.toThrow(HttpException);
-      await expect(
-        service.postPublication(caption, null, institutionId, accountId),
-      ).rejects.toThrow('File is required');
-    });
-
-    it('should throw an error if caption is missing', async () => {
+    it('should throw an error if content is missing', async () => {
       const mockFile: Express.Multer.File = {
         mimetype: 'image/jpeg',
         buffer: Buffer.from(''),
@@ -100,7 +87,7 @@ describe('PostService', () => {
       ).rejects.toThrow(HttpException);
       await expect(
         service.postPublication(null, mockFile, institutionId, accountId),
-      ).rejects.toThrow('Caption is required');
+      ).rejects.toThrow('O conteúdo da publicação não pode estar vazio');
     });
 
     it('should create a post with media when valid data is provided', async () => {
@@ -148,11 +135,18 @@ describe('PostService', () => {
       expect(mediaService.processMedia).toHaveBeenCalledWith(mockFile, {
         accountId,
       });
+
       expect(prismaService.post.create).toHaveBeenCalledWith({
         data: {
           body: 'Test caption',
-          institutionId: 1,
-          mediaId: 'mock-media-id',
+          institution: {
+            connect: {
+              id: institutionId,
+            },
+          },
+          media: mediaResponse.mediaAttachment.id
+            ? { connect: { id: mediaResponse.mediaAttachment.id } }
+            : undefined,
         },
         select: {
           body: true,
@@ -193,10 +187,7 @@ describe('PostService', () => {
           updatedAt: true,
         },
       });
-      expect(result).toEqual({
-        ...createdPost,
-        media,
-      });
+      expect(result).toEqual(createdPost);
     });
   });
 
@@ -253,54 +244,11 @@ describe('PostService', () => {
 
       prismaService.post.findMany = jest.fn().mockResolvedValue(mockPosts);
 
-      mediaService.getMediaAttachmentsByIds = jest
-        .fn()
-        .mockImplementation((mediaIds: string[]) => {
-          if (mediaIds.includes('media-1') || mediaIds.includes('media-2')) {
-            return Promise.resolve(mediaResponses);
-          }
-          if (mediaIds.includes('avatar-1') || mediaIds.includes('avatar-2')) {
-            return Promise.resolve(avatarMediaResponses);
-          }
-          return Promise.resolve([]);
-        });
-
       const result = await service.getAllPosts();
 
       expect(prismaService.post.findMany).toHaveBeenCalled();
 
-      expect(mediaService.getMediaAttachmentsByIds).toHaveBeenCalledWith([
-        'media-1',
-        'media-2',
-      ]);
-
-      expect(mediaService.getMediaAttachmentsByIds).toHaveBeenCalledWith([
-        'avatar-1',
-        'avatar-2',
-      ]);
-
-      expect(result).toEqual([
-        {
-          ...mockPosts[0],
-          media: mediaResponses[0].mediaResponse,
-          institution: {
-            account: {
-              avatarId: 'avatar-1',
-              media: avatarMediaResponses[0].mediaResponse,
-            },
-          },
-        },
-        {
-          ...mockPosts[1],
-          media: mediaResponses[1].mediaResponse,
-          institution: {
-            account: {
-              avatarId: 'avatar-2',
-              media: avatarMediaResponses[1].mediaResponse,
-            },
-          },
-        },
-      ]);
+      expect(result).toEqual([mockPosts[0], mockPosts[1]]);
     });
   });
 
