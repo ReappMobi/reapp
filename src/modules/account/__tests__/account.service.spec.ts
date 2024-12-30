@@ -368,11 +368,11 @@ describe('AccountService', () => {
       expect(result).toEqual(donor);
     });
 
-    it('should throw not found if no donor account', async () => {
+    it('should return nothing if no donor account', async () => {
       mockPrismaService.donor.findUnique.mockResolvedValue(null);
-      await expect(service.findOneDonor(99)).rejects.toThrow(
-        'conta do doador não encontrada',
-      );
+      const result = await service.findOneDonor(99);
+
+      expect(result).toBeNull();
     });
   });
 
@@ -428,7 +428,7 @@ describe('AccountService', () => {
   });
 
   describe('update', () => {
-    it('should update account data and media', async () => {
+    it('should update donor account data and media', async () => {
       const account = {
         id: 1,
         accountType: AccountType.DONOR,
@@ -436,17 +436,11 @@ describe('AccountService', () => {
         institution: null,
         donor: {},
       };
-      mockPrismaService.account.findUnique.mockResolvedValue(account);
 
+      mockPrismaService.account.findUnique.mockResolvedValue(account);
       mockMediaService.deleteMediaAttachment.mockResolvedValue(undefined);
       const mediaAttachmentMock = { mediaAttachment: { id: 'new-media-id' } };
       mockMediaService.processMedia.mockResolvedValue(mediaAttachmentMock);
-      mockMediaService.getMediaAttachmentById.mockResolvedValue({
-        mediaResponse: {
-          id: 'new-media-id',
-          url: 'http://example.com/media.jpg',
-        },
-      });
 
       mockPrismaService.account.update.mockResolvedValue({
         id: 1,
@@ -463,24 +457,142 @@ describe('AccountService', () => {
 
       const updateDto: UpdateAccountDto = { name: 'Updated Name' };
       const file = {} as Express.Multer.File;
+
       const result = await service.update(1, updateDto, file);
 
-      expect(prismaService.account.findUnique).toHaveBeenCalledWith({
+      expect(mockPrismaService.account.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
         include: { institution: true, donor: true },
       });
-      expect(mediaService.deleteMediaAttachment).toHaveBeenCalledWith(
+
+      expect(mockMediaService.deleteMediaAttachment).toHaveBeenCalledWith(
         'old-media-id',
       );
-      expect(mediaService.processMedia).toHaveBeenCalled();
-      expect(prismaService.account.update).toHaveBeenCalledWith({
+
+      expect(mockMediaService.processMedia).toHaveBeenCalledWith(file, {
+        accountId: 1,
+      });
+
+      expect(mockPrismaService.account.update).toHaveBeenCalledWith({
         where: { id: 1 },
         data: { name: 'Updated Name', avatarId: 'new-media-id' },
         select: expect.any(Object),
       });
-      expect(result.media).toEqual({
-        id: 'new-media-id',
-        url: 'http://example.com/media.jpg',
+
+      expect(result).toEqual({
+        id: 1,
+        email: 'user@example.com',
+        name: 'Updated Name',
+        accountType: AccountType.DONOR,
+        donor: { donations: [] },
+        avatarId: 'new-media-id',
+        media: null,
+        institution: null,
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+      });
+    });
+
+    it('should update institution account data with category', async () => {
+      const account = {
+        id: 2,
+        accountType: AccountType.INSTITUTION,
+        avatarId: 'old-media-id',
+        institution: {
+          id: 1,
+          phone: '123456789',
+          category: { id: 1, name: 'Old Category' },
+        },
+        donor: null,
+      };
+
+      const newCategory = { id: 2, name: 'New Category' };
+
+      mockPrismaService.account.findUnique.mockResolvedValue(account);
+      mockMediaService.deleteMediaAttachment.mockResolvedValue(undefined);
+      const mediaAttachmentMock = { mediaAttachment: { id: 'new-media-id' } };
+      mockMediaService.processMedia.mockResolvedValue(mediaAttachmentMock);
+      mockPrismaService.category.findFirst.mockResolvedValue(null);
+      mockPrismaService.category.create.mockResolvedValue(newCategory);
+
+      mockPrismaService.account.update.mockResolvedValue({
+        id: 2,
+        email: 'institution@example.com',
+        name: 'Updated Institution',
+        accountType: AccountType.INSTITUTION,
+        institution: {
+          id: 1,
+          phone: '987654321',
+          category: newCategory,
+        },
+        avatarId: 'new-media-id',
+        media: null,
+        donor: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const updateDto: UpdateAccountDto = {
+        name: 'Updated Institution',
+        phone: '987654321',
+        category: 'New Category',
+      };
+
+      const file = {} as Express.Multer.File;
+
+      const result = await service.update(2, updateDto, file);
+
+      expect(mockPrismaService.account.findUnique).toHaveBeenCalledWith({
+        where: { id: 2 },
+        include: { institution: true, donor: true },
+      });
+
+      expect(mockMediaService.deleteMediaAttachment).toHaveBeenCalledWith(
+        'old-media-id',
+      );
+
+      expect(mockMediaService.processMedia).toHaveBeenCalledWith(file, {
+        accountId: 2,
+      });
+
+      expect(mockPrismaService.category.findFirst).toHaveBeenCalledWith({
+        where: { name: 'New Category' },
+      });
+
+      expect(mockPrismaService.category.create).toHaveBeenCalledWith({
+        data: { name: 'New Category' },
+      });
+
+      expect(mockPrismaService.account.update).toHaveBeenCalledWith({
+        where: { id: 2 },
+        data: {
+          name: 'Updated Institution',
+          avatarId: 'new-media-id',
+          institution: {
+            update: {
+              phone: '987654321',
+              category: { connect: { id: newCategory.id } },
+            },
+          },
+        },
+        select: expect.any(Object),
+      });
+
+      expect(result).toEqual({
+        id: 2,
+        email: 'institution@example.com',
+        name: 'Updated Institution',
+        accountType: AccountType.INSTITUTION,
+        institution: {
+          id: 1,
+          phone: '987654321',
+          category: newCategory,
+        },
+        avatarId: 'new-media-id',
+        media: null,
+        donor: null,
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
       });
     });
 
