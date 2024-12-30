@@ -260,13 +260,14 @@ export class AccountService {
   }
 
   async findAllInstitutions() {
-    const institutions = await this.prismaService.institution.findMany({
+    const allInstitutions = await this.prismaService.institution.findMany({
       select: {
         id: true,
         cnpj: true,
         phone: true,
         category: {
           select: {
+            id: true,
             name: true,
           },
         },
@@ -283,7 +284,7 @@ export class AccountService {
       },
     });
 
-    return institutions;
+    return allInstitutions;
   }
 
   async findOneInstitution(id: number) {
@@ -339,14 +340,6 @@ export class AccountService {
         donations: true,
       },
     });
-
-    if (!donorAccount) {
-      throw new HttpException(
-        'conta do doador não encontrada',
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
     return donorAccount;
   }
 
@@ -392,7 +385,7 @@ export class AccountService {
   async update(
     accountId: number,
     updateAccountDto: UpdateAccountDto,
-    file?: Express.Multer.File,
+    media?: Express.Multer.File,
   ) {
     const account = await this.prismaService.account.findUnique({
       where: { id: accountId },
@@ -413,12 +406,12 @@ export class AccountService {
     }
 
     const mediaId = account.avatarId;
-    if (file) {
+    if (media) {
       if (mediaId) {
         await this.mediaService.deleteMediaAttachment(mediaId);
       }
 
-      const mediaAttachment = await this.mediaService.processMedia(file, {
+      const mediaAttachment = await this.mediaService.processMedia(media, {
         accountId,
       });
       data.avatarId = mediaAttachment.mediaAttachment.id;
@@ -468,14 +461,6 @@ export class AccountService {
           : donorResponseFields,
     });
 
-    const media = data.avatarId
-      ? (await this.mediaService.getMediaAttachmentById(data.avatarId))
-          .mediaResponse
-      : null;
-
-    return {
-      ...updatedAccount,
-      media,
-    };
+    return updatedAccount;
   }
 }
