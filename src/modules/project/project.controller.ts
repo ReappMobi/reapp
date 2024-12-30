@@ -39,7 +39,7 @@ export class ProjectController {
   @UseInterceptors(FileInterceptor('file'))
   @HttpCode(HttpStatus.CREATED)
   async postProject(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() media: Express.Multer.File,
     @Body() createProjectDto: CreateProjectDto,
     @Req() req: RequestWithUser,
   ) {
@@ -58,7 +58,7 @@ export class ProjectController {
     const project = await this.projectService.postProjectService({
       description,
       name,
-      file,
+      media,
       subtitle,
       category,
       institutionId: institution.id,
