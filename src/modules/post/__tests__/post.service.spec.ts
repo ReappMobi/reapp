@@ -212,36 +212,6 @@ describe('PostService', () => {
         },
       ];
 
-      const mediaResponses = [
-        {
-          mediaResponse: {
-            id: 'media-1',
-            url: 'http://example.com/media1.jpg',
-          },
-        },
-        {
-          mediaResponse: {
-            id: 'media-2',
-            url: 'http://example.com/media2.jpg',
-          },
-        },
-      ];
-
-      const avatarMediaResponses = [
-        {
-          mediaResponse: {
-            id: 'avatar-1',
-            url: 'http://example.com/avatar1.jpg',
-          },
-        },
-        {
-          mediaResponse: {
-            id: 'avatar-2',
-            url: 'http://example.com/avatar2.jpg',
-          },
-        },
-      ];
-
       prismaService.post.findMany = jest.fn().mockResolvedValue(mockPosts);
 
       const result = await service.getAllPosts();
