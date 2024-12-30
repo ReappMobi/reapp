@@ -63,7 +63,7 @@ export class AccountController {
   findOneDonor(@Param('id') id: string) {
     return this.accountService.findOneDonor(+id);
   }
-  
+
   @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @Req() request: any) {
