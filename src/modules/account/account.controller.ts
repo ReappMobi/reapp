@@ -34,30 +34,36 @@ export class AccountController {
     return this.accountService.createWithGoogle(createAccountGoogleDto);
   }
 
+  @UseGuards(AuthGuard)
   @Get()
   findAll() {
     return this.accountService.findAll();
   }
 
+  @UseGuards(AuthGuard)
   @Get('institution')
   findAllInstitutions() {
     return this.accountService.findAllInstitutions();
   }
 
+  @UseGuards(AuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.accountService.findOne(+id);
   }
 
+  @UseGuards(AuthGuard)
   @Get('institution/:id')
   findOneInsitution(@Param('id') id: string) {
     return this.accountService.findOneInstitution(+id);
   }
 
+  @UseGuards(AuthGuard)
   @Get('donor/:id')
   findOneDonor(@Param('id') id: string) {
     return this.accountService.findOneDonor(+id);
   }
+  
   @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @Req() request: any) {
@@ -71,9 +77,9 @@ export class AccountController {
   async update(
     @Req() request: any,
     @Body() updateAccountDto: UpdateAccountDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() media: Express.Multer.File,
   ) {
     const accountId = request.user.id;
-    return this.accountService.update(accountId, updateAccountDto, file);
+    return this.accountService.update(accountId, updateAccountDto, media);
   }
 }
