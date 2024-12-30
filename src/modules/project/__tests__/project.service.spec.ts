@@ -75,7 +75,7 @@ describe('ProjectService', () => {
         description: 'Test description',
         name: 'Test Project',
         category: 'Test Category',
-        file: null,
+        media: null,
         subtitle: 'Test Subtitle',
         institutionId: 1,
         accountId: 1,
@@ -85,7 +85,39 @@ describe('ProjectService', () => {
         HttpException,
       );
       await expect(service.postProjectService(data)).rejects.toThrow(
-        'File is required',
+        'Um arquivo de mídia é obrigatório para o projeto',
+      );
+    });
+
+    it('should throw an error if file is not an image', async () => {
+      const mockFile: Express.Multer.File = {
+        mimetype: 'application/pdf',
+        buffer: Buffer.from(''),
+        originalname: 'test.pdf',
+        fieldname: 'file',
+        encoding: '7bit',
+        size: 1024,
+        stream: null,
+        destination: '',
+        filename: '',
+        path: '',
+      };
+
+      const data: PostProjectData = {
+        description: 'Test description',
+        name: 'Test Project',
+        category: 'Test Category',
+        media: mockFile,
+        subtitle: 'Test Subtitle',
+        institutionId: 1,
+        accountId: 1,
+      };
+
+      await expect(service.postProjectService(data)).rejects.toThrow(
+        HttpException,
+      );
+      await expect(service.postProjectService(data)).rejects.toThrow(
+        'Apenas arquivos de imagem são permitidos para projetos',
       );
     });
 
@@ -107,7 +139,7 @@ describe('ProjectService', () => {
         description: 'Test description',
         name: 'Test Project',
         category: 'Test Category',
-        file: mockFile,
+        media: mockFile,
         subtitle: 'Test Subtitle',
         institutionId: 1,
         accountId: 1,
@@ -115,9 +147,6 @@ describe('ProjectService', () => {
 
       const existingCategory = { id: 1, name: 'Test Category' };
       const mediaAttachment = { mediaAttachment: { id: 'media-id' } };
-      const media = {
-        mediaResponse: { id: 'media-id', url: 'http://example.com/media.jpg' },
-      };
       const createdProject = {
         id: 1,
         description: data.description,
@@ -134,7 +163,6 @@ describe('ProjectService', () => {
         .fn()
         .mockResolvedValue(existingCategory);
       mediaService.processMedia = jest.fn().mockResolvedValue(mediaAttachment);
-      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue(media);
       prismaService.project.create = jest
         .fn()
         .mockResolvedValue(createdProject);
@@ -147,9 +175,6 @@ describe('ProjectService', () => {
       expect(mediaService.processMedia).toHaveBeenCalledWith(mockFile, {
         accountId: data.accountId,
       });
-      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
-        'media-id',
-      );
       expect(prismaService.project.create).toHaveBeenCalledWith({
         data: {
           description: data.description,
@@ -165,11 +190,9 @@ describe('ProjectService', () => {
           },
           subtitle: data.subtitle,
         },
+        select: expect.any(Object),
       });
-      expect(result).toEqual({
-        ...createdProject,
-        media: media.mediaResponse,
-      });
+      expect(result).toEqual(createdProject);
     });
 
     it('should create a new category if it does not exist', async () => {
@@ -190,7 +213,7 @@ describe('ProjectService', () => {
         description: 'Test description',
         name: 'Test Project',
         category: 'New Category',
-        file: mockFile,
+        media: mockFile,
         subtitle: 'Test Subtitle',
         institutionId: 1,
         accountId: 1,
@@ -198,9 +221,6 @@ describe('ProjectService', () => {
 
       const newCategory = { id: 2, name: 'New Category' };
       const mediaAttachment = { mediaAttachment: { id: 'media-id' } };
-      const media = {
-        mediaResponse: { id: 'media-id', url: 'http://example.com/media.jpg' },
-      };
       const createdProject = {
         id: 1,
         description: data.description,
@@ -216,7 +236,6 @@ describe('ProjectService', () => {
       prismaService.category.findFirst = jest.fn().mockResolvedValue(null);
       prismaService.category.create = jest.fn().mockResolvedValue(newCategory);
       mediaService.processMedia = jest.fn().mockResolvedValue(mediaAttachment);
-      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue(media);
       prismaService.project.create = jest
         .fn()
         .mockResolvedValue(createdProject);
@@ -232,9 +251,6 @@ describe('ProjectService', () => {
       expect(mediaService.processMedia).toHaveBeenCalledWith(mockFile, {
         accountId: data.accountId,
       });
-      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
-        'media-id',
-      );
       expect(prismaService.project.create).toHaveBeenCalledWith({
         data: {
           description: data.description,
@@ -250,11 +266,9 @@ describe('ProjectService', () => {
           },
           subtitle: data.subtitle,
         },
+        select: expect.any(Object),
       });
-      expect(result).toEqual({
-        ...createdProject,
-        media: media.mediaResponse,
-      });
+      expect(result).toEqual(createdProject);
     });
 
     it('should throw an error if there is an exception during project creation', async () => {
@@ -275,7 +289,7 @@ describe('ProjectService', () => {
         description: 'Test description',
         name: 'Test Project',
         category: 'Test Category',
-        file: mockFile,
+        media: mockFile,
         subtitle: 'Test Subtitle',
         institutionId: 1,
         accountId: 1,
@@ -284,12 +298,13 @@ describe('ProjectService', () => {
       prismaService.category.findFirst = jest
         .fn()
         .mockRejectedValue(new Error('Database error'));
+      mediaService.processMedia = jest.fn().mockResolvedValue({
+        mediaAttachment: { id: 'media-id' },
+      });
 
+      await expect(service.postProjectService(data)).rejects.toThrow(Error);
       await expect(service.postProjectService(data)).rejects.toThrow(
-        HttpException,
-      );
-      await expect(service.postProjectService(data)).rejects.toThrow(
-        'erro ao criar projeto',
+        'Database error',
       );
     });
   });
@@ -781,7 +796,7 @@ describe('ProjectService', () => {
 
   // Tests for getAllProjectsService
   describe('getAllProjectsService', () => {
-    it('should return all projects with media and favorite status when donorId is provided', async () => {
+    it('should return all projects with favorite status when donorId is provided', async () => {
       const donorId = 1;
       const allProjects = [
         {
@@ -792,7 +807,6 @@ describe('ProjectService', () => {
           updatedAt: new Date(),
           institutionId: 1,
           subtitle: 'Subtitle 1',
-          mediaId: 'media-1',
         },
         {
           id: 2,
@@ -802,32 +816,14 @@ describe('ProjectService', () => {
           updatedAt: new Date(),
           institutionId: 2,
           subtitle: 'Subtitle 2',
-          mediaId: 'media-2',
         },
       ];
       const favoriteProjects = [{ projectId: 1 }];
-      const mediaResponses = [
-        {
-          mediaResponse: {
-            id: 'media-1',
-            url: 'http://example.com/media1.jpg',
-          },
-        },
-        {
-          mediaResponse: {
-            id: 'media-2',
-            url: 'http://example.com/media2.jpg',
-          },
-        },
-      ];
 
       prismaService.project.findMany = jest.fn().mockResolvedValue(allProjects);
       prismaService.favoriteProject.findMany = jest
         .fn()
         .mockResolvedValue(favoriteProjects);
-      mediaService.getMediaAttachmentsByIds = jest
-        .fn()
-        .mockResolvedValue(mediaResponses);
 
       const result = await service.getAllProjectsService(donorId);
 
@@ -836,20 +832,14 @@ describe('ProjectService', () => {
         where: { donorId },
         select: { projectId: true },
       });
-      expect(mediaService.getMediaAttachmentsByIds).toHaveBeenCalledWith([
-        'media-1',
-        'media-2',
-      ]);
 
       expect(result).toEqual([
         {
           ...allProjects[0],
-          media: mediaResponses[0].mediaResponse,
           isFavorite: true,
         },
         {
           ...allProjects[1],
-          media: mediaResponses[1].mediaResponse,
           isFavorite: false,
         },
       ]);
@@ -865,7 +855,6 @@ describe('ProjectService', () => {
           updatedAt: new Date(),
           institutionId: 1,
           subtitle: 'Subtitle 1',
-          mediaId: 'media-1',
         },
         {
           id: 2,
@@ -875,46 +864,21 @@ describe('ProjectService', () => {
           updatedAt: new Date(),
           institutionId: 2,
           subtitle: 'Subtitle 2',
-          mediaId: 'media-2',
-        },
-      ];
-      const mediaResponses = [
-        {
-          mediaResponse: {
-            id: 'media-1',
-            url: 'http://example.com/media1.jpg',
-          },
-        },
-        {
-          mediaResponse: {
-            id: 'media-2',
-            url: 'http://example.com/media2.jpg',
-          },
         },
       ];
 
       prismaService.project.findMany = jest.fn().mockResolvedValue(allProjects);
-      mediaService.getMediaAttachmentsByIds = jest
-        .fn()
-        .mockResolvedValue(mediaResponses);
 
       const result = await service.getAllProjectsService();
 
       expect(prismaService.project.findMany).toHaveBeenCalled();
-      expect(mediaService.getMediaAttachmentsByIds).toHaveBeenCalledWith([
-        'media-1',
-        'media-2',
-      ]);
-
       expect(result).toEqual([
         {
           ...allProjects[0],
-          media: mediaResponses[0].mediaResponse,
           isFavorite: false,
         },
         {
           ...allProjects[1],
-          media: mediaResponses[1].mediaResponse,
           isFavorite: false,
         },
       ]);
