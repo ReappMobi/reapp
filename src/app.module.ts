@@ -8,15 +8,11 @@ import { MediaProcessingModule } from './modules/media-processing/media-processi
 import { PostModule } from './modules/post/post.module';
 import { ProjectModule } from './modules/project/project.module';
 import { InstitutionMemberModule } from './modules/institutionMember/institutionMember.module';
+import { redisConfig } from './config';
 
 @Module({
   imports: [
-    BullModule.forRoot({
-      redis: {
-        host: 'localhost',
-        port: 6379,
-      },
-    }),
+    BullModule.forRoot({ redis: redisConfig }),
     AccountModule,
     AuthenticationModule,
     DonationModule,
