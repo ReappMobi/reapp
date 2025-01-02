@@ -35,6 +35,24 @@ const projectResponseFields = {
       name: true,
     },
   },
+  institution: {
+    select: {
+      id: true,
+      category: {
+        select: {
+          name: true,
+        },
+      },
+      account: {
+        select: {
+          id: true,
+          name: true,
+          avatarId: true,
+          media: true,
+        },
+      },
+    },
+  },
   media: true,
   createdAt: true,
   updatedAt: true,
@@ -189,6 +207,7 @@ export class ProjectService {
           ? { connect: { id: projectCategory.id } }
           : undefined,
       },
+      select: projectResponseFields,
     });
 
     /*
@@ -221,15 +240,7 @@ export class ProjectService {
 
     */
 
-    // Obtém o media atualizado
-    const media = mediaId
-      ? (await this.mediaService.getMediaAttachmentById(mediaId)).mediaResponse
-      : null;
-
-    return {
-      ...updatedProject,
-      media,
-    };
+    return updatedProject;
   }
 
   async toggleFavoriteService({ projectId, donorId }: FavoriteProjectData) {
@@ -304,26 +315,14 @@ export class ProjectService {
   async getProjectByIdService(projectId: number) {
     const project = await this.prismaService.project.findUnique({
       where: { id: projectId },
+      select: projectResponseFields,
     });
 
     if (!project) {
       throw new NotFoundException('Projeto não encontrado');
     }
 
-    let media = null;
-    if (project.mediaId) {
-      const mediaResult = await this.mediaService.getMediaAttachmentById(
-        project.mediaId,
-      );
-      media = mediaResult.mediaResponse;
-    }
-
-    const projectWithMedia = {
-      ...project,
-      media,
-    };
-
-    return projectWithMedia;
+    return project;
   }
 
   async getFavoriteProjectService(donorId: number) {
@@ -332,43 +331,15 @@ export class ProjectService {
         donorId: donorId,
       },
       include: {
-        project: true,
+        project: {
+          select: projectResponseFields,
+        },
       },
     });
 
     const projects = favoriteProjects.map((favorite) => favorite.project);
 
-    const mediaIds = Array.from(
-      new Set(
-        projects
-          .map((project) => project.mediaId)
-          .filter((mediaId): mediaId is string => mediaId !== null),
-      ),
-    );
-
-    const mediaResponses =
-      await this.mediaService.getMediaAttachmentsByIds(mediaIds);
-
-    const mediaMap = new Map<string, any>();
-    mediaResponses.forEach((mediaResponseObj) => {
-      if (mediaResponseObj.mediaResponse) {
-        mediaMap.set(
-          mediaResponseObj.mediaResponse.id,
-          mediaResponseObj.mediaResponse,
-        );
-      }
-    });
-
-    const projectsWithMedia = projects.map((project) => {
-      const media = project.mediaId ? mediaMap.get(project.mediaId) : null;
-      return {
-        ...project,
-        media,
-        isFavorite: true,
-      };
-    });
-
-    return projectsWithMedia;
+    return projects;
   }
 
   async getProjectsByInstitutionService(institutionId: number) {
@@ -376,42 +347,14 @@ export class ProjectService {
       where: {
         institutionId: institutionId,
       },
+      select: projectResponseFields,
     });
 
     if (projects.length === 0) {
       return [];
     }
 
-    const mediaIds = Array.from(
-      new Set(
-        projects
-          .map((project) => project.mediaId)
-          .filter((mediaId): mediaId is string => mediaId !== null),
-      ),
-    );
-
-    const mediaResponses =
-      await this.mediaService.getMediaAttachmentsByIds(mediaIds);
-
-    const mediaMap = new Map<string, any>();
-    mediaResponses.forEach((mediaResponseObj) => {
-      if (mediaResponseObj.mediaResponse) {
-        mediaMap.set(
-          mediaResponseObj.mediaResponse.id,
-          mediaResponseObj.mediaResponse,
-        );
-      }
-    });
-
-    const projectsWithMedia = projects.map((project) => {
-      const media = project.mediaId ? mediaMap.get(project.mediaId) : null;
-      return {
-        ...project,
-        media,
-      };
-    });
-
-    return projectsWithMedia;
+    return projects;
   }
 
   async getProjectCategoriesService() {
