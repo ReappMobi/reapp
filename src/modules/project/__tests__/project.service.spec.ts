@@ -451,16 +451,45 @@ describe('ProjectService', () => {
           media: { connect: { id: 'media-id' } }, // Atualizado
           category: undefined,
         },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          subtitle: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          institution: {
+            select: {
+              id: true,
+              category: {
+                select: {
+                  name: true,
+                },
+              },
+              account: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatarId: true,
+                  media: true,
+                },
+              },
+            },
+          },
+          media: true,
+          createdAt: true,
+          updatedAt: true,
+          mediaId: true,
+        },
       });
-
-      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
-        'media-id',
-      );
 
       expect(result).toEqual({
         ...existingProject,
         ...updateData,
-        media: { id: 'media-id', url: 'http://example.com/media.jpg' },
       });
     });
 
@@ -547,20 +576,46 @@ describe('ProjectService', () => {
           media: { connect: { id: 'new-media-id' } },
           category: undefined,
         },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          subtitle: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          institution: {
+            select: {
+              id: true,
+              category: {
+                select: {
+                  name: true,
+                },
+              },
+              account: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatarId: true,
+                  media: true,
+                },
+              },
+            },
+          },
+          media: true,
+          createdAt: true,
+          updatedAt: true,
+          mediaId: true,
+        },
       });
-
-      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
-        'new-media-id',
-      );
 
       expect(result).toEqual({
         ...existingProject,
         ...updateData,
         mediaId: 'new-media-id',
-        media: {
-          id: 'new-media-id',
-          url: 'http://example.com/new-media.jpg',
-        },
       });
     });
 
@@ -626,16 +681,45 @@ describe('ProjectService', () => {
           media: { connect: { id: 'media-id' } }, // Atualizado
           category: { connect: { id: newCategory.id } },
         },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          subtitle: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          institution: {
+            select: {
+              id: true,
+              category: {
+                select: {
+                  name: true,
+                },
+              },
+              account: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatarId: true,
+                  media: true,
+                },
+              },
+            },
+          },
+          media: true,
+          createdAt: true,
+          updatedAt: true,
+          mediaId: true,
+        },
       });
-
-      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
-        'media-id',
-      );
 
       expect(result).toEqual({
         ...existingProject,
         categoryId: newCategory.id,
-        media: { id: 'media-id', url: 'http://example.com/media.jpg' },
       });
     });
 
@@ -899,27 +983,51 @@ describe('ProjectService', () => {
         institutionId: 1,
         subtitle: 'Subtitle 1',
       };
-      const mediaResponse = {
-        mediaResponse: { id: 'media-1', url: 'http://example.com/media1.jpg' },
-      };
 
       prismaService.project.findUnique = jest.fn().mockResolvedValue(project);
-      mediaService.getMediaAttachmentById = jest
-        .fn()
-        .mockResolvedValue(mediaResponse);
 
       const result = await service.getProjectByIdService(projectId);
 
       expect(prismaService.project.findUnique).toHaveBeenCalledWith({
         where: { id: projectId },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          subtitle: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          institution: {
+            select: {
+              id: true,
+              category: {
+                select: {
+                  name: true,
+                },
+              },
+              account: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatarId: true,
+                  media: true,
+                },
+              },
+            },
+          },
+          media: true,
+          createdAt: true,
+          updatedAt: true,
+          mediaId: true,
+        },
       });
-      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
-        'media-1',
-      );
 
       expect(result).toEqual({
         ...project,
-        media: mediaResponse.mediaResponse,
       });
     });
 
@@ -975,17 +1083,49 @@ describe('ProjectService', () => {
 
       expect(prismaService.favoriteProject.findMany).toHaveBeenCalledWith({
         where: { donorId },
-        include: { project: true },
+        include: {
+          project: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              subtitle: true,
+              category: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              institution: {
+                select: {
+                  id: true,
+                  category: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                  account: {
+                    select: {
+                      id: true,
+                      name: true,
+                      avatarId: true,
+                      media: true,
+                    },
+                  },
+                },
+              },
+              media: true,
+              createdAt: true,
+              updatedAt: true,
+              mediaId: true,
+            },
+          },
+        },
       });
-      expect(mediaService.getMediaAttachmentsByIds).toHaveBeenCalledWith([
-        'media-1',
-      ]);
 
       expect(result).toEqual([
         {
           ...favoriteProjects[0].project,
-          media: mediaResponses[0].mediaResponse,
-          isFavorite: true,
         },
       ]);
     });
@@ -1026,15 +1166,45 @@ describe('ProjectService', () => {
 
       expect(prismaService.project.findMany).toHaveBeenCalledWith({
         where: { institutionId },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          subtitle: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          institution: {
+            select: {
+              id: true,
+              category: {
+                select: {
+                  name: true,
+                },
+              },
+              account: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatarId: true,
+                  media: true,
+                },
+              },
+            },
+          },
+          media: true,
+          createdAt: true,
+          updatedAt: true,
+          mediaId: true,
+        },
       });
-      expect(mediaService.getMediaAttachmentsByIds).toHaveBeenCalledWith([
-        'media-1',
-      ]);
 
       expect(result).toEqual([
         {
           ...projects[0],
-          media: mediaResponses[0].mediaResponse,
         },
       ]);
     });
@@ -1049,6 +1219,40 @@ describe('ProjectService', () => {
 
       expect(prismaService.project.findMany).toHaveBeenCalledWith({
         where: { institutionId },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          subtitle: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          institution: {
+            select: {
+              id: true,
+              category: {
+                select: {
+                  name: true,
+                },
+              },
+              account: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatarId: true,
+                  media: true,
+                },
+              },
+            },
+          },
+          media: true,
+          createdAt: true,
+          updatedAt: true,
+          mediaId: true,
+        },
       });
       expect(result).toEqual([]);
     });
