@@ -86,7 +86,7 @@ export class ProjectController {
 
     const project = await this.projectService.getProjectByIdService(projectId);
 
-    if (project.institutionId !== institution.id) {
+    if (project.institution.id !== institution.id) {
       throw new ForbiddenException(
         'Você não tem permissão para editar este projeto',
       );
@@ -176,7 +176,7 @@ export class ProjectController {
 
     const project = await this.projectService.getProjectByIdService(projectId);
 
-    if (project.institutionId !== institution.id) {
+    if (project.institution.id !== institution.id) {
       throw new ForbiddenException(
         'Você não tem permissão para deletar este projeto',
       );
