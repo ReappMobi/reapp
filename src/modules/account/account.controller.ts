@@ -22,7 +22,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('account')
 export class AccountController {
-  constructor(private readonly accountService: AccountService) { }
+  constructor(private readonly accountService: AccountService) {}
 
   @Post()
   create(@Body() createAccountDto: CreateAccountDto) {
