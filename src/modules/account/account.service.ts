@@ -420,6 +420,7 @@ export class AccountService {
       const mediaAttachment = await this.mediaService.processMedia(media, {
         accountId,
       });
+
       data.avatarId = mediaAttachment.mediaAttachment.id;
     }
 
@@ -460,10 +461,27 @@ export class AccountService {
     const updatedAccount = await this.prismaService.account.update({
       where: { id: accountId },
       data,
-      select:
-        account.accountType === AccountType.INSTITUTION
-          ? institutionResponseFields
-          : donorResponseFields,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        accountType: true,
+        avatarId: true,
+        media: true,
+        note: true,
+        institution: account.accountType === AccountType.INSTITUTION && {
+          select: {
+            cnpj: true,
+            phone: true,
+            category: {
+              select: {
+                name: true,
+              },
+            },
+            fields: true,
+          },
+        },
+      },
     });
 
     return updatedAccount;
