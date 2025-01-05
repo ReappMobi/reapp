@@ -49,4 +49,10 @@ export abstract class UpdateAccountDto {
   @Type(() => AccountField)
   @IsOptional()
   fields?: AccountField[];
+
+  @IsOptional()
+  @IsString()
+  @MinLength(5, { message: 'A nota deve ter no mínimo 5 caracteres.' })
+  @MaxLength(40, { message: 'A nota deve ter no máximo 40 caracteres.' })
+  note?: string;
 }
