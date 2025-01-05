@@ -25,6 +25,7 @@ const donorResponseFields = {
   createdAt: true,
   updatedAt: true,
   accountType: true,
+  note: true,
 };
 
 const institutionResponseFields = {
@@ -45,6 +46,7 @@ const institutionResponseFields = {
   avatarId: true,
   media: true,
   accountType: true,
+  note: true,
 };
 
 @Injectable()
@@ -405,6 +407,10 @@ export class AccountService {
       data.name = updateAccountDto.name;
     }
 
+    if (updateAccountDto.note) {
+      data.note = updateAccountDto.note;
+    }
+
     const mediaId = account.avatarId;
     if (media) {
       if (mediaId) {
@@ -425,7 +431,6 @@ export class AccountService {
       }
 
       if (updateAccountDto.category) {
-        // Verificar se a categoria existe ou criar uma nova
         let category = await this.prismaService.category.findFirst({
           where: { name: updateAccountDto.category },
         });
