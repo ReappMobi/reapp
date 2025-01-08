@@ -3,6 +3,7 @@ import { DonationController } from '../donation.controller';
 import { DonationService } from '../donation.service';
 import { RequestDonationDto } from '../dto/request-donation.dto';
 import { NotificationRequestDto } from '../dto/notification.dto';
+import { AuthGuard } from '../../auth/auth.guard';
 
 describe('DonationController', () => {
   let controller: DonationController;
@@ -20,7 +21,12 @@ describe('DonationController', () => {
           },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({
+        canActivate: jest.fn().mockReturnValue(true),
+      })
+      .compile();
 
     controller = module.get<DonationController>(DonationController);
     donationService = module.get<DonationService>(DonationService);
@@ -33,17 +39,16 @@ describe('DonationController', () => {
   describe('requestDonation', () => {
     it('should call donationService.requestDonation with correct data', async () => {
       const requestDonationDto: RequestDonationDto = {
-        name: 'test',
-        email: 'test@test.com',
-        userToken: 'test',
         amount: 10,
         institutionId: 1,
         projectId: 1,
         description: 'test',
       };
-      await controller.requestDonation(requestDonationDto);
+      const request = { user: { id: 1 } } as any;
+      await controller.requestDonation(requestDonationDto, request);
       expect(donationService.requestDonation).toHaveBeenCalledWith(
         requestDonationDto,
+        request.user.id,
       );
     });
   });

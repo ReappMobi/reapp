@@ -245,6 +245,9 @@ describe('PostService', () => {
 
       expect(prismaService.post.findMany).toHaveBeenCalledWith({
         where: { institutionId },
+        orderBy: {
+          createdAt: 'desc',
+        },
         select: {
           body: true,
           comments: true,
@@ -284,16 +287,7 @@ describe('PostService', () => {
           updatedAt: true,
         },
       });
-      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
-        'media-1',
-      );
-      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
-        'media-2',
-      );
-      expect(result).toEqual([
-        { ...mockPosts[0], media: media1 },
-        { ...mockPosts[1], media: media2 },
-      ]);
+      expect(result).toEqual(mockPosts);
     });
   });
 

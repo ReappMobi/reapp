@@ -118,24 +118,13 @@ export class PostService {
       where: {
         institutionId,
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
       select: postResponseFields,
     });
 
-    const postsWithMedia = await Promise.all(
-      posts.map(async (post) => {
-        let media = null;
-        if (post.mediaId) {
-          media = await this.mediaService.getMediaAttachmentById(post.mediaId);
-        }
-
-        return {
-          ...post,
-          media,
-        };
-      }),
-    );
-
-    return postsWithMedia;
+    return posts;
   }
 
   async findInstitutionByAccountId(accountId: number): Promise<Institution> {

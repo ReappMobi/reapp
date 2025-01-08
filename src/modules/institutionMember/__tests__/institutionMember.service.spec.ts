@@ -103,9 +103,7 @@ describe('InstitutionMemberService', () => {
       expect(mediaService.processMedia).toHaveBeenCalledWith(data.file, {
         accountId: data.institutionId,
       });
-      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
-        'media-id',
-      );
+
       expect(prismaService.institutionMember.create).toHaveBeenCalledWith({
         data: {
           name: data.name,
@@ -113,10 +111,16 @@ describe('InstitutionMemberService', () => {
           memberType: data.memberType,
           avatarId: 'media-id',
         },
+        select: {
+          id: true,
+          name: true,
+          memberType: true,
+          media: true,
+          institutionId: true,
+        },
       });
       expect(result).toEqual({
         ...createdMember,
-        media: mediaResponse,
       });
     });
 
@@ -150,10 +154,16 @@ describe('InstitutionMemberService', () => {
           memberType: data.memberType,
           avatarId: null,
         },
+        select: {
+          id: true,
+          name: true,
+          memberType: true,
+          media: true,
+          institutionId: true,
+        },
       });
       expect(result).toEqual({
         ...createdMember,
-        media: null,
       });
     });
   });
@@ -180,27 +190,9 @@ describe('InstitutionMemberService', () => {
         },
       ];
 
-      const mediaResponse = {
-        mediaResponse: {
-          id: 'media-id',
-          type: 'image',
-          url: 'http://example.com/media.jpg',
-          preview_url: 'http://example.com/preview.jpg',
-          remote_url: null,
-          text_url: null,
-          meta: null,
-          description: '',
-          blurhash: '',
-        },
-        processing: 2,
-      };
-
       jest
         .spyOn(prismaService.institutionMember, 'findMany')
         .mockResolvedValue(members);
-      jest
-        .spyOn(mediaService, 'getMediaAttachmentById')
-        .mockResolvedValue(mediaResponse);
 
       const result = await service.getInstitutionMembersByType(
         institutionId,
@@ -212,22 +204,16 @@ describe('InstitutionMemberService', () => {
           institutionId,
           memberType,
         },
+        select: {
+          id: true,
+          name: true,
+          memberType: true,
+          media: true,
+          institutionId: true,
+        },
       });
 
-      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
-        'media-id-1',
-      );
-
-      expect(result).toEqual([
-        {
-          ...members[0],
-          media: mediaResponse,
-        },
-        {
-          ...members[1],
-          media: null,
-        },
-      ]);
+      expect(result).toEqual(members);
     });
   });
 
@@ -267,14 +253,17 @@ describe('InstitutionMemberService', () => {
 
       expect(prismaService.institutionMember.findUnique).toHaveBeenCalledWith({
         where: { id: memberId },
+        select: {
+          id: true,
+          name: true,
+          memberType: true,
+          media: true,
+          institutionId: true,
+        },
       });
-      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
-        'media-id',
-      );
 
       expect(result).toEqual({
         ...member,
-        media: mediaResponse,
       });
     });
 
@@ -296,12 +285,17 @@ describe('InstitutionMemberService', () => {
 
       expect(prismaService.institutionMember.findUnique).toHaveBeenCalledWith({
         where: { id: memberId },
+        select: {
+          id: true,
+          name: true,
+          memberType: true,
+          media: true,
+          institutionId: true,
+        },
       });
-      expect(mediaService.getMediaAttachmentById).not.toHaveBeenCalled();
 
       expect(result).toEqual({
         ...member,
-        media: null,
       });
     });
   });
@@ -320,8 +314,42 @@ describe('InstitutionMemberService', () => {
         name: 'John Doe',
         institutionId: 1,
         memberType: InstitutionMemberType.COLLABORATOR,
-        avatarId: 'old-media-id',
-        media: null,
+        media: {
+          id: 'old-media-id',
+          statusId: BigInt(1),
+          fileFileName: 'DeWatermark.ai_1731156953652.png',
+          fileContentType: 'image/png',
+          fileFileSize: 789337,
+          fileUpdatedAt: null,
+          remoteUrl: 'http://example.com/image.jpg',
+          createdAt: new Date('2024-12-29T18:32:38.158Z'),
+          updatedAt: new Date('2024-12-29T18:32:38.158Z'),
+          shortcode: 'cfa91091-54af-4027-bca5-a89067c92105',
+          type: 1,
+          fileMeta: {
+            focus: {
+              x: 0,
+              y: 0,
+            },
+            original: {
+              size: '800x1200',
+              width: 800,
+              aspect: 0.6666666666666666,
+              height: 1200,
+            },
+          },
+          accountId: 8,
+          description: 'Media description',
+          scheduledStatusId: null,
+          blurhash: 'blurhash-string',
+          processing: 2,
+          fileStorageSchemaVersion: 1,
+          thumbnailFileName: null,
+          thumbnailContentType: null,
+          thumbnailFileSize: null,
+          thumbnailUpdatedAt: null,
+          thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
+        },
       };
 
       const mediaResult = {
@@ -385,9 +413,6 @@ describe('InstitutionMemberService', () => {
       expect(mediaService.processMedia).toHaveBeenCalledWith(data.file, {
         accountId: existingMember.institutionId,
       });
-      expect(mediaService.getMediaAttachmentById).toHaveBeenCalledWith(
-        'new-media-id',
-      );
       expect(prismaService.institutionMember.update).toHaveBeenCalledWith({
         where: { id: memberId },
         data: {
@@ -395,10 +420,16 @@ describe('InstitutionMemberService', () => {
           memberType: data.memberType,
           avatarId: 'new-media-id',
         },
+        select: {
+          id: true,
+          name: true,
+          memberType: true,
+          media: true,
+          institutionId: true,
+        },
       });
       expect(result).toEqual({
         ...updatedMember,
-        media: mediaResponse,
       });
     });
 
@@ -415,18 +446,40 @@ describe('InstitutionMemberService', () => {
         memberType: InstitutionMemberType.COLLABORATOR,
         avatarId: 'media-id',
         media: {
-          mediaResponse: {
-            id: 'media-id',
-            type: 'image',
-            url: 'http://example.com/media.jpg',
-            preview_url: 'http://example.com/preview.jpg',
-            remote_url: null,
-            text_url: null,
-            meta: null,
-            description: '',
-            blurhash: '',
+          id: 'media-id',
+          statusId: BigInt(1),
+          fileFileName: 'DeWatermark.ai_1731156953652.png',
+          fileContentType: 'image/png',
+          fileFileSize: 789337,
+          fileUpdatedAt: null,
+          remoteUrl: 'http://example.com/image.jpg',
+          createdAt: new Date('2024-12-29T18:32:38.158Z'),
+          updatedAt: new Date('2024-12-29T18:32:38.158Z'),
+          shortcode: 'cfa91091-54af-4027-bca5-a89067c92105',
+          type: 1,
+          fileMeta: {
+            focus: {
+              x: 0,
+              y: 0,
+            },
+            original: {
+              size: '800x1200',
+              width: 800,
+              aspect: 0.6666666666666666,
+              height: 1200,
+            },
           },
+          accountId: 8,
+          description: 'Media description',
+          scheduledStatusId: null,
+          blurhash: 'blurhash-string',
           processing: 2,
+          fileStorageSchemaVersion: 1,
+          thumbnailFileName: null,
+          thumbnailContentType: null,
+          thumbnailFileSize: null,
+          thumbnailUpdatedAt: null,
+          thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
       };
 
@@ -489,10 +542,16 @@ describe('InstitutionMemberService', () => {
           memberType: undefined,
           avatarId: 'media-id',
         },
+        select: {
+          id: true,
+          name: true,
+          memberType: true,
+          media: true,
+          institutionId: true,
+        },
       });
       expect(result).toEqual({
         ...updatedMember,
-        media: mediaResponse,
       });
     });
 
@@ -521,7 +580,42 @@ describe('InstitutionMemberService', () => {
         institutionId: 1,
         memberType: InstitutionMemberType.COLLABORATOR,
         avatarId: 'media-id',
-        media: null,
+        media: {
+          id: 'old-media-id',
+          statusId: BigInt(1),
+          fileFileName: 'DeWatermark.ai_1731156953652.png',
+          fileContentType: 'image/png',
+          fileFileSize: 789337,
+          fileUpdatedAt: null,
+          remoteUrl: 'http://example.com/image.jpg',
+          createdAt: new Date('2024-12-29T18:32:38.158Z'),
+          updatedAt: new Date('2024-12-29T18:32:38.158Z'),
+          shortcode: 'cfa91091-54af-4027-bca5-a89067c92105',
+          type: 1,
+          fileMeta: {
+            focus: {
+              x: 0,
+              y: 0,
+            },
+            original: {
+              size: '800x1200',
+              width: 800,
+              aspect: 0.6666666666666666,
+              height: 1200,
+            },
+          },
+          accountId: 8,
+          description: 'Media description',
+          scheduledStatusId: null,
+          blurhash: 'blurhash-string',
+          processing: 2,
+          fileStorageSchemaVersion: 1,
+          thumbnailFileName: null,
+          thumbnailContentType: null,
+          thumbnailFileSize: null,
+          thumbnailUpdatedAt: null,
+          thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
+        },
       };
 
       jest
@@ -538,7 +632,7 @@ describe('InstitutionMemberService', () => {
 
       expect(service.findInstitutionMemberById).toHaveBeenCalledWith(memberId);
       expect(mediaService.deleteMediaAttachment).toHaveBeenCalledWith(
-        'media-id',
+        'old-media-id',
       );
       expect(prismaService.institutionMember.delete).toHaveBeenCalledWith({
         where: { id: memberId },
