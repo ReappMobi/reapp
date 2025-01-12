@@ -59,7 +59,10 @@ export class AccountService {
     this.client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
   }
 
-  private async createInstitution(createAccountDto: CreateAccountDto) {
+  private async createInstitution(
+    createAccountDto: CreateAccountDto,
+    media?: Express.Multer.File,
+  ) {
     const emailExists = await this.prismaService.account.findFirst({
       where: { email: createAccountDto.email },
     });
@@ -122,6 +125,22 @@ export class AccountService {
         select: institutionResponseFields,
       });
 
+      if (media) {
+        const mediaAttachment = await this.mediaService.processMedia(media, {
+          accountId: account.id,
+        });
+
+        const accountWithMedia = await this.prismaService.account.update({
+          where: { id: account.id },
+          data: {
+            avatarId: mediaAttachment.mediaAttachment.id,
+          },
+          select: donorResponseFields,
+        });
+
+        return accountWithMedia;
+      }
+
       return account;
     } catch (error) {
       throw new HttpException(
@@ -131,7 +150,10 @@ export class AccountService {
     }
   }
 
-  private async createDonor(createAccountDto: CreateAccountDto) {
+  private async createDonor(
+    createAccountDto: CreateAccountDto,
+    media?: Express.Multer.File,
+  ) {
     const emailExists = await this.prismaService.account.findFirst({
       where: { email: createAccountDto.email },
     });
@@ -157,6 +179,22 @@ export class AccountService {
         select: donorResponseFields,
       });
 
+      if (media) {
+        const mediaAttachment = await this.mediaService.processMedia(media, {
+          accountId: account.id,
+        });
+
+        const accountWithMedia = await this.prismaService.account.update({
+          where: { id: account.id },
+          data: {
+            avatarId: mediaAttachment.mediaAttachment.id,
+          },
+          select: donorResponseFields,
+        });
+
+        return accountWithMedia;
+      }
+
       return account;
     } catch (error) {
       throw new HttpException(
@@ -166,11 +204,14 @@ export class AccountService {
     }
   }
 
-  async create(createAccountDto: CreateAccountDto) {
+  async create(
+    createAccountDto: CreateAccountDto,
+    media?: Express.Multer.File,
+  ) {
     if (createAccountDto.accountType === AccountType.INSTITUTION) {
-      return await this.createInstitution(createAccountDto);
+      return await this.createInstitution(createAccountDto, media);
     }
-    return await this.createDonor(createAccountDto);
+    return await this.createDonor(createAccountDto, media);
   }
 
   async createWithGoogle(createAccountGoogleDto: CreateAccountGoogleDto) {
@@ -236,6 +277,15 @@ export class AccountService {
             fields: true,
           },
         },
+      },
+    });
+  }
+
+  async findAllCategories() {
+    return await this.prismaService.category.findMany({
+      select: {
+        id: true,
+        name: true,
       },
     });
   }
