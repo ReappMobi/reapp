@@ -25,13 +25,22 @@ export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 
   @Post()
-  create(@Body() createAccountDto: CreateAccountDto) {
-    return this.accountService.create(createAccountDto);
+  @UseInterceptors(FileInterceptor('media'))
+  create(
+    @Body() createAccountDto: CreateAccountDto,
+    @UploadedFile() media: Express.Multer.File,
+  ) {
+    return this.accountService.create(createAccountDto, media);
   }
 
   @Post('google')
   createWithGoogle(@Body() createAccountGoogleDto: CreateAccountGoogleDto) {
     return this.accountService.createWithGoogle(createAccountGoogleDto);
+  }
+
+  @Get('categories')
+  findAllCategories() {
+    return this.accountService.findAllCategories();
   }
 
   @UseGuards(AuthGuard)
