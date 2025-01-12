@@ -34,6 +34,17 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.prismaService.account.findFirst({
       where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        media: true,
+        accountType: true,
+        followingCount: true,
+        followersCount: true,
+        note: true,
+        passwordHash: true,
+      },
     });
 
     if (user) {
