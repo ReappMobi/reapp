@@ -6,6 +6,16 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 
+const authResponseFields = {
+  id: true,
+  email: true,
+  name: true,
+  media: true,
+  accountType: true,
+  followingCount: true,
+  followersCount: true,
+  note: true,
+};
 @Injectable()
 export class AuthService {
   private client: OAuth2Client;
@@ -84,16 +94,7 @@ export class AuthService {
     const email = payload?.email;
     const user = await this.prismaService.account.findFirst({
       where: { email },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        media: true,
-        accountType: true,
-        followingCount: true,
-        followersCount: true,
-        note: true,
-      },
+      select: authResponseFields,
     });
 
     if (!user) {

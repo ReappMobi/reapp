@@ -52,9 +52,6 @@ describe('DonationService tests', () => {
 
   describe('error case', () => {
     const requestDonationDto: RequestDonationDto = {
-      name: 'test',
-      email: 'test@test.com',
-      userToken: 'test',
       amount: 10,
       institutionId: 1,
       projectId: 1,
@@ -69,9 +66,10 @@ describe('DonationService tests', () => {
         name: 'test',
       });
       requestDonationDto.projectId = null;
-      await expect(service.requestDonation(requestDonationDto)).rejects.toThrow(
-        'Instituição não encontrada',
-      );
+      const accountId = 1;
+      await expect(
+        service.requestDonation(requestDonationDto, accountId),
+      ).rejects.toThrow('Instituição não encontrada');
     });
 
     it('should throw an error if the project does not exist', async () => {
@@ -82,9 +80,10 @@ describe('DonationService tests', () => {
       (prismaService.project.findUnique as jest.Mock).mockResolvedValue(null);
       requestDonationDto.institutionId = null;
       requestDonationDto.projectId = 1;
-      await expect(service.requestDonation(requestDonationDto)).rejects.toThrow(
-        'Projeto não encontrado',
-      );
+      const accountId = 1;
+      await expect(
+        service.requestDonation(requestDonationDto, accountId),
+      ).rejects.toThrow('Projeto não encontrado');
     });
 
     it('should throw an error if the amount is less than or equal to 0', async () => {
@@ -93,9 +92,10 @@ describe('DonationService tests', () => {
         email: 'test@test.com',
         name: 'test',
       });
-      await expect(service.requestDonation(requestDonationDto)).rejects.toThrow(
-        'A quantidade de doação não pode ser negativa',
-      );
+      const accountId = 1;
+      await expect(
+        service.requestDonation(requestDonationDto, accountId),
+      ).rejects.toThrow('A quantidade de doação não pode ser negativa');
     });
 
     it('should throw an error if the amount is less than 0.01', async () => {
@@ -104,17 +104,18 @@ describe('DonationService tests', () => {
         email: 'test@test.com',
         name: 'test',
       });
-
-      await expect(service.requestDonation(requestDonationDto)).rejects.toThrow(
-        'Valor inválido',
-      );
+      const accountId = 1;
+      await expect(
+        service.requestDonation(requestDonationDto, accountId),
+      ).rejects.toThrow('Valor inválido');
     });
 
     it('should throw an error if account is not exists', async () => {
       (prismaService.account.findUnique as jest.Mock).mockResolvedValue(null);
-      await expect(service.requestDonation(requestDonationDto)).rejects.toThrow(
-        'Usuário não encontrado',
-      );
+      const accountId = 1;
+      await expect(
+        service.requestDonation(requestDonationDto, accountId),
+      ).rejects.toThrow('Usuário não encontrado');
     });
 
     it('should throw an error if account is an institution', async () => {
@@ -125,17 +126,15 @@ describe('DonationService tests', () => {
           id: 1,
         },
       });
-      await expect(service.requestDonation(requestDonationDto)).rejects.toThrow(
-        'Usuário é uma instituição e não pode fazer doações',
-      );
+      const accountId = 1;
+      await expect(
+        service.requestDonation(requestDonationDto, accountId),
+      ).rejects.toThrow('Usuário é uma instituição e não pode fazer doações');
     });
   });
 
   describe('success case', () => {
     const requestDonationDto: RequestDonationDto = {
-      name: 'test',
-      email: 'test@test.com',
-      userToken: 'test',
       amount: 10,
       institutionId: 1,
       projectId: 1,
@@ -154,7 +153,8 @@ describe('DonationService tests', () => {
         id: 'test_id',
         init_point: 'https://test_url',
       });
-      await service.requestDonation(requestDonationDto);
+      const accountId = 1;
+      await service.requestDonation(requestDonationDto, accountId);
       expect(mercadopagoService.processPayment).toHaveBeenCalledWith({
         items: [
           {
@@ -167,8 +167,8 @@ describe('DonationService tests', () => {
           },
         ],
         payer: {
-          name: requestDonationDto.name,
-          email: requestDonationDto.email,
+          name: 'test',
+          email: 'test@test.com',
         },
         notification_url: 'localhost:3000/donation/notify',
       });
@@ -190,7 +190,8 @@ describe('DonationService tests', () => {
       });
       requestDonationDto.projectId = null;
       requestDonationDto.institutionId = 1;
-      await service.requestDonation(requestDonationDto);
+      const accountId = 1;
+      await service.requestDonation(requestDonationDto, accountId);
       expect(mercadopagoService.processPayment).toHaveBeenCalledWith({
         items: [
           {
@@ -203,8 +204,8 @@ describe('DonationService tests', () => {
           },
         ],
         payer: {
-          name: requestDonationDto.name,
-          email: requestDonationDto.email,
+          name: 'test',
+          email: 'test@test.com',
         },
         notification_url: 'localhost:3000/donation/notify',
       });
@@ -222,7 +223,8 @@ describe('DonationService tests', () => {
       requestDonationDto.projectId = null;
       requestDonationDto.institutionId = null;
 
-      await service.requestDonation(requestDonationDto);
+      const accountId = 1;
+      await service.requestDonation(requestDonationDto, accountId);
       expect(mercadopagoService.processPayment).toHaveBeenCalledWith({
         items: [
           {
@@ -235,8 +237,8 @@ describe('DonationService tests', () => {
           },
         ],
         payer: {
-          name: requestDonationDto.name,
-          email: requestDonationDto.email,
+          name: 'test',
+          email: 'test@test.com',
         },
         notification_url: 'localhost:3000/donation/notify',
       });

@@ -8,6 +8,10 @@ import {
 } from 'mercadopago/dist/clients/preference/commonTypes';
 import { NotificationRequestDto } from './dto/notification.dto';
 
+type ExtendedDonationRequest = RequestDonationDto & {
+  name: string;
+  email: string;
+};
 // TODO: Simplify this class and fix error handling
 @Injectable()
 export class DonationService {
@@ -17,7 +21,7 @@ export class DonationService {
   ) {}
 
   private buildRequestBody(
-    bodyInfo: RequestDonationDto,
+    bodyInfo: ExtendedDonationRequest,
     title = 'Reapp',
   ): PreferenceRequest {
     return {
@@ -54,7 +58,9 @@ export class DonationService {
     }
   }
 
-  private async requestProjectDonation(requestDonationDto: RequestDonationDto) {
+  private async requestProjectDonation(
+    requestDonationDto: ExtendedDonationRequest,
+  ) {
     const { projectId } = requestDonationDto;
     const project = await this.prismaService.project.findUnique({
       where: { id: projectId },
@@ -80,7 +86,7 @@ export class DonationService {
   }
 
   private async requestInstitutionDonation(
-    requestDonationDto: RequestDonationDto,
+    requestDonationDto: ExtendedDonationRequest,
   ) {
     const { institutionId } = requestDonationDto;
 
@@ -113,7 +119,9 @@ export class DonationService {
     return response;
   }
 
-  private async requestGeneralDonation(requestDonationDto: RequestDonationDto) {
+  private async requestGeneralDonation(
+    requestDonationDto: ExtendedDonationRequest,
+  ) {
     const mpRequestBody = this.buildRequestBody(requestDonationDto);
 
     const response = await this.createMercadopagoRequest(mpRequestBody);
@@ -126,7 +134,10 @@ export class DonationService {
     return response;
   }
 
-  async requestDonation(requestDonationDto: RequestDonationDto) {
+  async requestDonation(
+    requestDonationDto: RequestDonationDto,
+    accountId: number,
+  ) {
     if (requestDonationDto.amount <= 0) {
       throw new HttpException(
         'A quantidade de doação não pode ser negativa',
@@ -136,11 +147,13 @@ export class DonationService {
 
     const account = await this.prismaService.account.findUnique({
       where: {
-        email: requestDonationDto.email,
+        id: accountId,
       },
       select: {
         id: true,
         institution: true,
+        name: true,
+        email: true,
       },
     });
 
@@ -159,13 +172,19 @@ export class DonationService {
       throw new HttpException('Valor inválido', HttpStatus.BAD_REQUEST);
     }
 
+    const requestData: ExtendedDonationRequest = {
+      ...requestDonationDto,
+      name: account.name,
+      email: account.email,
+    };
+
     let response: PreferenceResponse;
     if (requestDonationDto.projectId) {
-      response = await this.requestProjectDonation(requestDonationDto);
+      response = await this.requestProjectDonation(requestData);
     } else if (requestDonationDto.institutionId) {
-      response = await this.requestInstitutionDonation(requestDonationDto);
+      response = await this.requestInstitutionDonation(requestData);
     } else {
-      response = await this.requestGeneralDonation(requestDonationDto);
+      response = await this.requestGeneralDonation(requestData);
     }
 
     try {
