@@ -51,13 +51,18 @@ describe('AccountController', () => {
         name: 'Test User',
       };
 
+      const file = {} as Express.Multer.File;
+
       (accountService.create as jest.Mock).mockResolvedValue({
         id: 1,
         ...createAccountDto,
       });
 
-      const result = await controller.create(createAccountDto);
-      expect(accountService.create).toHaveBeenCalledWith(createAccountDto);
+      const result = await controller.create(createAccountDto, file);
+      expect(accountService.create).toHaveBeenCalledWith(
+        createAccountDto,
+        file,
+      );
       expect(result).toEqual({ id: 1, ...createAccountDto });
     });
   });
