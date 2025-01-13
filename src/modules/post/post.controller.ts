@@ -136,4 +136,34 @@ export class PostController {
     await this.postService.unlikePost(postId, userId);
     return { message: 'Post descurtido com sucesso' };
   }
+
+  @Post(':id/save')
+  @UseGuards(AuthGuard)
+  async savePost(
+    @Param('id', ParseIntPipe) postId: number,
+    @Req() req: RequestWithUser,
+  ) {
+    const userId = req.user?.id;
+    const savedPost = await this.postService.savePost(postId, userId);
+    return savedPost;
+  }
+
+  @Delete(':id/save')
+  @UseGuards(AuthGuard)
+  async unsavePost(
+    @Param('id', ParseIntPipe) postId: number,
+    @Req() req: RequestWithUser,
+  ) {
+    const userId = req.user?.id;
+    await this.postService.unsavePost(postId, userId);
+    return { message: 'Post retirado dos salvos com sucesso' };
+  }
+
+  @Get('/saved')
+  @UseGuards(AuthGuard)
+  async getSavedPostsByUserId(@Req() req: RequestWithUser) {
+    const userId = req.user?.id;
+    const savedPosts = await this.postService.findSavedPostsByUserId(userId);
+    return savedPosts;
+  }
 }

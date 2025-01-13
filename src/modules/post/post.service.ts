@@ -38,12 +38,13 @@ const postResponseFields = {
   likes: {
     select: {
       id: true,
-      donorId: true,
-      donor: {
-        select: {
-          accountId: true,
-        },
-      },
+      accountId: true,
+    },
+  },
+  saves: {
+    select: {
+      id: true,
+      accountId: true,
     },
   },
 };
@@ -227,14 +228,6 @@ export class PostService {
       );
     }
 
-    const donor = await this.accountService.findOneDonor(accountId);
-    if (!donor) {
-      throw new HttpException(
-        'Não foi possível encontrar a conta do doador associada a este ID.',
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
     const post = await this.findPostById(postId);
     if (!post) {
       throw new HttpException(
@@ -247,7 +240,7 @@ export class PostService {
       data: {
         body,
         postId: post.id,
-        donorId: donor.id,
+        accountId,
       },
     });
 
@@ -255,21 +248,13 @@ export class PostService {
   }
 
   async likePost(postId: number, accountId: number) {
-    const donor = await this.accountService.findOneDonor(accountId);
-    if (!donor) {
-      throw new HttpException(
-        'Usuário doador não encontrado',
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
     const post = await this.findPostById(postId);
     if (!post) {
       throw new HttpException('Post não encontrado', HttpStatus.NOT_FOUND);
     }
 
     const existingLike = await this.prismaService.like.findFirst({
-      where: { postId, donorId: donor.id },
+      where: { postId, accountId },
     });
 
     if (existingLike) {
@@ -280,23 +265,15 @@ export class PostService {
     }
 
     const like = await this.prismaService.like.create({
-      data: { postId, donorId: donor.id },
+      data: { postId, accountId },
     });
 
     return like;
   }
 
   async unlikePost(postId: number, accountId: number) {
-    const donor = await this.accountService.findOneDonor(accountId);
-    if (!donor) {
-      throw new HttpException(
-        'Usuário doador não encontrado',
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
     const existingLike = await this.prismaService.like.findFirst({
-      where: { postId, donorId: donor.id },
+      where: { postId, accountId },
     });
 
     if (!existingLike) {
@@ -309,5 +286,64 @@ export class PostService {
     await this.prismaService.like.delete({
       where: { id: existingLike.id },
     });
+  }
+
+  async savePost(postId: number, accountId: number) {
+    const post = await this.findPostById(postId);
+    if (!post) {
+      throw new HttpException('Post não encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    const existingSavedPost = await this.prismaService.save.findFirst({
+      where: { postId, accountId },
+    });
+
+    if (existingSavedPost) {
+      throw new HttpException(
+        'Post já salvo pelo usuário',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const save = await this.prismaService.save.create({
+      data: { postId, accountId },
+    });
+
+    return save;
+  }
+
+  async unsavePost(postId: number, accountId: number) {
+    const post = await this.findPostById(postId);
+    if (!post) {
+      throw new HttpException('Post não encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    const existingSavedPost = await this.prismaService.save.findFirst({
+      where: { postId, accountId },
+    });
+
+    if (!existingSavedPost) {
+      throw new HttpException(
+        'Este Post não foi salvo pelo usuário',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await this.prismaService.save.delete({
+      where: { id: existingSavedPost.id },
+    });
+  }
+
+  async findSavedPostsByUserId(accountId: number) {
+    const posts = await this.prismaService.save.findMany({
+      where: { accountId },
+      select: {
+        post: {
+          select: postResponseFields,
+        },
+      },
+    });
+
+    return posts.map((save) => save.post);
   }
 }
