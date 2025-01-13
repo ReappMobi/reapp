@@ -174,12 +174,13 @@ describe('PostService', () => {
           likes: {
             select: {
               id: true,
-              donorId: true,
-              donor: {
-                select: {
-                  accountId: true,
-                },
-              },
+              accountId: true,
+            },
+          },
+          saves: {
+            select: {
+              id: true,
+              accountId: true,
             },
           },
           media: true,
@@ -274,12 +275,13 @@ describe('PostService', () => {
           likes: {
             select: {
               id: true,
-              donorId: true,
-              donor: {
-                select: {
-                  accountId: true,
-                },
-              },
+              accountId: true,
+            },
+          },
+          saves: {
+            select: {
+              id: true,
+              accountId: true,
             },
           },
           media: true,
@@ -427,12 +429,13 @@ describe('PostService', () => {
           likes: {
             select: {
               id: true,
-              donorId: true,
-              donor: {
-                select: {
-                  accountId: true,
-                },
-              },
+              accountId: true,
+            },
+          },
+          saves: {
+            select: {
+              id: true,
+              accountId: true,
             },
           },
           media: true,
@@ -471,6 +474,7 @@ describe('PostService', () => {
       updatedAt: new Date(),
       comments: [],
       likes: [],
+      saves: [],
     };
 
     it('should add a comment successfully', async () => {
@@ -480,27 +484,24 @@ describe('PostService', () => {
         id: 100,
         body,
         postId,
-        donorId: donor.id,
+        accountId,
       });
 
       const result = await service.addComment(postId, accountId, body);
 
-      expect((service as any).accountService.findOneDonor).toHaveBeenCalledWith(
-        accountId,
-      );
       expect(service.findPostById).toHaveBeenCalledWith(postId);
       expect(prismaService.comment.create).toHaveBeenCalledWith({
         data: {
           body,
           postId: post.id,
-          donorId: donor.id,
+          accountId: accountId,
         },
       });
       expect(result).toEqual({
         id: 100,
         body,
         postId,
-        donorId: donor.id,
+        accountId: accountId,
       });
     });
 
@@ -514,7 +515,7 @@ describe('PostService', () => {
       (service as any).accountService.findOneDonor.mockResolvedValue(null);
 
       await expect(service.addComment(postId, accountId, body)).rejects.toThrow(
-        'Não foi possível encontrar a conta do doador associada a este ID.',
+        'Não foi possível encontrar o post associado a este ID.',
       );
     });
 
@@ -551,6 +552,7 @@ describe('PostService', () => {
       updatedAt: new Date(),
       comments: [],
       likes: [],
+      saves: [],
     };
     const like = { id: 200, postId, donorId: donor.id };
 
@@ -562,25 +564,14 @@ describe('PostService', () => {
 
       const result = await service.likePost(postId, accountId);
 
-      expect((service as any).accountService.findOneDonor).toHaveBeenCalledWith(
-        accountId,
-      );
       expect(service.findPostById).toHaveBeenCalledWith(postId);
       expect(prismaService.like.findFirst).toHaveBeenCalledWith({
-        where: { postId, donorId: donor.id },
+        where: { postId, accountId },
       });
       expect(prismaService.like.create).toHaveBeenCalledWith({
-        data: { postId, donorId: donor.id },
+        data: { postId, accountId },
       });
       expect(result).toEqual(like);
-    });
-
-    it('should throw NOT_FOUND if donor not found', async () => {
-      (service as any).accountService.findOneDonor.mockResolvedValue(null);
-
-      await expect(service.likePost(postId, accountId)).rejects.toThrow(
-        'Usuário doador não encontrado',
-      );
     });
 
     it('should throw NOT_FOUND if post not found', async () => {
@@ -620,23 +611,12 @@ describe('PostService', () => {
 
       await service.unlikePost(postId, accountId);
 
-      expect((service as any).accountService.findOneDonor).toHaveBeenCalledWith(
-        accountId,
-      );
       expect(prismaService.like.findFirst).toHaveBeenCalledWith({
-        where: { postId, donorId: donor.id },
+        where: { postId, accountId },
       });
       expect(prismaService.like.delete).toHaveBeenCalledWith({
         where: { id: 400 },
       });
-    });
-
-    it('should throw NOT_FOUND if donor not found', async () => {
-      (service as any).accountService.findOneDonor.mockResolvedValue(null);
-
-      await expect(service.unlikePost(postId, accountId)).rejects.toThrow(
-        'Usuário doador não encontrado',
-      );
     });
 
     it('should throw BAD_REQUEST if user never liked the post', async () => {
