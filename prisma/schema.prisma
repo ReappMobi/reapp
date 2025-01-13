@@ -44,6 +44,9 @@ model Account {
   followersCount   Int               @default(0)
   institution      Institution?
   donor            Donor?
+  saves            Save[]
+  likes            Like[]
+  comments         Comment[]
   mediaAttachments MediaAttachment[] @relation(name: "AccountMediaAttachments")
 }
 
@@ -52,8 +55,6 @@ model Donor {
   account   Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
   accountId Int               @unique
   donations Donation[]
-  likes     Like[]
-  comments  Comment[]
   favorites FavoriteProject[]
 }
 
@@ -85,6 +86,7 @@ model Post {
   body          String           @db.Text
   comments      Comment[]
   likes         Like[]
+  saves         Save[]
   institution   Institution      @relation(fields: [institutionId], references: [id])
   institutionId Int
   mediaId       String? // Chave estrangeira para MediaAttachment (opcional)
@@ -97,8 +99,8 @@ model Like {
   id      Int   @id @default(autoincrement())
   post    Post  @relation(fields: [postId], references: [id])
   postId  Int
-  donor   Donor @relation(fields: [donorId], references: [id])
-  donorId Int
+  Account Account  @relation(fields: [accountId], references: [id])
+  accountId Int
 }
 
 model Comment {
@@ -106,8 +108,16 @@ model Comment {
   body    String @db.Text
   post    Post   @relation(fields: [postId], references: [id])
   postId  Int
-  donor   Donor  @relation(fields: [donorId], references: [id])
-  donorId Int
+  Account Account  @relation(fields: [accountId], references: [id])
+  accountId Int
+}
+
+model Save {
+  id      Int    @id @default(autoincrement())
+  post    Post   @relation(fields: [postId], references: [id])
+  postId  Int
+  account Account  @relation(fields: [accountId], references: [id])
+  accountId Int
 }
 
 model Project {
