@@ -76,6 +76,7 @@ describe('InstitutionMemberController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
       const createdMember = {
@@ -377,6 +378,7 @@ describe('InstitutionMemberController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
       const member = {
@@ -479,6 +481,7 @@ describe('InstitutionMemberController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
 
@@ -518,6 +521,7 @@ describe('InstitutionMemberController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
       const member = {
@@ -607,6 +611,7 @@ describe('InstitutionMemberController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
       const member = {
@@ -776,6 +781,7 @@ describe('InstitutionMemberController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
 
@@ -827,6 +833,7 @@ describe('InstitutionMemberController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
       const member = {
@@ -919,6 +926,7 @@ describe('InstitutionMemberController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
       const member = {
@@ -1027,6 +1035,7 @@ describe('InstitutionMemberController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
 
@@ -1069,6 +1078,7 @@ describe('InstitutionMemberController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
 
