@@ -50,9 +50,24 @@ export class AccountController {
   }
 
   @UseGuards(AuthGuard)
+  @Post('follow/:id')
+  follow(@Req() request: any, @Param('id') id: number) {
+    const userId = request.user.id;
+    return this.accountService.followAccount(userId, +id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('unfollow/:id')
+  unfollow(@Req() request: any, @Param('id') id: number) {
+    const userId = request.user.id;
+    return this.accountService.unfollowAccount(userId, +id);
+  }
+
+  @UseGuards(AuthGuard)
   @Get('institution')
-  findAllInstitutions() {
-    return this.accountService.findAllInstitutions();
+  findAllInstitutions(@Req() request: any) {
+    const userId = request.user.id;
+    return this.accountService.findAllInstitutions(userId);
   }
 
   @UseGuards(AuthGuard)
@@ -63,8 +78,9 @@ export class AccountController {
 
   @UseGuards(AuthGuard)
   @Get('institution/:id')
-  findOneInsitution(@Param('id') id: string) {
-    return this.accountService.findOneInstitution(+id);
+  findOneInsitution(@Param('id') id: string, @Req() request: any) {
+    const userId = request.user.id;
+    return this.accountService.findOneInstitution(+id, userId);
   }
 
   @UseGuards(AuthGuard)
