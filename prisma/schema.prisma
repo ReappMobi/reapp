@@ -48,6 +48,20 @@ model Account {
   likes            Like[]
   comments         Comment[]
   mediaAttachments MediaAttachment[] @relation(name: "AccountMediaAttachments")
+  following        Follow[]          @relation("Following")
+  followers        Follow[]          @relation("Followers")
+}
+
+model Follow {
+  id               Int               @id @default(autoincrement())
+  followerId       Int               
+  followingId      Int               
+  createdAt        DateTime          @default(now())
+
+  follower         Account           @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  following        Account           @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId]) 
 }
 
 model Donor {

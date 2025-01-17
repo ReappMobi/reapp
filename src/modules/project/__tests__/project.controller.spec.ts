@@ -92,6 +92,7 @@ describe('ProjectController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
 
@@ -256,6 +257,7 @@ describe('ProjectController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
 
@@ -290,6 +292,7 @@ describe('ProjectController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
 
@@ -508,6 +511,7 @@ describe('ProjectController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
 
@@ -566,6 +570,7 @@ describe('ProjectController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
 
@@ -732,6 +737,7 @@ describe('ProjectController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
 
@@ -879,6 +885,7 @@ describe('ProjectController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
 
@@ -915,6 +922,7 @@ describe('ProjectController', () => {
         category: {
           name: 'infancia',
         },
+        isFollowing: false,
         fields: [],
       };
 

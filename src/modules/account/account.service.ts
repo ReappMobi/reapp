@@ -311,7 +311,7 @@ export class AccountService {
     return account;
   }
 
-  async findAllInstitutions() {
+  async findAllInstitutions(followerId: number) {
     const allInstitutions = await this.prismaService.institution.findMany({
       select: {
         id: true,
@@ -337,10 +337,28 @@ export class AccountService {
       },
     });
 
-    return allInstitutions;
+    const institutionsWithFollowStatus = await Promise.all(
+      allInstitutions.map(async (institution) => {
+        const isFollowing = await this.prismaService.follow.findUnique({
+          where: {
+            followerId_followingId: {
+              followerId,
+              followingId: institution.account.id,
+            },
+          },
+        });
+
+        return {
+          ...institution,
+          isFollowing: Boolean(isFollowing),
+        };
+      }),
+    );
+
+    return institutionsWithFollowStatus;
   }
 
-  async findOneInstitution(id: number) {
+  async findOneInstitution(id: number, followerId: number = undefined) {
     const institutionAccount = await this.prismaService.institution.findUnique({
       where: { accountId: id },
       select: {
@@ -373,7 +391,23 @@ export class AccountService {
       );
     }
 
-    return institutionAccount;
+    let isFollowing = false;
+    if (followerId) {
+      isFollowing = Boolean(
+        await this.prismaService.follow.findUnique({
+          where: {
+            followerId_followingId: {
+              followerId,
+              followingId: id,
+            },
+          },
+        }),
+      );
+    }
+    return {
+      ...institutionAccount,
+      isFollowing: isFollowing,
+    };
   }
 
   async findOneDonor(id: number) {
@@ -537,5 +571,110 @@ export class AccountService {
     });
 
     return updatedAccount;
+  }
+
+  async followAccount(followerId: number, followingId: number) {
+    const existRegister = await this.prismaService.follow.findFirst({
+      where: { followerId: followerId, followingId: followingId },
+    });
+
+    if (existRegister) {
+      throw new HttpException(
+        `O usuário já segue essa conta`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const existingFollowingAccount = await this.prismaService.account.findFirst(
+      {
+        where: { id: followingId },
+      },
+    );
+
+    if (!existingFollowingAccount) {
+      throw new HttpException(
+        `Conta com ID ${followerId} não encontrada`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const existingFollowerAccount = await this.prismaService.account.findFirst({
+      where: { id: followerId },
+    });
+
+    if (!existingFollowerAccount) {
+      throw new HttpException(
+        `Conta com ID ${followerId} não encontrada`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    await this.prismaService.account.update({
+      where: { id: followerId },
+      data: { followingCount: { increment: 1 } },
+    });
+
+    await this.prismaService.account.update({
+      where: { id: followingId },
+      data: { followersCount: { increment: 1 } },
+    });
+
+    return this.prismaService.follow.create({
+      data: {
+        followerId,
+        followingId,
+      },
+    });
+  }
+
+  async unfollowAccount(followerId: number, followingId: number) {
+    const existRegister = await this.prismaService.follow.findFirst({
+      where: { followerId: followerId, followingId: followingId },
+    });
+
+    if (!existRegister) {
+      throw new HttpException(
+        `O usuário já segue essa conta`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const existingFollowingAccount = await this.prismaService.account.findFirst(
+      {
+        where: { id: followingId },
+      },
+    );
+
+    if (!existingFollowingAccount) {
+      throw new HttpException(
+        `Conta com ID ${followerId} não encontrada`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const existingFollowerAccount = await this.prismaService.account.findFirst({
+      where: { id: followerId },
+    });
+
+    if (!existingFollowerAccount) {
+      throw new HttpException(
+        `Conta com ID ${followerId} não encontrada`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    await this.prismaService.account.update({
+      where: { id: followerId },
+      data: { followingCount: { decrement: 1 } },
+    });
+
+    await this.prismaService.account.update({
+      where: { id: followingId },
+      data: { followersCount: { decrement: 1 } },
+    });
+
+    return this.prismaService.follow.delete({
+      where: { id: existRegister.id },
+    });
   }
 }

@@ -23,6 +23,11 @@ describe('AccountService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     },
+    follow: {
+      findFirst: jest.fn(),
+      create: jest.fn(),
+      delete: jest.fn(),
+    },
     institution: {
       findFirst: jest.fn(),
       findUnique: jest.fn(),
@@ -162,6 +167,141 @@ describe('AccountService', () => {
       await expect(service.create(createAccountDto)).rejects.toThrow(
         'este cnpj já está cadastrado',
       );
+    });
+  });
+
+  describe('AccountService - Follow/Unfollow', () => {
+    describe('followAccount', () => {
+      it('should follow an account successfully', async () => {
+        mockPrismaService.follow.findFirst.mockResolvedValue(null); // Não há registro existente
+        mockPrismaService.account.findFirst.mockResolvedValueOnce({ id: 2 }); // Conta a ser seguida existe
+        mockPrismaService.account.findFirst.mockResolvedValueOnce({ id: 1 }); // Conta do seguidor existe
+        mockPrismaService.account.update.mockResolvedValue(undefined); // Incremento de contadores
+        mockPrismaService.follow.create.mockResolvedValue({
+          id: 1,
+          followerId: 1,
+          followingId: 2,
+        }); // Criação do registro de follow
+
+        const result = await service.followAccount(1, 2);
+
+        expect(mockPrismaService.follow.findFirst).toHaveBeenCalledWith({
+          where: { followerId: 1, followingId: 2 },
+        });
+        expect(mockPrismaService.account.update).toHaveBeenCalledTimes(2);
+        expect(mockPrismaService.follow.create).toHaveBeenCalledWith({
+          data: { followerId: 1, followingId: 2 },
+        });
+        expect(result).toEqual({ id: 1, followerId: 1, followingId: 2 });
+      });
+
+      it('should throw an error if the user already follows the account', async () => {
+        mockPrismaService.follow.findFirst.mockResolvedValue({ id: 1 });
+
+        await expect(service.followAccount(1, 2)).rejects.toThrow(
+          'O usuário já segue essa conta',
+        );
+        expect(mockPrismaService.follow.findFirst).toHaveBeenCalledWith({
+          where: { followerId: 1, followingId: 2 },
+        });
+      });
+
+      it('should throw an error if the following account does not exist', async () => {
+        mockPrismaService.follow.findFirst.mockResolvedValue(null);
+        mockPrismaService.account.findFirst.mockResolvedValueOnce(null); // Conta a ser seguida não existe
+
+        await expect(service.followAccount(1, 2)).rejects.toThrow(
+          'Conta com ID 1 não encontrada',
+        );
+        expect(mockPrismaService.account.findFirst).toHaveBeenCalledWith({
+          where: { id: 2 },
+        });
+      });
+
+      it('should throw an error if the follower account does not exist', async () => {
+        mockPrismaService.follow.findFirst.mockResolvedValue(null);
+        mockPrismaService.account.findFirst
+          .mockResolvedValueOnce({ id: 2 }) // Conta a ser seguida existe
+          .mockResolvedValueOnce(null); // Conta do seguidor não existe
+
+        await expect(service.followAccount(1, 2)).rejects.toThrow(
+          'Conta com ID 1 não encontrada',
+        );
+        expect(mockPrismaService.account.findFirst).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    describe('unfollowAccount', () => {
+      it('should unfollow an account successfully', async () => {
+        mockPrismaService.follow.findFirst.mockResolvedValue({
+          id: 1,
+          followerId: 1,
+          followingId: 2,
+        }); // Existe registro de follow
+        mockPrismaService.account.findFirst
+          .mockResolvedValueOnce({ id: 2 }) // Conta a ser deixada de seguir existe
+          .mockResolvedValueOnce({ id: 1 }); // Conta do seguidor existe
+        mockPrismaService.account.update.mockResolvedValue(undefined); // Decremento de contadores
+        mockPrismaService.follow.delete.mockResolvedValue({
+          id: 1,
+          followerId: 1,
+          followingId: 2,
+        }); // Remoção do registro de follow
+
+        const result = await service.unfollowAccount(1, 2);
+
+        expect(mockPrismaService.follow.findFirst).toHaveBeenCalledWith({
+          where: { followerId: 1, followingId: 2 },
+        });
+        expect(mockPrismaService.account.update).toHaveBeenCalledTimes(2);
+        expect(mockPrismaService.follow.delete).toHaveBeenCalledWith({
+          where: { id: 1 },
+        });
+        expect(result).toEqual({ id: 1, followerId: 1, followingId: 2 });
+      });
+
+      it('should throw an error if there is no follow record', async () => {
+        mockPrismaService.follow.findFirst.mockResolvedValue(null);
+
+        await expect(service.unfollowAccount(1, 2)).rejects.toThrow(
+          'O usuário já segue essa conta',
+        );
+        expect(mockPrismaService.follow.findFirst).toHaveBeenCalledWith({
+          where: { followerId: 1, followingId: 2 },
+        });
+      });
+
+      it('should throw an error if the following account does not exist', async () => {
+        mockPrismaService.follow.findFirst.mockResolvedValue({
+          id: 1,
+          followerId: 1,
+          followingId: 2,
+        });
+        mockPrismaService.account.findFirst.mockResolvedValueOnce(null); // Conta a ser deixada de seguir não existe
+
+        await expect(service.unfollowAccount(1, 2)).rejects.toThrow(
+          'Conta com ID 1 não encontrada',
+        );
+        expect(mockPrismaService.account.findFirst).toHaveBeenCalledWith({
+          where: { id: 2 },
+        });
+      });
+
+      it('should throw an error if the follower account does not exist', async () => {
+        mockPrismaService.follow.findFirst.mockResolvedValue({
+          id: 1,
+          followerId: 1,
+          followingId: 2,
+        });
+        mockPrismaService.account.findFirst
+          .mockResolvedValueOnce({ id: 2 }) // Conta a ser deixada de seguir existe
+          .mockResolvedValueOnce(null); // Conta do seguidor não existe
+
+        await expect(service.unfollowAccount(1, 2)).rejects.toThrow(
+          'Conta com ID 1 não encontrada',
+        );
+        expect(mockPrismaService.account.findFirst).toHaveBeenCalledTimes(2);
+      });
     });
   });
 
@@ -334,6 +474,7 @@ describe('AccountService', () => {
           avatarId: null,
           media: null,
         },
+        isFollowing: false,
       };
       mockPrismaService.institution.findUnique.mockResolvedValue(inst);
 

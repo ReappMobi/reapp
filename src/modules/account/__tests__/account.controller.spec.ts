@@ -28,6 +28,8 @@ describe('AccountController', () => {
             findOneDonor: jest.fn(),
             remove: jest.fn(),
             update: jest.fn(),
+            followAccount: jest.fn(),
+            unfollowAccount: jest.fn(),
           },
         },
       ],
@@ -154,9 +156,87 @@ describe('AccountController', () => {
         institutionData,
       );
 
-      const result = await controller.findOneInsitution('1');
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      const request = { user: { id: 1 } } as any;
+      const result = await controller.findOneInsitution('1', request);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(
+        1,
+        request.user.id,
+      );
       expect(result).toEqual(institutionData);
+    });
+  });
+
+  describe('follow', () => {
+    it('should follow an account', async () => {
+      const request = { user: { id: 1 } };
+      const targetAccountId = 2;
+
+      (accountService.followAccount as jest.Mock).mockResolvedValue({
+        message: `You are now following account ${targetAccountId}`,
+      });
+
+      const result = await controller.follow(request, targetAccountId);
+      expect(accountService.followAccount).toHaveBeenCalledWith(
+        1,
+        targetAccountId,
+      );
+      expect(result).toEqual({
+        message: `You are now following account ${targetAccountId}`,
+      });
+    });
+
+    it('should handle error when trying to follow an invalid account', async () => {
+      const request = { user: { id: 1 } };
+      const targetAccountId = 999;
+
+      (accountService.followAccount as jest.Mock).mockRejectedValue(
+        new HttpException('Account not found', HttpStatus.NOT_FOUND),
+      );
+
+      await expect(controller.follow(request, targetAccountId)).rejects.toThrow(
+        'Account not found',
+      );
+      expect(accountService.followAccount).toHaveBeenCalledWith(
+        1,
+        targetAccountId,
+      );
+    });
+  });
+
+  describe('unfollow', () => {
+    it('should unfollow an account', async () => {
+      const request = { user: { id: 1 } };
+      const targetAccountId = 2;
+
+      (accountService.unfollowAccount as jest.Mock).mockResolvedValue({
+        message: `You have unfollowed account ${targetAccountId}`,
+      });
+
+      const result = await controller.unfollow(request, targetAccountId);
+      expect(accountService.unfollowAccount).toHaveBeenCalledWith(
+        1,
+        targetAccountId,
+      );
+      expect(result).toEqual({
+        message: `You have unfollowed account ${targetAccountId}`,
+      });
+    });
+
+    it('should handle error when trying to unfollow an invalid account', async () => {
+      const request = { user: { id: 1 } };
+      const targetAccountId = 999;
+
+      (accountService.unfollowAccount as jest.Mock).mockRejectedValue(
+        new HttpException('Account not found', HttpStatus.NOT_FOUND),
+      );
+
+      await expect(
+        controller.unfollow(request, targetAccountId),
+      ).rejects.toThrow('Account not found');
+      expect(accountService.unfollowAccount).toHaveBeenCalledWith(
+        1,
+        targetAccountId,
+      );
     });
   });
 
