@@ -173,7 +173,7 @@ model Donation {
   projectId            Int?
   project              Project?       @relation(fields: [projectId], references: [id])
   institutionId        Int?
-  Institution          Institution?   @relation(fields: [institutionId], references: [id])
+  institution          Institution?   @relation(fields: [institutionId], references: [id])
   donorId              Int
   donor                Donor          @relation(fields: [donorId], references: [id])
 }
