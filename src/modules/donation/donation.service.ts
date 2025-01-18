@@ -252,19 +252,48 @@ export class DonationService {
     limit: number,
     institutionId: number = null,
     projectId: number = null,
+    user: any,
   ) {
-    const donations =
-      (await this.prismaService.donation.findMany({
+    const { id } = user;
+
+    if (id && donorId !== id) {
+      throw new HttpException(
+        'Doadores não podem ver doações de outros doadores',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    try {
+      const donations = await this.prismaService.donation.findMany({
         where: {
           donorId: Number(donorId),
           projectId: projectId ? projectId : undefined,
           institutionId: institutionId ? institutionId : undefined,
         },
+        include: {
+          project: true,
+          institution: {
+            select: {
+              account: {
+                select: {
+                  name: true,
+                  media: true,
+                },
+              },
+            },
+          },
+        },
         skip: (page - 1) * limit,
         take: Number(limit),
-      })) || [];
-
-    return donations;
+      });
+      return donations;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(
+        'Erro ao buscar doações',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async notifyDonation(data: NotificationRequestDto) {
