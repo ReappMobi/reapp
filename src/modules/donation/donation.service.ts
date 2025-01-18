@@ -218,20 +218,124 @@ export class DonationService {
     return donations;
   }
 
-  async getDonationsByInstitution(
-    institutionId: number,
-    page: number,
-    limit: number,
-  ) {
-    const donations =
-      (await this.prismaService.donation.findMany({
+  async getDonationsByInstitution(user: any, page: number, limit: number) {
+    if (!user) {
+      throw new HttpException(
+        'Apenas usuários logados podem ver as doações recebidas',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const thisAccount = await this.prismaService.account.findUnique({
+      where: {
+        id: +user.id,
+      },
+      select: { institution: { select: { id: true } } },
+    });
+
+    if (!thisAccount.institution) {
+      throw new HttpException(
+        'Apenas instituições podem ver as doações recebidas',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    try {
+      const donations = await this.prismaService.donation.findMany({
         where: {
-          institutionId: Number(institutionId),
+          institutionId: thisAccount.institution.id,
+          status: {
+            equals: 'APPROVED',
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          project: true,
+          donor: {
+            include: {
+              account: {
+                select: {
+                  name: true,
+                  media: true,
+                },
+              },
+            },
+          },
         },
         skip: (page - 1) * limit,
         take: Number(limit),
-      })) || [];
-    return donations;
+      });
+      return donations;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(
+        'Erro ao buscar doações',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getDonationsByInstitutionId(
+    institutionId: number,
+    page: number,
+    limit: number,
+    user: any,
+  ) {
+    const thisAccount = await this.prismaService.account.findUnique({
+      where: {
+        id: +user.id,
+      },
+      select: { institution: { select: { id: true } } },
+    });
+
+    if (!thisAccount.institution) {
+      throw new HttpException(
+        'Apenas instituições podem ver as doações recebidas',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    if (thisAccount.institution.id !== institutionId) {
+      throw new HttpException(
+        'Instituições não podem ver doações de outras instituições',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    try {
+      const donations = await this.prismaService.donation.findMany({
+        where: {
+          institutionId: Number(institutionId),
+          status: {
+            equals: 'APPROVED',
+          },
+        },
+        include: {
+          project: true,
+          donor: {
+            include: {
+              account: {
+                select: {
+                  name: true,
+                  media: true,
+                },
+              },
+            },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: Number(limit),
+      });
+      return donations;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(
+        'Erro ao buscar doações',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async getDonationsByProject(projectId: number, page: number, limit: number) {

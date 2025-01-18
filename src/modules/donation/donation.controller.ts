@@ -41,16 +41,33 @@ export class DonationController {
   }
 
   @UseGuards(AuthGuard)
-  @Get('institution/:institutionId')
+  @Get('institution')
   findByInstitution(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.donationService.getDonationsByInstitution(
+      req.user,
+      page,
+      limit,
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('institution/:institutionId')
+  findByInstitutionId(
     @Param('institutionId') institutionId: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
+    @Req() req: RequestWithUser,
   ) {
-    return this.donationService.getDonationsByInstitution(
-      institutionId,
-      page,
-      limit,
+    const { user } = req;
+    return this.donationService.getDonationsByInstitutionId(
+      +institutionId,
+      +page,
+      +limit,
+      user,
     );
   }
 
@@ -60,11 +77,13 @@ export class DonationController {
     @Param('projectId') projectId: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
+    @Req() req: RequestWithUser,
   ) {
-    return this.donationService.getDonationsByInstitution(
+    return this.donationService.getDonationsByInstitutionId(
       projectId,
       page,
       limit,
+      req.user,
     );
   }
 
