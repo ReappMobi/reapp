@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
   UnauthorizedException,
   UploadedFile,
@@ -64,6 +65,12 @@ export class PostController {
     return posts;
   }
 
+  @Get(':id')
+  @UseGuards(AuthGuard)
+  async getPostById(@Param('id', ParseIntPipe) id: number) {
+    const posts = await this.postService.getPostById(id);
+    return posts;
+  }
   @Get('institution/:institutionId')
   @UseGuards(AuthGuard)
   async getPostsByInstitution(

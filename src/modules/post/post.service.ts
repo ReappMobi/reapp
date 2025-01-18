@@ -114,6 +114,14 @@ export class PostService {
     return allPosts;
   }
 
+  async getPostById(id: number) {
+    const post = await this.prismaService.post.findMany({
+      where: {
+        id,
+      },
+    });
+    return post;
+  }
   async getPostsByInstitution(institutionId: number) {
     const posts = await this.prismaService.post.findMany({
       where: {
