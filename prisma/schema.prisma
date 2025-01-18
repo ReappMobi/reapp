@@ -53,15 +53,15 @@ model Account {
 }
 
 model Follow {
-  id               Int               @id @default(autoincrement())
-  followerId       Int               
-  followingId      Int               
-  createdAt        DateTime          @default(now())
+  id          Int      @id @default(autoincrement())
+  followerId  Int
+  followingId Int
+  createdAt   DateTime @default(now())
 
-  follower         Account           @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
-  following        Account           @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  follower  Account @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  following Account @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
 
-  @@unique([followerId, followingId]) 
+  @@unique([followerId, followingId])
 }
 
 model Donor {
@@ -110,27 +110,28 @@ model Post {
 }
 
 model Like {
-  id      Int   @id @default(autoincrement())
-  post    Post  @relation(fields: [postId], references: [id])
-  postId  Int
-  Account Account  @relation(fields: [accountId], references: [id])
+  id        Int     @id @default(autoincrement())
+  post      Post    @relation(fields: [postId], references: [id])
+  postId    Int
+  Account   Account @relation(fields: [accountId], references: [id])
   accountId Int
 }
 
 model Comment {
-  id      Int    @id @default(autoincrement())
-  body    String @db.Text
-  post    Post   @relation(fields: [postId], references: [id])
-  postId  Int
-  Account Account  @relation(fields: [accountId], references: [id])
+  id        Int      @id @default(autoincrement())
+  body      String   @db.Text
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+  account   Account  @relation(fields: [accountId], references: [id])
   accountId Int
+  createdAt DateTime @default(now())
 }
 
 model Save {
-  id      Int    @id @default(autoincrement())
-  post    Post   @relation(fields: [postId], references: [id])
-  postId  Int
-  account Account  @relation(fields: [accountId], references: [id])
+  id        Int     @id @default(autoincrement())
+  post      Post    @relation(fields: [postId], references: [id])
+  postId    Int
+  account   Account @relation(fields: [accountId], references: [id])
   accountId Int
 }
 

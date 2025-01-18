@@ -34,7 +34,6 @@ const postResponseFields = {
   media: true,
   createdAt: true,
   updatedAt: true,
-  comments: true,
   likes: {
     select: {
       id: true,
@@ -48,6 +47,8 @@ const postResponseFields = {
     },
   },
 };
+
+const COMMENT_PAGE_SIZE = 10;
 
 @Injectable()
 export class PostService {
@@ -112,6 +113,38 @@ export class PostService {
     });
 
     return allPosts;
+  }
+
+  async getPostById(id: number) {
+    const post = await this.prismaService.post.findMany({
+      where: {
+        id,
+      },
+    });
+    return post;
+  }
+
+  async getPostComments(id: number, page: number) {
+    const comments = await this.prismaService.comment.findMany({
+      where: {
+        postId: id,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        account: {
+          select: {
+            name: true,
+            media: true,
+          },
+        },
+      },
+      skip: (page - 1) * COMMENT_PAGE_SIZE,
+      take: COMMENT_PAGE_SIZE,
+    });
+
+    return comments;
   }
 
   async getPostsByInstitution(institutionId: number) {
@@ -221,6 +254,13 @@ export class PostService {
   }
 
   async addComment(postId: number, accountId: number, body: string) {
+    if (!accountId) {
+      throw new HttpException(
+        'Você precisa estar logado para comentar.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
     if (!body) {
       throw new HttpException(
         'Por favor, insira o texto do comentário.',
