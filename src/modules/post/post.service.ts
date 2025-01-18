@@ -254,6 +254,13 @@ export class PostService {
   }
 
   async addComment(postId: number, accountId: number, body: string) {
+    if (!accountId) {
+      throw new HttpException(
+        'Você precisa estar logado para comentar.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
     if (!body) {
       throw new HttpException(
         'Por favor, insira o texto do comentário.',
