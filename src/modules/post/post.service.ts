@@ -34,7 +34,6 @@ const postResponseFields = {
   media: true,
   createdAt: true,
   updatedAt: true,
-  comments: true,
   likes: {
     select: {
       id: true,
@@ -48,6 +47,8 @@ const postResponseFields = {
     },
   },
 };
+
+const COMMENT_PAGE_SIZE = 10;
 
 @Injectable()
 export class PostService {
@@ -122,6 +123,30 @@ export class PostService {
     });
     return post;
   }
+
+  async getPostComments(id: number, page: number) {
+    const comments = await this.prismaService.comment.findMany({
+      where: {
+        postId: id,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        account: {
+          select: {
+            name: true,
+            media: true,
+          },
+        },
+      },
+      skip: (page - 1) * COMMENT_PAGE_SIZE,
+      take: COMMENT_PAGE_SIZE,
+    });
+
+    return comments;
+  }
+
   async getPostsByInstitution(institutionId: number) {
     const posts = await this.prismaService.post.findMany({
       where: {
