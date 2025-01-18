@@ -31,7 +31,7 @@ export class AuthService {
     const jwtSecretKey = process.env.JWT_SECRET;
     if (!jwtSecretKey) {
       throw new HttpException(
-        'JWT secret key not found',
+        'Ocorreu um erro ao autenticar o usuário',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
