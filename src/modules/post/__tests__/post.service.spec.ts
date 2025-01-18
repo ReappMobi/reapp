@@ -150,7 +150,6 @@ describe('PostService', () => {
         },
         select: {
           body: true,
-          comments: true,
           createdAt: true,
           id: true,
           institution: {
@@ -251,7 +250,6 @@ describe('PostService', () => {
         },
         select: {
           body: true,
-          comments: true,
           createdAt: true,
           id: true,
           institution: {
@@ -405,7 +403,6 @@ describe('PostService', () => {
         },
         select: {
           body: true,
-          comments: true,
           createdAt: true,
           id: true,
           institution: {
