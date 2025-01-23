@@ -65,6 +65,14 @@ export class PostController {
     return posts;
   }
 
+  @Get('/saved')
+  @UseGuards(AuthGuard)
+  async getSavedPostsByUserId(@Req() req: RequestWithUser) {
+    const userId = req.user?.id;
+    const savedPosts = await this.postService.findSavedPostsByUserId(userId);
+    return savedPosts;
+  }
+
   @Get(':id')
   @UseGuards(AuthGuard)
   async getPostById(@Param('id', ParseIntPipe) id: number) {
@@ -173,13 +181,5 @@ export class PostController {
     const userId = req.user?.id;
     await this.postService.unsavePost(postId, userId);
     return { message: 'Post retirado dos salvos com sucesso' };
-  }
-
-  @Get('/saved')
-  @UseGuards(AuthGuard)
-  async getSavedPostsByUserId(@Req() req: RequestWithUser) {
-    const userId = req.user?.id;
-    const savedPosts = await this.postService.findSavedPostsByUserId(userId);
-    return savedPosts;
   }
 }

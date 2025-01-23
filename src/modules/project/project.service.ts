@@ -38,6 +38,7 @@ const projectResponseFields = {
   institution: {
     select: {
       id: true,
+      phone: true,
       category: {
         select: {
           name: true,
