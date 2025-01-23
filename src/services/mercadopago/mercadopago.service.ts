@@ -13,20 +13,13 @@ export class MercadopagoService {
   constructor() {
     this.client = new MercadoPagoConfig({
       accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
-      options: {
-        timeout: 5000,
-        idempotencyKey: process.env.MERCADOPAGO_IDEMPOTENCY_KEY,
-      },
     });
   }
 
   async processPayment(data: PreferenceRequest): Promise<PreferenceResponse> {
     const preference = new Preference(this.client);
-    const requestOptions = {
-      idempotencyKey: process.env.MERCADOPAGO_IDEMPOTENCY_KEY,
-    };
     try {
-      const response = await preference.create({ body: data, requestOptions });
+      const response = await preference.create({ body: data });
       return response;
     } catch (error) {
       return error;
