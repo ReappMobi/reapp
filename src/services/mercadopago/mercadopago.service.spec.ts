@@ -50,9 +50,6 @@ describe('MercadopagoService', () => {
       const result = await service.processPayment(data);
       expect(mercadopagoPreferenceMock.create).toHaveBeenCalledWith({
         body: data,
-        requestOptions: {
-          idempotencyKey: process.env.MERCADOPAGO_IDEMPOTENCY_KEY,
-        },
       });
       expect(result).toEqual(response);
     });
@@ -80,9 +77,6 @@ describe('MercadopagoService', () => {
       const result = await service.processPayment(data);
       expect(mercadopagoPreferenceMock.create).toHaveBeenCalledWith({
         body: data,
-        requestOptions: {
-          idempotencyKey: process.env.MERCADOPAGO_IDEMPOTENCY_KEY,
-        },
       });
       expect(result).toEqual(error);
     });
