@@ -170,7 +170,7 @@ describe('DonationService tests', () => {
           name: 'test',
           email: 'test@test.com',
         },
-        notification_url: 'localhost:3000/donation/notify',
+        notification_url: 'https://exemploAplicacao.com/donation/notify',
       });
     });
 
@@ -207,7 +207,7 @@ describe('DonationService tests', () => {
           name: 'test',
           email: 'test@test.com',
         },
-        notification_url: 'localhost:3000/donation/notify',
+        notification_url: 'https://exemploAplicacao.com/donation/notify',
       });
     });
 
@@ -240,7 +240,7 @@ describe('DonationService tests', () => {
           name: 'test',
           email: 'test@test.com',
         },
-        notification_url: 'localhost:3000/donation/notify',
+        notification_url: 'https://exemploAplicacao.com/donation/notify',
       });
     });
   });
