@@ -148,6 +148,7 @@ describe('ProjectController', () => {
         updatedAt: new Date(),
         institution: {
           id: 1,
+          phone: '989828213878',
           name: 'Institution Name',
           description: 'Institution Description',
           category: {
@@ -348,6 +349,7 @@ describe('ProjectController', () => {
         },
         institution: {
           id: 1,
+          phone: '989828213878',
           name: 'Institution Name',
           description: 'Institution Description',
           category: {
@@ -626,6 +628,7 @@ describe('ProjectController', () => {
         },
         institution: {
           id: 2,
+          phone: '989828213878',
           name: 'Old project',
           description: 'Old Description',
           category: {
@@ -793,6 +796,7 @@ describe('ProjectController', () => {
         },
         institution: {
           id: 1,
+          phone: '989828213878',
           name: 'Institution Name',
           description: 'Institution Description',
           category: {
@@ -977,6 +981,7 @@ describe('ProjectController', () => {
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
         institution: {
+          phone: '989828213878',
           id: 2,
           name: 'Institution Name',
           description: 'Institution Description',
@@ -1155,6 +1160,7 @@ describe('ProjectController', () => {
           },
           institution: {
             id: 1,
+            phone: '989828213878',
             name: 'Institution Name',
             description: 'Institution Description',
             category: {
@@ -1276,6 +1282,7 @@ describe('ProjectController', () => {
           },
           institution: {
             id: 1,
+            phone: '989828213878',
             name: 'Institution Name',
             description: 'Institution Description',
             category: {
@@ -1410,6 +1417,7 @@ describe('ProjectController', () => {
           },
           institution: {
             id: 1,
+            phone: '989828213878',
             name: 'Institution Name',
             description: 'Institution Description',
             category: {
@@ -1545,6 +1553,7 @@ describe('ProjectController', () => {
         },
         institution: {
           id: 1,
+          phone: '989828213878',
           name: 'Institution Name',
           description: 'Institution Description',
           category: {
@@ -1664,6 +1673,7 @@ describe('ProjectController', () => {
           },
           institution: {
             id: 1,
+            phone: '989828213878',
             name: 'Institution Name',
             description: 'Institution Description',
             category: {

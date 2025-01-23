@@ -448,7 +448,7 @@ describe('ProjectService', () => {
         data: {
           name: updateData.name,
           description: updateData.description,
-          media: { connect: { id: 'media-id' } }, // Atualizado
+          media: { connect: { id: 'media-id' } },
           category: undefined,
         },
         select: {
@@ -465,6 +465,7 @@ describe('ProjectService', () => {
           institution: {
             select: {
               id: true,
+              phone: true,
               category: {
                 select: {
                   name: true,
@@ -590,6 +591,7 @@ describe('ProjectService', () => {
           institution: {
             select: {
               id: true,
+              phone: true,
               category: {
                 select: {
                   name: true,
@@ -694,6 +696,7 @@ describe('ProjectService', () => {
           },
           institution: {
             select: {
+              phone: true,
               id: true,
               category: {
                 select: {
@@ -1003,6 +1006,7 @@ describe('ProjectService', () => {
           },
           institution: {
             select: {
+              phone: true,
               id: true,
               category: {
                 select: {
@@ -1098,6 +1102,7 @@ describe('ProjectService', () => {
               },
               institution: {
                 select: {
+                  phone: true,
                   id: true,
                   category: {
                     select: {
@@ -1179,6 +1184,7 @@ describe('ProjectService', () => {
           },
           institution: {
             select: {
+              phone: true,
               id: true,
               category: {
                 select: {
@@ -1233,6 +1239,7 @@ describe('ProjectService', () => {
           institution: {
             select: {
               id: true,
+              phone: true,
               category: {
                 select: {
                   name: true,
