@@ -1268,23 +1268,26 @@ describe('ProjectService', () => {
   // Tests for getProjectCategoriesService
   describe('getProjectCategoriesService', () => {
     it('should return categories with at least one project', async () => {
-      const categories = [
+      const categoriesIds = [{ id: 1 }, { id: 2 }];
+      const expected = [
         { id: 1, name: 'Category 1' },
         { id: 2, name: 'Category 2' },
       ];
 
-      prismaService.category.findMany = jest.fn().mockResolvedValue(categories);
+      prismaService.$queryRaw = jest.fn().mockResolvedValue(categoriesIds);
+      prismaService.category.findMany = jest.fn().mockResolvedValue(expected);
 
-      const result = await service.getProjectCategoriesService();
+      const actual = await service.getProjectCategoriesService('');
 
       expect(prismaService.category.findMany).toHaveBeenCalledWith({
         where: {
-          projects: {
-            some: {},
+          id: {
+            in: [1, 2],
           },
         },
+        orderBy: { name: 'asc' },
       });
-      expect(result).toEqual(categories);
+      expect(actual).toEqual(expected);
     });
   });
 });
