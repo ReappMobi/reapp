@@ -10,6 +10,7 @@ services:
       - "3000:3000"
     volumes:
       - .:/app
+      - app_uploads:/app/uploads
     env_file:
       - .env
     depends_on:
@@ -43,3 +44,4 @@ services:
 
 volumes:
   postgres_data:
+  app_uploads:

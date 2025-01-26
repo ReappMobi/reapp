@@ -148,6 +148,9 @@ describe('DonationService tests', () => {
       (prismaService.account.findUnique as jest.Mock).mockResolvedValue({
         email: 'test@test.com',
         name: 'test',
+        donor: {
+          id: 1,
+        },
       });
       (mercadopagoService.processPayment as jest.Mock).mockResolvedValue({
         id: 'test_id',
@@ -170,7 +173,7 @@ describe('DonationService tests', () => {
           name: 'test',
           email: 'test@test.com',
         },
-        notification_url: 'https://exemploAplicacao.com/donation/notify',
+        notification_url: 'https://reapp.dev.br/donation/notify',
       });
     });
 
@@ -183,6 +186,9 @@ describe('DonationService tests', () => {
       (prismaService.account.findUnique as jest.Mock).mockResolvedValue({
         email: 'test@test.com',
         name: 'test',
+        donor: {
+          id: 1,
+        },
       });
       (mercadopagoService.processPayment as jest.Mock).mockResolvedValue({
         id: 'test_id',
@@ -207,7 +213,7 @@ describe('DonationService tests', () => {
           name: 'test',
           email: 'test@test.com',
         },
-        notification_url: 'https://exemploAplicacao.com/donation/notify',
+        notification_url: 'https://reapp.dev.br/donation/notify',
       });
     });
 
@@ -215,6 +221,9 @@ describe('DonationService tests', () => {
       (prismaService.account.findUnique as jest.Mock).mockResolvedValue({
         email: 'test@test.com',
         name: 'test',
+        donor: {
+          id: 1,
+        },
       });
       (mercadopagoService.processPayment as jest.Mock).mockResolvedValue({
         id: 'test_id',
@@ -240,7 +249,7 @@ describe('DonationService tests', () => {
           name: 'test',
           email: 'test@test.com',
         },
-        notification_url: 'https://exemploAplicacao.com/donation/notify',
+        notification_url: 'https://reapp.dev.br/donation/notify',
       });
     });
   });
