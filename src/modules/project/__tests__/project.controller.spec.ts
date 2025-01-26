@@ -1491,7 +1491,7 @@ describe('ProjectController', () => {
         .spyOn(projectService, 'getProjectCategoriesService')
         .mockResolvedValue(categories);
 
-      const result = await controller.getProjectCategories();
+      const result = await controller.getProjectCategories('');
 
       expect(projectService.getProjectCategoriesService).toHaveBeenCalled();
       expect(result).toEqual(categories);
