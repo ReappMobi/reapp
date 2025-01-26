@@ -184,6 +184,7 @@ model Category {
   name         String        @unique @db.VarChar(255)
   projects     Project[]
   institutions Institution[]
+  @@map("categories")
 }
 
 model InstitutionMember {
