@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../../database/prisma.service';
 import { MediaService } from '../media-attachment/media-attachment.service';
 import { UpdateProjectDto } from './dto/updateProject.dto';
+import { Prisma } from '@prisma/client';
 
 export type PostProjectData = {
   description: string;
@@ -358,16 +359,36 @@ export class ProjectService {
     return projects;
   }
 
-  async getProjectCategoriesService() {
-    const categories = await this.prismaService.category.findMany({
-      where: {
-        projects: {
-          some: {},
-        },
-      },
-    });
+  async getProjectCategoriesService(search: string = '') {
+    const sanitizedSearch = search.trim();
+    if (sanitizedSearch.length > 100) {
+      throw new HttpException(
+        'A pesquisa deve ter no máximo 100 caracteres',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
-    return categories;
+    const query = `%${sanitizedSearch}%`;
+    const maxResults = 10;
+    try {
+      const ids = await this.prismaService.$queryRaw<{ id: number }[]>(
+        Prisma.sql`SELECT id FROM categories WHERE name ILIKE ${query} LIMIT ${maxResults}`,
+      );
+      const categories = await this.prismaService.category.findMany({
+        where: {
+          id: {
+            in: ids.map((id) => id.id),
+          },
+        },
+        orderBy: { name: 'asc' },
+      });
+      return categories;
+    } catch (error) {
+      throw new HttpException(
+        'Erro ao buscar categorias',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async deleteProjectService(projectId: number, accountId: number) {
