@@ -14,6 +14,7 @@ import {
   ParseIntPipe,
   Put,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthGuard } from '../auth/auth.guard';
@@ -140,8 +141,9 @@ export class ProjectController {
   }
 
   @Get('categories')
-  async getProjectCategories() {
-    const result = await this.projectService.getProjectCategoriesService();
+  async getProjectCategories(@Query('search') search: string) {
+    const result =
+      await this.projectService.getProjectCategoriesService(search);
     return result;
   }
 
