@@ -154,6 +154,7 @@ export class DonationService {
         institution: true,
         name: true,
         email: true,
+        donor: true,
       },
     });
 
@@ -195,7 +196,7 @@ export class DonationService {
           paymentTransactionId: response.id,
           donor: {
             connect: {
-              id: account.id,
+              id: account.donor.id,
             },
           },
         },
@@ -401,6 +402,7 @@ export class DonationService {
   }
 
   async notifyDonation(data: NotificationRequestDto) {
+    console.log(data);
     if (data.type !== 'payment') return;
     const payment = await this.mercadopagoService.getPayment(data.data.id);
     if (!payment) {
