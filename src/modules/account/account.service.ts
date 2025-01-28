@@ -63,8 +63,9 @@ export class AccountService {
     createAccountDto: CreateAccountDto,
     media?: Express.Multer.File,
   ) {
+    const email = createAccountDto.email.toLowerCase();
     const emailExists = await this.prismaService.account.findFirst({
-      where: { email: createAccountDto.email },
+      where: { email },
     });
 
     const cnpjExists = await this.prismaService.institution.findFirst({
@@ -102,9 +103,10 @@ export class AccountService {
       const account = await this.prismaService.account.create({
         data: {
           accountType: 'INSTITUTION',
-          email: createAccountDto.email,
+          email: email,
           passwordHash: hashedPassword,
           name: createAccountDto.name,
+          note: createAccountDto.note,
           institution: {
             create: {
               fields: {
@@ -154,8 +156,9 @@ export class AccountService {
     createAccountDto: CreateAccountDto,
     media?: Express.Multer.File,
   ) {
+    const email = createAccountDto.email.toLowerCase();
     const emailExists = await this.prismaService.account.findFirst({
-      where: { email: createAccountDto.email },
+      where: { email },
     });
 
     if (emailExists) {
@@ -169,9 +172,10 @@ export class AccountService {
       const hashedPassword = await bcrypt.hash(createAccountDto.password, 10);
       const account = await this.prismaService.account.create({
         data: {
-          email: createAccountDto.email,
+          email: email,
           passwordHash: hashedPassword,
           name: createAccountDto.name,
+          note: createAccountDto.note,
           donor: {
             create: {},
           },
@@ -495,6 +499,14 @@ export class AccountService {
 
     if (updateAccountDto.note) {
       data.note = updateAccountDto.note;
+    }
+
+    if (
+      updateAccountDto.password &&
+      updateAccountDto.password == updateAccountDto.confirmPassword
+    ) {
+      const hashedPassword = await bcrypt.hash(updateAccountDto.password, 10);
+      data.passwordHash = hashedPassword;
     }
 
     const mediaId = account.avatarId;
