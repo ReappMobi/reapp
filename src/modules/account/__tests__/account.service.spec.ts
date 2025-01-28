@@ -677,8 +677,6 @@ describe('AccountService', () => {
         name: 'Updated Institution',
         phone: '987654321',
         category: 'New Category',
-        password: 'senha1234',
-        confirmPassword: 'senha1234',
       };
 
       const file = {} as Express.Multer.File;
