@@ -54,6 +54,16 @@ export class AuthService {
         followersCount: true,
         note: true,
         passwordHash: true,
+        donor: {
+          select: {
+            id: true,
+          },
+        },
+        institution: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
 
@@ -68,8 +78,7 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
-    const user = await this.validateUser(email, password);
-
+    const user = await this.validateUser(email.toLowerCase(), password);
     if (!user) {
       throw new HttpException('Credenciais inválidas', HttpStatus.UNAUTHORIZED);
     }

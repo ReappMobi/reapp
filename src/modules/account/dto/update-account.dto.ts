@@ -55,4 +55,14 @@ export abstract class UpdateAccountDto {
   @MinLength(5, { message: 'A nota deve ter no mínimo 5 caracteres.' })
   @MaxLength(40, { message: 'A nota deve ter no máximo 40 caracteres.' })
   note?: string;
+
+  @Expose()
+  @IsOptional()
+  @MinLength(8, { message: 'A senha deve ter no mínimo 8 caracteres.' })
+  password?: string;
+
+  @Expose()
+  @IsOptional()
+  @MinLength(8, { message: 'A senha deve ter no mínimo 8 caracteres.' })
+  confirmPassword?: string;
 }

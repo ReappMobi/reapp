@@ -282,7 +282,11 @@ describe('AccountController', () => {
   describe('update', () => {
     it('should update the account', async () => {
       const request = { user: { id: 1 } };
-      const updateAccountDto: UpdateAccountDto = { name: 'Updated User' };
+      const updateAccountDto: UpdateAccountDto = {
+        name: 'Updated User',
+        password: 'senha1234',
+        confirmPassword: 'senha1234',
+      };
       const file = {} as Express.Multer.File;
 
       const updatedAccount = {
@@ -305,7 +309,11 @@ describe('AccountController', () => {
 
     it('should handle not found exception on update', async () => {
       const request = { user: { id: 999 } };
-      const updateAccountDto: UpdateAccountDto = { name: 'Not Found' };
+      const updateAccountDto: UpdateAccountDto = {
+        name: 'Not Found',
+        password: 'senha1234',
+        confirmPassword: 'senha1234',
+      };
 
       (accountService.update as jest.Mock).mockRejectedValue(
         new HttpException('Conta não encontrada', HttpStatus.NOT_FOUND),

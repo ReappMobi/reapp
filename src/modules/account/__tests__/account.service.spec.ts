@@ -739,7 +739,11 @@ describe('AccountService', () => {
 
     it("should throw not found if account doesn't exist", async () => {
       mockPrismaService.account.findUnique.mockResolvedValue(null);
-      const updateDto: UpdateAccountDto = { name: 'No Account' };
+      const updateDto: UpdateAccountDto = {
+        name: 'No Account',
+        password: 'senha1234',
+        confirmPassword: 'senha1234',
+      };
 
       await expect(service.update(999, updateDto)).rejects.toThrow(
         'Conta não encontrada',
