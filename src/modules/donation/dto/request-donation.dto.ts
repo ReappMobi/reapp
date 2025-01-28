@@ -3,7 +3,6 @@ import {
   IsNumber,
   IsPositive,
   Min,
-  Max,
   IsOptional,
   IsString,
   MaxLength,
@@ -22,7 +21,6 @@ export abstract class RequestDonationDto {
   )
   @IsPositive({ message: 'O valor deve ser positivo.' })
   @Min(0.01, { message: 'O valor deve ser maior que 0.' })
-  @Max(500, { message: 'O valor deve ser menor que 500.' }) // TODO: Change this value
   amount: number;
 
   @IsOptional()
