@@ -7,6 +7,7 @@ import {
   PreferenceResponse,
 } from 'mercadopago/dist/clients/preference/commonTypes';
 import { NotificationRequestDto } from './dto/notification.dto';
+import { v4 as uuidv4 } from 'uuid';
 
 type ExtendedDonationRequest = RequestDonationDto & {
   name: string;
@@ -39,6 +40,7 @@ export class DonationService {
         name: bodyInfo.name,
         email: bodyInfo.email,
       },
+      external_reference: uuidv4(),
       notification_url:
         process.env.MERCADOPAGO_NOTIFICATION_URL ||
         'https://exemploAplicacao.com/donation/notify',
@@ -189,11 +191,12 @@ export class DonationService {
     }
 
     try {
+      console.log(response);
       await this.prismaService.donation.create({
         data: {
           amount: requestDonationDto.amount,
           paymentCheckoutUrl: response.init_point,
-          paymentTransactionId: response.id,
+          paymentTransactionId: response.external_reference,
           donor: {
             connect: {
               id: account.donor.id,
@@ -404,7 +407,9 @@ export class DonationService {
   async notifyDonation(data: NotificationRequestDto) {
     console.log(data);
     if (data.type !== 'payment') return;
+
     const payment = await this.mercadopagoService.getPayment(data.data.id);
+
     if (!payment) {
       throw new HttpException(
         'Pagamento não encontrado',
@@ -420,7 +425,7 @@ export class DonationService {
     if (statusMap[payment.status]) {
       await this.prismaService.donation.update({
         where: {
-          paymentTransactionId: String(payment.id),
+          paymentTransactionId: String(payment.external_reference),
         },
         data: {
           status: statusMap[payment.status],
