@@ -156,6 +156,7 @@ describe('DonationService tests', () => {
         id: 'test_id',
         init_point: 'https://test_url',
       });
+
       const accountId = 1;
       await service.requestDonation(requestDonationDto, accountId);
       expect(mercadopagoService.processPayment).toHaveBeenCalledWith({
@@ -173,6 +174,9 @@ describe('DonationService tests', () => {
           name: 'test',
           email: 'test@test.com',
         },
+        external_reference: expect.stringMatching(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        ),
         notification_url: 'https://reapp.dev.br/donation/notify',
       });
     });
@@ -213,6 +217,9 @@ describe('DonationService tests', () => {
           name: 'test',
           email: 'test@test.com',
         },
+        external_reference: expect.stringMatching(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        ),
         notification_url: 'https://reapp.dev.br/donation/notify',
       });
     });
@@ -249,6 +256,9 @@ describe('DonationService tests', () => {
           name: 'test',
           email: 'test@test.com',
         },
+        external_reference: expect.stringMatching(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        ),
         notification_url: 'https://reapp.dev.br/donation/notify',
       });
     });
@@ -290,6 +300,7 @@ describe('DonationService tests', () => {
         id: '123',
         status: 'approved',
         transaction_amount: 10,
+        external_reference: '1234',
       });
       await service.notifyDonation(data);
       expect(prismaService.donation.update).toHaveBeenCalledWith({
@@ -297,7 +308,7 @@ describe('DonationService tests', () => {
           status: 'APPROVED',
         },
         where: {
-          paymentTransactionId: '123',
+          paymentTransactionId: '1234',
         },
       });
     });
@@ -307,6 +318,7 @@ describe('DonationService tests', () => {
         id: '123',
         status: 'cancelled',
         transaction_amount: 10,
+        external_reference: '1234',
       });
       await service.notifyDonation(data);
       expect(prismaService.donation.update).toHaveBeenCalledWith({
@@ -314,7 +326,7 @@ describe('DonationService tests', () => {
           status: 'CANCELED',
         },
         where: {
-          paymentTransactionId: '123',
+          paymentTransactionId: '1234',
         },
       });
     });
@@ -324,6 +336,7 @@ describe('DonationService tests', () => {
         id: '123',
         status: 'rejected',
         transaction_amount: 10,
+        external_reference: '1234',
       });
       await service.notifyDonation(data);
       expect(prismaService.donation.update).toHaveBeenCalledWith({
@@ -331,7 +344,7 @@ describe('DonationService tests', () => {
           status: 'REJECTED',
         },
         where: {
-          paymentTransactionId: '123',
+          paymentTransactionId: '1234',
         },
       });
     });
