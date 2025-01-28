@@ -42,7 +42,8 @@
     "redis": "^4.7.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "uuid": "^11.0.5"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.4.0",
@@ -99,6 +100,8 @@
       ".dto.ts",
       "main.ts"
     ],
-    "setupFiles": ["dotenv/config"]
+    "setupFiles": [
+      "dotenv/config"
+    ]
   }
 }
