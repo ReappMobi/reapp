@@ -9,7 +9,6 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - .:/app
       - app_uploads:/app/uploads
     env_file:
       - .env
