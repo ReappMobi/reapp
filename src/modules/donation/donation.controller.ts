@@ -110,7 +110,7 @@ export class DonationController {
   }
 
   @Post('notify')
-  notifyDonation(requestBody: NotificationRequestDto) {
+  notifyDonation(@Body() requestBody: NotificationRequestDto) {
     return this.donationService.notifyDonation(requestBody);
   }
 }
