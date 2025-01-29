@@ -394,6 +394,7 @@ export class DonationService {
           donorId: Number(donorId),
           projectId: projectId ? projectId : undefined,
           institutionId: institutionId ? institutionId : undefined,
+          status: 'APPROVED',
         },
         include: {
           project: true,
