@@ -373,7 +373,15 @@ export class DonationService {
   ) {
     const { id } = user;
 
-    if (id && donorId !== id) {
+    const userExist = await this.prismaService.account.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        donor: true,
+      },
+    });
+
+    if (userExist && userExist.donor && donorId !== userExist.donor.id) {
       throw new HttpException(
         'Doadores não podem ver doações de outros doadores',
         HttpStatus.FORBIDDEN,
@@ -403,6 +411,8 @@ export class DonationService {
         skip: (page - 1) * limit,
         take: Number(limit),
       });
+
+      console.log(donations);
       return donations;
     } catch (error) {
       console.error(error);
