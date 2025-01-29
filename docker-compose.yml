@@ -9,7 +9,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - app_uploads:/app/uploads
+      - app_uploads:/usr/src/app/uploads
     env_file:
       - .env
     depends_on:
