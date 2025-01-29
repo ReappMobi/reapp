@@ -191,7 +191,6 @@ export class DonationService {
     }
 
     try {
-      console.log(response);
       await this.prismaService.donation.create({
         data: {
           amount: requestDonationDto.amount,
@@ -202,6 +201,16 @@ export class DonationService {
               id: account.donor.id,
             },
           },
+          ...(requestDonationDto.institutionId && {
+            institution: {
+              connect: { id: requestDonationDto.institutionId },
+            },
+          }),
+          ...(requestDonationDto.projectId && {
+            project: {
+              connect: { id: requestDonationDto.projectId },
+            },
+          }),
         },
       });
       return response.init_point;
