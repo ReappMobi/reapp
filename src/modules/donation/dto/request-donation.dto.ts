@@ -6,7 +6,6 @@ import {
   IsOptional,
   IsString,
   MaxLength,
-  MinLength,
 } from 'class-validator';
 
 export abstract class RequestDonationDto {
@@ -51,6 +50,5 @@ export abstract class RequestDonationDto {
   @IsOptional()
   @IsString({ message: 'A descrição deve ser uma string.' })
   @MaxLength(25, { message: 'A descrição deve ter no máximo 25 aracteres.' })
-  @MinLength(5, { message: 'A descrição deve ter no mínimo 5 caracteres.' })
   description: string;
 }

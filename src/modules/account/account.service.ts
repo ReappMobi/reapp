@@ -201,6 +201,7 @@ export class AccountService {
 
       return account;
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         'erro ao criar conta',
         HttpStatus.INTERNAL_SERVER_ERROR,
