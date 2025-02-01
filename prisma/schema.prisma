@@ -111,7 +111,7 @@ model Post {
 
 model Like {
   id        Int     @id @default(autoincrement())
-  post      Post    @relation(fields: [postId], references: [id])
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    Int
   Account   Account @relation(fields: [accountId], references: [id])
   accountId Int
@@ -120,7 +120,7 @@ model Like {
 model Comment {
   id        Int      @id @default(autoincrement())
   body      String   @db.Text
-  post      Post     @relation(fields: [postId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    Int
   account   Account  @relation(fields: [accountId], references: [id])
   accountId Int
@@ -129,7 +129,7 @@ model Comment {
 
 model Save {
   id        Int     @id @default(autoincrement())
-  post      Post    @relation(fields: [postId], references: [id])
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    Int
   account   Account @relation(fields: [accountId], references: [id])
   accountId Int
