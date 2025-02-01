@@ -17,6 +17,7 @@ const donorResponseFields = {
   donor: {
     select: {
       donations: true,
+      id: true,
     },
   },
   avatarId: true,
