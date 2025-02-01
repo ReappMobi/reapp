@@ -37,8 +37,7 @@ export class ProjectController {
 
   @Post()
   @UseGuards(AuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
-  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(FileInterceptor('media'))
   async postProject(
     @UploadedFile() media: Express.Multer.File,
     @Body() createProjectDto: CreateProjectDto,
