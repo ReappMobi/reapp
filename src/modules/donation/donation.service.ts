@@ -397,7 +397,13 @@ export class DonationService {
           status: 'APPROVED',
         },
         include: {
-          project: true,
+          project: {
+            select: {
+              id: true,
+              name: true,
+              media: true,
+            },
+          },
           institution: {
             select: {
               account: {
@@ -413,7 +419,6 @@ export class DonationService {
         take: Number(limit),
       });
 
-      console.log(donations);
       return donations;
     } catch (error) {
       console.error(error);

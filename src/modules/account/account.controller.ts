@@ -30,7 +30,6 @@ export class AccountController {
     @Body() createAccountDto: CreateAccountDto,
     @UploadedFile() media: Express.Multer.File,
   ) {
-    console.log(createAccountDto, media);
     return this.accountService.create(createAccountDto, media);
   }
 
