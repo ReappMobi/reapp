@@ -280,6 +280,14 @@ export class PostService {
         postId: post.id,
         accountId,
       },
+      include: {
+        account: {
+          select: {
+            name: true,
+            media: true,
+          },
+        },
+      },
     });
 
     return comment;
