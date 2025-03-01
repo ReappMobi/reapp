@@ -13,6 +13,14 @@ enum AccountType {
   INSTITUTION
 }
 
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+  PENDING
+}
+
 enum DonationStatus {
   PENDING
   APPROVED
@@ -27,7 +35,6 @@ enum InstitutionMemberType {
   COLLABORATOR
 }
 
-// TODO migrate Like, Comment to interaction model
 
 model Account {
   id               Int               @id @default(autoincrement())
@@ -50,6 +57,7 @@ model Account {
   mediaAttachments MediaAttachment[] @relation(name: "AccountMediaAttachments")
   following        Follow[]          @relation("Following")
   followers        Follow[]          @relation("Followers")
+  status           AccountStatus @default(ACTIVE) 
 }
 
 model Follow {
