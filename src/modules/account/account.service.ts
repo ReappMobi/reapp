@@ -1,14 +1,14 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
 import {
   CreateAccountDto,
   CreateAccountGoogleDto,
-} from './dto/create-account.dto';
-import { UpdateAccountDto } from './dto/update-account.dto';
-import { AccountType } from '@prisma/client';
-import { PrismaService } from '../../database/prisma.service';
-import * as bcrypt from 'bcrypt';
-import { OAuth2Client } from 'google-auth-library';
-import { MediaService } from '../media-attachment/media-attachment.service';
+} from './dto/create-account.dto'
+import { UpdateAccountDto } from './dto/update-account.dto'
+import { AccountType } from '@prisma/client'
+import { PrismaService } from '../../database/prisma.service'
+import * as bcrypt from 'bcrypt'
+import { OAuth2Client } from 'google-auth-library'
+import { MediaService } from '../media-attachment/media-attachment.service'
 
 const donorResponseFields = {
   id: true,
@@ -27,7 +27,7 @@ const donorResponseFields = {
   updatedAt: true,
   accountType: true,
   note: true,
-};
+}
 
 const institutionResponseFields = {
   id: true,
@@ -48,59 +48,59 @@ const institutionResponseFields = {
   media: true,
   accountType: true,
   note: true,
-};
+}
 
 @Injectable()
 export class AccountService {
-  private client: OAuth2Client;
+  private client: OAuth2Client
   constructor(
     private readonly prismaService: PrismaService,
     private readonly mediaService: MediaService,
   ) {
-    this.client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    this.client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
   }
 
   private async createInstitution(
     createAccountDto: CreateAccountDto,
     media?: Express.Multer.File,
   ) {
-    const email = createAccountDto.email.toLowerCase();
+    const email = createAccountDto.email.toLowerCase()
     const emailExists = await this.prismaService.account.findFirst({
       where: { email },
-    });
+    })
 
     const cnpjExists = await this.prismaService.institution.findFirst({
       where: { cnpj: createAccountDto.cnpj },
-    });
+    })
 
     if (emailExists) {
       throw new HttpException(
         'este email já está cadastrado',
         HttpStatus.BAD_REQUEST,
-      );
+      )
     }
 
     if (cnpjExists) {
       throw new HttpException(
         'este cnpj já está cadastrado',
         HttpStatus.BAD_REQUEST,
-      );
+      )
     }
 
     try {
       let category = await this.prismaService.category.findFirst({
         where: { name: createAccountDto.category },
-      });
+      })
 
       if (!category) {
         category = await this.prismaService.category.create({
           data: {
             name: createAccountDto.category,
           },
-        });
+        })
       }
 
-      const hashedPassword = await bcrypt.hash(createAccountDto.password, 10);
+      const hashedPassword = await bcrypt.hash(createAccountDto.password, 10)
       const account = await this.prismaService.account.create({
         data: {
           accountType: 'INSTITUTION',
@@ -127,12 +127,12 @@ export class AccountService {
           status: 'PENDING',
         },
         select: institutionResponseFields,
-      });
+      })
 
       if (media) {
         const mediaAttachment = await this.mediaService.processMedia(media, {
           accountId: account.id,
-        });
+        })
 
         const accountWithMedia = await this.prismaService.account.update({
           where: { id: account.id },
@@ -140,17 +140,17 @@ export class AccountService {
             avatarId: mediaAttachment.mediaAttachment.id,
           },
           select: donorResponseFields,
-        });
+        })
 
-        return accountWithMedia;
+        return accountWithMedia
       }
 
-      return account;
-    } catch (error) {
+      return account
+    } catch (_error) {
       throw new HttpException(
         'erro ao criar conta',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
   }
 
@@ -158,20 +158,20 @@ export class AccountService {
     createAccountDto: CreateAccountDto,
     media?: Express.Multer.File,
   ) {
-    const email = createAccountDto.email.toLowerCase();
+    const email = createAccountDto.email.toLowerCase()
     const emailExists = await this.prismaService.account.findFirst({
       where: { email },
-    });
+    })
 
     if (emailExists) {
       throw new HttpException(
         'este email já está cadastrado',
         HttpStatus.BAD_REQUEST,
-      );
+      )
     }
 
     try {
-      const hashedPassword = await bcrypt.hash(createAccountDto.password, 10);
+      const hashedPassword = await bcrypt.hash(createAccountDto.password, 10)
       const account = await this.prismaService.account.create({
         data: {
           email: email,
@@ -184,12 +184,12 @@ export class AccountService {
           },
         },
         select: donorResponseFields,
-      });
+      })
 
       if (media) {
         const mediaAttachment = await this.mediaService.processMedia(media, {
           accountId: account.id,
-        });
+        })
 
         const accountWithMedia = await this.prismaService.account.update({
           where: { id: account.id },
@@ -197,18 +197,18 @@ export class AccountService {
             avatarId: mediaAttachment.mediaAttachment.id,
           },
           select: donorResponseFields,
-        });
+        })
 
-        return accountWithMedia;
+        return accountWithMedia
       }
 
-      return account;
+      return account
     } catch (error) {
-      console.log(error);
+      console.log(error)
       throw new HttpException(
         'erro ao criar conta',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
   }
 
@@ -217,36 +217,36 @@ export class AccountService {
     media?: Express.Multer.File,
   ) {
     if (createAccountDto.accountType === AccountType.INSTITUTION) {
-      return await this.createInstitution(createAccountDto, media);
+      return await this.createInstitution(createAccountDto, media)
     }
-    return await this.createDonor(createAccountDto, media);
+    return await this.createDonor(createAccountDto, media)
   }
 
   async createWithGoogle(createAccountGoogleDto: CreateAccountGoogleDto) {
-    const { idToken } = createAccountGoogleDto;
+    const { idToken } = createAccountGoogleDto
 
     const ticket = await this.client.verifyIdToken({
       idToken,
-    });
+    })
 
-    const payload = ticket.getPayload();
+    const payload = ticket.getPayload()
     if (!payload) {
       throw new HttpException(
         'Não foi possível autenticar. Tente novamente mais tarde.',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
 
-    const email = payload['email'];
-    const name = payload['name'];
+    const email = payload['email']
+    const name = payload['name']
     //const avatar = payload['picture'];
 
     const emailExists = await this.prismaService.account.findFirst({
       where: { email: email },
-    });
+    })
 
     if (emailExists) {
-      throw new HttpException('email já cadastrado', HttpStatus.BAD_REQUEST);
+      throw new HttpException('email já cadastrado', HttpStatus.BAD_REQUEST)
     }
 
     const createAccountDto: CreateAccountDto = {
@@ -254,9 +254,9 @@ export class AccountService {
       email: email,
       name: name,
       password: idToken,
-    };
+    }
 
-    return await this.createDonor(createAccountDto);
+    return await this.createDonor(createAccountDto)
   }
 
   async findAll() {
@@ -286,7 +286,7 @@ export class AccountService {
           },
         },
       },
-    });
+    })
   }
 
   async findAllCategories() {
@@ -295,7 +295,7 @@ export class AccountService {
         id: true,
         name: true,
       },
-    });
+    })
   }
 
   async findOne(id: number) {
@@ -310,13 +310,13 @@ export class AccountService {
         media: true,
         note: true,
       },
-    });
+    })
 
     if (!account) {
-      throw new HttpException('conta não encontrada', HttpStatus.NOT_FOUND);
+      throw new HttpException('conta não encontrada', HttpStatus.NOT_FOUND)
     }
 
-    return account;
+    return account
   }
 
   async findAllInstitutions(followerId: number) {
@@ -343,7 +343,7 @@ export class AccountService {
           },
         },
       },
-    });
+    })
 
     const institutionsWithFollowStatus = await Promise.all(
       allInstitutions.map(async (institution) => {
@@ -354,16 +354,16 @@ export class AccountService {
               followingId: institution.account.id,
             },
           },
-        });
+        })
 
         return {
           ...institution,
           isFollowing: Boolean(isFollowing),
-        };
+        }
       }),
-    );
+    )
 
-    return institutionsWithFollowStatus;
+    return institutionsWithFollowStatus
   }
 
   async findOneInstitution(id: number, followerId: number = undefined) {
@@ -390,16 +390,16 @@ export class AccountService {
           },
         },
       },
-    });
+    })
 
     if (!institutionAccount) {
       throw new HttpException(
         'conta da instituição não encontrada',
         HttpStatus.NOT_FOUND,
-      );
+      )
     }
 
-    let isFollowing = false;
+    let isFollowing = false
     if (followerId) {
       isFollowing = Boolean(
         await this.prismaService.follow.findUnique({
@@ -410,12 +410,12 @@ export class AccountService {
             },
           },
         }),
-      );
+      )
     }
     return {
       ...institutionAccount,
       isFollowing: isFollowing,
-    };
+    }
   }
 
   async findOneDonor(id: number) {
@@ -435,8 +435,8 @@ export class AccountService {
         },
         donations: true,
       },
-    });
-    return donorAccount;
+    })
+    return donorAccount
   }
 
   async remove(accountId: number, id: number) {
@@ -446,18 +446,18 @@ export class AccountService {
         institution: true,
         donor: true,
       },
-    });
+    })
 
     if (!account) {
-      throw new HttpException('Conta não encontrada', HttpStatus.NOT_FOUND);
+      throw new HttpException('Conta não encontrada', HttpStatus.NOT_FOUND)
     }
 
     if (account.id !== id) {
-      throw new HttpException('Acesso não autorizado', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Acesso não autorizado', HttpStatus.UNAUTHORIZED)
     }
 
     if (account.avatarId) {
-      await this.mediaService.deleteMediaAttachment(account.avatarId);
+      await this.mediaService.deleteMediaAttachment(account.avatarId)
     }
 
     try {
@@ -465,16 +465,16 @@ export class AccountService {
         where: {
           id: id,
         },
-      });
+      })
     } catch (error) {
       if (error.code === 'P2025') {
-        throw new HttpException('conta não encontrada', HttpStatus.NOT_FOUND);
+        throw new HttpException('conta não encontrada', HttpStatus.NOT_FOUND)
       }
 
       throw new HttpException(
         'erro ao deletar conta',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
   }
 
@@ -489,74 +489,74 @@ export class AccountService {
         institution: true,
         donor: true,
       },
-    });
+    })
 
     if (!account) {
-      throw new HttpException('Conta não encontrada', HttpStatus.NOT_FOUND);
+      throw new HttpException('Conta não encontrada', HttpStatus.NOT_FOUND)
     }
 
-    const data: any = {};
+    const data: any = {}
 
     if (updateAccountDto.name) {
-      data.name = updateAccountDto.name;
+      data.name = updateAccountDto.name
     }
 
     if (updateAccountDto.note) {
-      data.note = updateAccountDto.note;
+      data.note = updateAccountDto.note
     }
 
     if (
       updateAccountDto.password &&
       updateAccountDto.password == updateAccountDto.confirmPassword
     ) {
-      const hashedPassword = await bcrypt.hash(updateAccountDto.password, 10);
-      data.passwordHash = hashedPassword;
+      const hashedPassword = await bcrypt.hash(updateAccountDto.password, 10)
+      data.passwordHash = hashedPassword
     }
 
-    const mediaId = account.avatarId;
+    const mediaId = account.avatarId
     if (media) {
       if (mediaId) {
-        await this.mediaService.deleteMediaAttachment(mediaId);
+        await this.mediaService.deleteMediaAttachment(mediaId)
       }
 
       const mediaAttachment = await this.mediaService.processMedia(media, {
         accountId,
-      });
+      })
 
-      data.avatarId = mediaAttachment.mediaAttachment.id;
+      data.avatarId = mediaAttachment.mediaAttachment.id
     }
 
     if (account.accountType === AccountType.INSTITUTION) {
-      const institutionData: any = {};
+      const institutionData: any = {}
 
       if (updateAccountDto.phone) {
-        institutionData.phone = updateAccountDto.phone;
+        institutionData.phone = updateAccountDto.phone
       }
 
       if (updateAccountDto.category) {
         let category = await this.prismaService.category.findFirst({
           where: { name: updateAccountDto.category },
-        });
+        })
 
         if (!category) {
           category = await this.prismaService.category.create({
             data: {
               name: updateAccountDto.category,
             },
-          });
+          })
         }
 
         institutionData.category = {
           connect: {
             id: category.id,
           },
-        };
+        }
       }
 
       if (Object.keys(institutionData).length > 0) {
         data.institution = {
           update: institutionData,
-        };
+        }
       }
     }
 
@@ -584,113 +584,113 @@ export class AccountService {
           },
         },
       },
-    });
+    })
 
-    return updatedAccount;
+    return updatedAccount
   }
 
   async followAccount(followerId: number, followingId: number) {
     const existRegister = await this.prismaService.follow.findFirst({
       where: { followerId: followerId, followingId: followingId },
-    });
+    })
 
     if (existRegister) {
       throw new HttpException(
         `O usuário já segue essa conta`,
         HttpStatus.BAD_REQUEST,
-      );
+      )
     }
 
     const existingFollowingAccount = await this.prismaService.account.findFirst(
       {
         where: { id: followingId },
       },
-    );
+    )
 
     if (!existingFollowingAccount) {
       throw new HttpException(
         `Conta com ID ${followerId} não encontrada`,
         HttpStatus.NOT_FOUND,
-      );
+      )
     }
 
     const existingFollowerAccount = await this.prismaService.account.findFirst({
       where: { id: followerId },
-    });
+    })
 
     if (!existingFollowerAccount) {
       throw new HttpException(
         `Conta com ID ${followerId} não encontrada`,
         HttpStatus.NOT_FOUND,
-      );
+      )
     }
 
     await this.prismaService.account.update({
       where: { id: followerId },
       data: { followingCount: { increment: 1 } },
-    });
+    })
 
     await this.prismaService.account.update({
       where: { id: followingId },
       data: { followersCount: { increment: 1 } },
-    });
+    })
 
     return this.prismaService.follow.create({
       data: {
         followerId,
         followingId,
       },
-    });
+    })
   }
 
   async unfollowAccount(followerId: number, followingId: number) {
     const existRegister = await this.prismaService.follow.findFirst({
       where: { followerId: followerId, followingId: followingId },
-    });
+    })
 
     if (!existRegister) {
       throw new HttpException(
         `O usuário já segue essa conta`,
         HttpStatus.BAD_REQUEST,
-      );
+      )
     }
 
     const existingFollowingAccount = await this.prismaService.account.findFirst(
       {
         where: { id: followingId },
       },
-    );
+    )
 
     if (!existingFollowingAccount) {
       throw new HttpException(
         `Conta com ID ${followerId} não encontrada`,
         HttpStatus.NOT_FOUND,
-      );
+      )
     }
 
     const existingFollowerAccount = await this.prismaService.account.findFirst({
       where: { id: followerId },
-    });
+    })
 
     if (!existingFollowerAccount) {
       throw new HttpException(
         `Conta com ID ${followerId} não encontrada`,
         HttpStatus.NOT_FOUND,
-      );
+      )
     }
 
     await this.prismaService.account.update({
       where: { id: followerId },
       data: { followingCount: { decrement: 1 } },
-    });
+    })
 
     await this.prismaService.account.update({
       where: { id: followingId },
       data: { followersCount: { decrement: 1 } },
-    });
+    })
 
     return this.prismaService.follow.delete({
       where: { id: existRegister.id },
-    });
+    })
   }
 }

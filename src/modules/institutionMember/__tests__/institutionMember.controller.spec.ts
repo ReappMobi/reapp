@@ -1,18 +1,18 @@
 // institutionMember.controller.spec.ts
-import { Test, TestingModule } from '@nestjs/testing';
-import { InstitutionMemberController } from '../institutionMember.controller';
-import { InstitutionMemberService } from '../institutionMember.service';
-import { AccountService } from '../../account/account.service';
-import { AuthGuard } from '../../auth/auth.guard';
-import { UnauthorizedException } from '@nestjs/common';
-import { CreateInstitutionMemberDto } from '../dto/createInstitutionMember.dto';
-import { UpdateInstitutionMemberDto } from '../dto/updateInstitutionMember.dto';
-import { InstitutionMemberType } from '@prisma/client';
+import { Test, TestingModule } from '@nestjs/testing'
+import { InstitutionMemberController } from '../institutionMember.controller'
+import { InstitutionMemberService } from '../institutionMember.service'
+import { AccountService } from '../../account/account.service'
+import { AuthGuard } from '../../auth/auth.guard'
+import { UnauthorizedException } from '@nestjs/common'
+import { CreateInstitutionMemberDto } from '../dto/createInstitutionMember.dto'
+import { UpdateInstitutionMemberDto } from '../dto/updateInstitutionMember.dto'
+import { InstitutionMemberType } from '@prisma/client'
 
 describe('InstitutionMemberController', () => {
-  let controller: InstitutionMemberController;
-  let institutionMemberService: InstitutionMemberService;
-  let accountService: AccountService;
+  let controller: InstitutionMemberController
+  let institutionMemberService: InstitutionMemberService
+  let accountService: AccountService
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -40,27 +40,27 @@ describe('InstitutionMemberController', () => {
       .useValue({
         canActivate: jest.fn().mockReturnValue(true),
       })
-      .compile();
+      .compile()
 
     controller = module.get<InstitutionMemberController>(
       InstitutionMemberController,
-    );
+    )
     institutionMemberService = module.get<InstitutionMemberService>(
       InstitutionMemberService,
-    );
-    accountService = module.get<AccountService>(AccountService);
-  });
+    )
+    accountService = module.get<AccountService>(AccountService)
+  })
 
   describe('createInstitutionMember', () => {
     it('should create an institution member', async () => {
       const createMemberDto: CreateInstitutionMemberDto = {
         name: 'John Doe',
         memberType: InstitutionMemberType.COLLABORATOR,
-      };
-      const file = {} as Express.Multer.File;
-      const request = { user: { id: 1 } } as any;
+      }
+      const file = {} as Express.Multer.File
+      const request = { user: { id: 1 } } as any
 
-      const accountId = 1;
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -78,7 +78,7 @@ describe('InstitutionMemberController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
       const createdMember = {
         id: 1,
         name: 'John Doe',
@@ -121,58 +121,56 @@ describe('InstitutionMemberController', () => {
           thumbnailUpdatedAt: null,
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
-      };
+      }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(institutionMemberService, 'createInstitutionMember')
-        .mockResolvedValue(createdMember);
+        .mockResolvedValue(createdMember)
 
       const result = await controller.createInstitutionMember(
         request,
         createMemberDto,
         file,
-      );
+      )
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1)
       expect(
         institutionMemberService.createInstitutionMember,
       ).toHaveBeenCalledWith({
         ...createMemberDto,
         institutionId: 1,
         file,
-      });
-      expect(result).toEqual(createdMember);
-    });
+      })
+      expect(result).toEqual(createdMember)
+    })
 
     it('should throw UnauthorizedException if institution not found', async () => {
       const createMemberDto: CreateInstitutionMemberDto = {
         name: 'John Doe',
         memberType: InstitutionMemberType.COLLABORATOR,
-      };
-      const file = {} as Express.Multer.File;
-      const request = { user: { id: 1 } } as any;
+      }
+      const file = {} as Express.Multer.File
+      const request = { user: { id: 1 } } as any
 
-      jest.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null);
+      jest.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null)
 
       await expect(
         controller.createInstitutionMember(request, createMemberDto, file),
-      ).rejects.toThrow(
-        new UnauthorizedException('Instituição não encontrada'),
-      );
+      ).rejects.toThrow(new UnauthorizedException('Instituição não encontrada'))
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1)
       expect(
         institutionMemberService.createInstitutionMember,
-      ).not.toHaveBeenCalled();
-    });
-  });
+      ).not.toHaveBeenCalled()
+    })
+  })
 
   describe('getCollaboratorsByInstitutionId', () => {
     it('should return collaborators for the institution', async () => {
-      const institutionId = 1;
+      const institutionId = 1
       const collaborators = [
         {
           id: 1,
@@ -217,25 +215,25 @@ describe('InstitutionMemberController', () => {
             thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
           },
         },
-      ];
+      ]
 
       jest
         .spyOn(institutionMemberService, 'getInstitutionMembersByType')
-        .mockResolvedValue(collaborators);
+        .mockResolvedValue(collaborators)
 
       const result =
-        await controller.getCollaboratorsByInstitutionId(institutionId);
+        await controller.getCollaboratorsByInstitutionId(institutionId)
 
       expect(
         institutionMemberService.getInstitutionMembersByType,
-      ).toHaveBeenCalledWith(institutionId, InstitutionMemberType.COLLABORATOR);
-      expect(result).toEqual(collaborators);
-    });
-  });
+      ).toHaveBeenCalledWith(institutionId, InstitutionMemberType.COLLABORATOR)
+      expect(result).toEqual(collaborators)
+    })
+  })
 
   describe('getVolunteersByInstitutionId', () => {
     it('should return volunteers for the institution', async () => {
-      const institutionId = 1;
+      const institutionId = 1
       const volunteers = [
         {
           id: 2,
@@ -280,25 +278,25 @@ describe('InstitutionMemberController', () => {
             thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
           },
         },
-      ];
+      ]
 
       jest
         .spyOn(institutionMemberService, 'getInstitutionMembersByType')
-        .mockResolvedValue(volunteers);
+        .mockResolvedValue(volunteers)
 
       const result =
-        await controller.getVolunteersByInstitutionId(institutionId);
+        await controller.getVolunteersByInstitutionId(institutionId)
 
       expect(
         institutionMemberService.getInstitutionMembersByType,
-      ).toHaveBeenCalledWith(institutionId, InstitutionMemberType.VOLUNTEER);
-      expect(result).toEqual(volunteers);
-    });
-  });
+      ).toHaveBeenCalledWith(institutionId, InstitutionMemberType.VOLUNTEER)
+      expect(result).toEqual(volunteers)
+    })
+  })
 
   describe('getPartnersByInstitutionId', () => {
     it('should return partners for the institution', async () => {
-      const institutionId = 1;
+      const institutionId = 1
       const partners = [
         {
           id: 3,
@@ -343,26 +341,26 @@ describe('InstitutionMemberController', () => {
             thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
           },
         },
-      ];
+      ]
 
       jest
         .spyOn(institutionMemberService, 'getInstitutionMembersByType')
-        .mockResolvedValue(partners);
+        .mockResolvedValue(partners)
 
-      const result = await controller.getPartnersByInstitutionId(institutionId);
+      const result = await controller.getPartnersByInstitutionId(institutionId)
 
       expect(
         institutionMemberService.getInstitutionMembersByType,
-      ).toHaveBeenCalledWith(institutionId, InstitutionMemberType.PARTNER);
-      expect(result).toEqual(partners);
-    });
-  });
+      ).toHaveBeenCalledWith(institutionId, InstitutionMemberType.PARTNER)
+      expect(result).toEqual(partners)
+    })
+  })
 
   describe('getInstitutionMemberById', () => {
     it('should return the institution member if authorized', async () => {
-      const memberId = 1;
-      const request = { user: { id: 1 } } as any;
-      const accountId = 1;
+      const memberId = 1
+      const request = { user: { id: 1 } } as any
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -380,7 +378,7 @@ describe('InstitutionMemberController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
       const member = {
         id: memberId,
         institutionId: 1,
@@ -423,49 +421,47 @@ describe('InstitutionMemberController', () => {
           thumbnailUpdatedAt: null,
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
-      };
+      }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member);
+        .mockResolvedValue(member)
 
       const result = await controller.getInstitutionMemberById(
         memberId,
         request,
-      );
+      )
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1)
       expect(
         institutionMemberService.findInstitutionMemberById,
-      ).toHaveBeenCalledWith(memberId);
-      expect(result).toEqual(member);
-    });
+      ).toHaveBeenCalledWith(memberId)
+      expect(result).toEqual(member)
+    })
 
     it('should throw UnauthorizedException if institution not found', async () => {
-      const memberId = 1;
-      const request = { user: { id: 1 } } as any;
+      const memberId = 1
+      const request = { user: { id: 1 } } as any
 
-      jest.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null);
+      jest.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null)
 
       await expect(
         controller.getInstitutionMemberById(memberId, request),
-      ).rejects.toThrow(
-        new UnauthorizedException('Instituição não encontrada'),
-      );
+      ).rejects.toThrow(new UnauthorizedException('Instituição não encontrada'))
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1)
       expect(
         institutionMemberService.findInstitutionMemberById,
-      ).not.toHaveBeenCalled();
-    });
+      ).not.toHaveBeenCalled()
+    })
 
     it('should throw UnauthorizedException if member not found', async () => {
-      const memberId = 1;
-      const request = { user: { id: 1 } } as any;
-      const accountId = 1;
+      const memberId = 1
+      const request = { user: { id: 1 } } as any
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -483,29 +479,29 @@ describe('InstitutionMemberController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(null);
+        .mockResolvedValue(null)
 
       await expect(
         controller.getInstitutionMemberById(memberId, request),
-      ).rejects.toThrow(new UnauthorizedException('Membro não encontrado'));
+      ).rejects.toThrow(new UnauthorizedException('Membro não encontrado'))
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1)
       expect(
         institutionMemberService.findInstitutionMemberById,
-      ).toHaveBeenCalledWith(memberId);
-    });
+      ).toHaveBeenCalledWith(memberId)
+    })
 
     it('should throw UnauthorizedException if access is unauthorized', async () => {
-      const memberId = 1;
-      const request = { user: { id: 1 } } as any;
-      const accountId = 1;
+      const memberId = 1
+      const request = { user: { id: 1 } } as any
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -523,7 +519,7 @@ describe('InstitutionMemberController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
       const member = {
         id: memberId,
         institutionId: 2,
@@ -566,36 +562,36 @@ describe('InstitutionMemberController', () => {
           thumbnailUpdatedAt: null,
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
-      };
+      }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member);
+        .mockResolvedValue(member)
 
       await expect(
         controller.getInstitutionMemberById(memberId, request),
-      ).rejects.toThrow(new UnauthorizedException('Acesso não autorizado'));
+      ).rejects.toThrow(new UnauthorizedException('Acesso não autorizado'))
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1)
       expect(
         institutionMemberService.findInstitutionMemberById,
-      ).toHaveBeenCalledWith(memberId);
-    });
-  });
+      ).toHaveBeenCalledWith(memberId)
+    })
+  })
 
   describe('updateInstitutionMember', () => {
     it('should update the institution member if authorized', async () => {
-      const memberId = 1;
-      const request = { user: { id: 1 } } as any;
+      const memberId = 1
+      const request = { user: { id: 1 } } as any
       const updateMemberDto: UpdateInstitutionMemberDto = {
         name: 'Updated Name',
         memberType: InstitutionMemberType.VOLUNTEER,
-      };
-      const file = {} as Express.Multer.File;
-      const accountId = 1;
+      }
+      const file = {} as Express.Multer.File
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -613,7 +609,7 @@ describe('InstitutionMemberController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
       const member = {
         id: memberId,
         institutionId: 1,
@@ -656,7 +652,7 @@ describe('InstitutionMemberController', () => {
           thumbnailUpdatedAt: null,
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
-      };
+      }
       const updatedMember = {
         id: memberId,
         institutionId: 1,
@@ -699,47 +695,47 @@ describe('InstitutionMemberController', () => {
           thumbnailUpdatedAt: null,
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
-      };
+      }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member);
+        .mockResolvedValue(member)
       jest
         .spyOn(institutionMemberService, 'updateInstitutionMember')
-        .mockResolvedValue(updatedMember);
+        .mockResolvedValue(updatedMember)
 
       const result = await controller.updateInstitutionMember(
         memberId,
         request,
         updateMemberDto,
         file,
-      );
+      )
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1)
       expect(
         institutionMemberService.findInstitutionMemberById,
-      ).toHaveBeenCalledWith(memberId);
+      ).toHaveBeenCalledWith(memberId)
       expect(
         institutionMemberService.updateInstitutionMember,
       ).toHaveBeenCalledWith(memberId, {
         ...updateMemberDto,
         file,
-      });
-      expect(result).toEqual(updatedMember);
-    });
+      })
+      expect(result).toEqual(updatedMember)
+    })
 
     it('should throw UnauthorizedException if institution not found', async () => {
-      const memberId = 1;
-      const request = { user: { id: 1 } } as any;
+      const memberId = 1
+      const request = { user: { id: 1 } } as any
       const updateMemberDto: UpdateInstitutionMemberDto = {
         name: 'Updated Name',
-      };
-      const file = {} as Express.Multer.File;
+      }
+      const file = {} as Express.Multer.File
 
-      jest.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null);
+      jest.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null)
 
       await expect(
         controller.updateInstitutionMember(
@@ -748,24 +744,22 @@ describe('InstitutionMemberController', () => {
           updateMemberDto,
           file,
         ),
-      ).rejects.toThrow(
-        new UnauthorizedException('Instituição não encontrada'),
-      );
+      ).rejects.toThrow(new UnauthorizedException('Instituição não encontrada'))
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1)
       expect(
         institutionMemberService.findInstitutionMemberById,
-      ).not.toHaveBeenCalled();
-    });
+      ).not.toHaveBeenCalled()
+    })
 
     it('should throw UnauthorizedException if member not found', async () => {
-      const memberId = 1;
-      const request = { user: { id: 1 } } as any;
+      const memberId = 1
+      const request = { user: { id: 1 } } as any
       const updateMemberDto: UpdateInstitutionMemberDto = {
         name: 'Updated Name',
-      };
-      const file = {} as Express.Multer.File;
-      const accountId = 1;
+      }
+      const file = {} as Express.Multer.File
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -783,14 +777,14 @@ describe('InstitutionMemberController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(null);
+        .mockResolvedValue(null)
 
       await expect(
         controller.updateInstitutionMember(
@@ -799,25 +793,25 @@ describe('InstitutionMemberController', () => {
           updateMemberDto,
           file,
         ),
-      ).rejects.toThrow(new UnauthorizedException('Membro não encontrado'));
+      ).rejects.toThrow(new UnauthorizedException('Membro não encontrado'))
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1)
       expect(
         institutionMemberService.findInstitutionMemberById,
-      ).toHaveBeenCalledWith(memberId);
+      ).toHaveBeenCalledWith(memberId)
       expect(
         institutionMemberService.updateInstitutionMember,
-      ).not.toHaveBeenCalled();
-    });
+      ).not.toHaveBeenCalled()
+    })
 
     it('should throw UnauthorizedException if access is unauthorized', async () => {
-      const memberId = 1;
-      const request = { user: { id: 1 } } as any;
+      const memberId = 1
+      const request = { user: { id: 1 } } as any
       const updateMemberDto: UpdateInstitutionMemberDto = {
         name: 'Updated Name',
-      };
-      const file = {} as Express.Multer.File;
-      const accountId = 1;
+      }
+      const file = {} as Express.Multer.File
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -835,7 +829,7 @@ describe('InstitutionMemberController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
       const member = {
         id: memberId,
         institutionId: 2,
@@ -878,14 +872,14 @@ describe('InstitutionMemberController', () => {
           thumbnailUpdatedAt: null,
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
-      };
+      }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member);
+        .mockResolvedValue(member)
 
       await expect(
         controller.updateInstitutionMember(
@@ -894,23 +888,23 @@ describe('InstitutionMemberController', () => {
           updateMemberDto,
           file,
         ),
-      ).rejects.toThrow(new UnauthorizedException('Acesso não autorizado'));
+      ).rejects.toThrow(new UnauthorizedException('Acesso não autorizado'))
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1)
       expect(
         institutionMemberService.findInstitutionMemberById,
-      ).toHaveBeenCalledWith(memberId);
+      ).toHaveBeenCalledWith(memberId)
       expect(
         institutionMemberService.updateInstitutionMember,
-      ).not.toHaveBeenCalled();
-    });
-  });
+      ).not.toHaveBeenCalled()
+    })
+  })
 
   describe('deleteInstitutionMember', () => {
     it('should delete the institution member if authorized', async () => {
-      const memberId = 1;
-      const request = { user: { id: 1 } } as any;
-      const accountId = 1;
+      const memberId = 1
+      const request = { user: { id: 1 } } as any
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -928,7 +922,7 @@ describe('InstitutionMemberController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
       const member = {
         id: memberId,
         institutionId: 1,
@@ -971,55 +965,50 @@ describe('InstitutionMemberController', () => {
           thumbnailUpdatedAt: null,
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
-      };
+      }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member);
+        .mockResolvedValue(member)
       jest
         .spyOn(institutionMemberService, 'deleteInstitutionMember')
-        .mockResolvedValue({ message: 'Membro deletado com sucesso' });
+        .mockResolvedValue({ message: 'Membro deletado com sucesso' })
 
-      const result = await controller.deleteInstitutionMember(
-        memberId,
-        request,
-      );
+      const result = await controller.deleteInstitutionMember(memberId, request)
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1)
       expect(
         institutionMemberService.findInstitutionMemberById,
-      ).toHaveBeenCalledWith(memberId);
+      ).toHaveBeenCalledWith(memberId)
       expect(
         institutionMemberService.deleteInstitutionMember,
-      ).toHaveBeenCalledWith(memberId);
-      expect(result).toEqual({ message: 'Membro deletado com sucesso' });
-    });
+      ).toHaveBeenCalledWith(memberId)
+      expect(result).toEqual({ message: 'Membro deletado com sucesso' })
+    })
 
     it('should throw UnauthorizedException if institution not found', async () => {
-      const memberId = 1;
-      const request = { user: { id: 1 } } as any;
+      const memberId = 1
+      const request = { user: { id: 1 } } as any
 
-      jest.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null);
+      jest.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null)
 
       await expect(
         controller.deleteInstitutionMember(memberId, request),
-      ).rejects.toThrow(
-        new UnauthorizedException('Instituição não encontrada'),
-      );
+      ).rejects.toThrow(new UnauthorizedException('Instituição não encontrada'))
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1)
       expect(
         institutionMemberService.findInstitutionMemberById,
-      ).not.toHaveBeenCalled();
-    });
+      ).not.toHaveBeenCalled()
+    })
 
     it('should throw UnauthorizedException if member not found', async () => {
-      const memberId = 1;
-      const request = { user: { id: 1 } } as any;
-      const accountId = 1;
+      const memberId = 1
+      const request = { user: { id: 1 } } as any
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -1037,32 +1026,32 @@ describe('InstitutionMemberController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(null);
+        .mockResolvedValue(null)
 
       await expect(
         controller.deleteInstitutionMember(memberId, request),
-      ).rejects.toThrow(new UnauthorizedException('Membro não encontrado'));
+      ).rejects.toThrow(new UnauthorizedException('Membro não encontrado'))
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1)
       expect(
         institutionMemberService.findInstitutionMemberById,
-      ).toHaveBeenCalledWith(memberId);
+      ).toHaveBeenCalledWith(memberId)
       expect(
         institutionMemberService.deleteInstitutionMember,
-      ).not.toHaveBeenCalled();
-    });
+      ).not.toHaveBeenCalled()
+    })
 
     it('should throw UnauthorizedException if access is unauthorized', async () => {
-      const memberId = 1;
-      const request = { user: { id: 1 } } as any;
-      const accountId = 1;
+      const memberId = 1
+      const request = { user: { id: 1 } } as any
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -1080,7 +1069,7 @@ describe('InstitutionMemberController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
 
       const member = {
         id: memberId,
@@ -1124,25 +1113,25 @@ describe('InstitutionMemberController', () => {
           thumbnailUpdatedAt: null,
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
-      };
+      }
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member);
+        .mockResolvedValue(member)
 
       await expect(
         controller.deleteInstitutionMember(memberId, request),
-      ).rejects.toThrow(new UnauthorizedException('Acesso não autorizado'));
+      ).rejects.toThrow(new UnauthorizedException('Acesso não autorizado'))
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(1)
       expect(
         institutionMemberService.findInstitutionMemberById,
-      ).toHaveBeenCalledWith(memberId);
+      ).toHaveBeenCalledWith(memberId)
       expect(
         institutionMemberService.deleteInstitutionMember,
-      ).not.toHaveBeenCalled();
-    });
-  });
-});
+      ).not.toHaveBeenCalled()
+    })
+  })
+})

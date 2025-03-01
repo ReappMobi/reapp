@@ -1,3 +1,3 @@
 export class LoginGoogleDto {
-  idToken: string;
+  idToken: string
 }

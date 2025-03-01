@@ -1,15 +1,15 @@
 // institutionMember.service.spec.ts
-import { Test, TestingModule } from '@nestjs/testing';
-import { InstitutionMemberService } from '../institutionMember.service';
-import { PrismaService } from '../../../database/prisma.service';
-import { MediaService } from '../../media-attachment/media-attachment.service';
-import { InstitutionMemberType } from '@prisma/client';
-import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing'
+import { InstitutionMemberService } from '../institutionMember.service'
+import { PrismaService } from '../../../database/prisma.service'
+import { MediaService } from '../../media-attachment/media-attachment.service'
+import { InstitutionMemberType } from '@prisma/client'
+import { NotFoundException } from '@nestjs/common'
 
 describe('InstitutionMemberService', () => {
-  let service: InstitutionMemberService;
-  let prismaService: PrismaService;
-  let mediaService: MediaService;
+  let service: InstitutionMemberService
+  let prismaService: PrismaService
+  let mediaService: MediaService
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -36,12 +36,12 @@ describe('InstitutionMemberService', () => {
           },
         },
       ],
-    }).compile();
+    }).compile()
 
-    service = module.get<InstitutionMemberService>(InstitutionMemberService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    mediaService = module.get<MediaService>(MediaService);
-  });
+    service = module.get<InstitutionMemberService>(InstitutionMemberService)
+    prismaService = module.get<PrismaService>(PrismaService)
+    mediaService = module.get<MediaService>(MediaService)
+  })
 
   describe('createInstitutionMember', () => {
     it('should create an institution member with media', async () => {
@@ -50,7 +50,7 @@ describe('InstitutionMemberService', () => {
         institutionId: 1,
         memberType: InstitutionMemberType.COLLABORATOR,
         file: {} as Express.Multer.File,
-      };
+      }
 
       const mediaResult = {
         isSynchronous: true,
@@ -65,7 +65,7 @@ describe('InstitutionMemberService', () => {
           description: '',
           blurhash: '',
         },
-      };
+      }
 
       const mediaResponse = {
         mediaResponse: {
@@ -80,7 +80,7 @@ describe('InstitutionMemberService', () => {
           blurhash: '',
         },
         processing: 2,
-      };
+      }
 
       const createdMember = {
         id: 1,
@@ -88,21 +88,21 @@ describe('InstitutionMemberService', () => {
         institutionId: 1,
         memberType: InstitutionMemberType.COLLABORATOR,
         avatarId: 'media-id',
-      };
+      }
 
-      jest.spyOn(mediaService, 'processMedia').mockResolvedValue(mediaResult);
+      jest.spyOn(mediaService, 'processMedia').mockResolvedValue(mediaResult)
       jest
         .spyOn(mediaService, 'getMediaAttachmentById')
-        .mockResolvedValue(mediaResponse);
+        .mockResolvedValue(mediaResponse)
       jest
         .spyOn(prismaService.institutionMember, 'create')
-        .mockResolvedValue(createdMember);
+        .mockResolvedValue(createdMember)
 
-      const result = await service.createInstitutionMember(data);
+      const result = await service.createInstitutionMember(data)
 
       expect(mediaService.processMedia).toHaveBeenCalledWith(data.file, {
         accountId: data.institutionId,
-      });
+      })
 
       expect(prismaService.institutionMember.create).toHaveBeenCalledWith({
         data: {
@@ -118,18 +118,18 @@ describe('InstitutionMemberService', () => {
           media: true,
           institutionId: true,
         },
-      });
+      })
       expect(result).toEqual({
         ...createdMember,
-      });
-    });
+      })
+    })
 
     it('should create an institution member without media', async () => {
       const data = {
         name: 'John Doe',
         institutionId: 1,
         memberType: InstitutionMemberType.COLLABORATOR,
-      };
+      }
 
       const createdMember = {
         id: 1,
@@ -137,16 +137,16 @@ describe('InstitutionMemberService', () => {
         institutionId: 1,
         memberType: InstitutionMemberType.COLLABORATOR,
         avatarId: null,
-      };
+      }
 
       jest
         .spyOn(prismaService.institutionMember, 'create')
-        .mockResolvedValue(createdMember);
+        .mockResolvedValue(createdMember)
 
-      const result = await service.createInstitutionMember(data);
+      const result = await service.createInstitutionMember(data)
 
-      expect(mediaService.processMedia).not.toHaveBeenCalled();
-      expect(mediaService.getMediaAttachmentById).not.toHaveBeenCalled();
+      expect(mediaService.processMedia).not.toHaveBeenCalled()
+      expect(mediaService.getMediaAttachmentById).not.toHaveBeenCalled()
       expect(prismaService.institutionMember.create).toHaveBeenCalledWith({
         data: {
           name: data.name,
@@ -161,17 +161,17 @@ describe('InstitutionMemberService', () => {
           media: true,
           institutionId: true,
         },
-      });
+      })
       expect(result).toEqual({
         ...createdMember,
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('getInstitutionMembersByType', () => {
     it('should return members with media', async () => {
-      const institutionId = 1;
-      const memberType = InstitutionMemberType.COLLABORATOR;
+      const institutionId = 1
+      const memberType = InstitutionMemberType.COLLABORATOR
 
       const members = [
         {
@@ -188,16 +188,16 @@ describe('InstitutionMemberService', () => {
           memberType,
           avatarId: null,
         },
-      ];
+      ]
 
       jest
         .spyOn(prismaService.institutionMember, 'findMany')
-        .mockResolvedValue(members);
+        .mockResolvedValue(members)
 
       const result = await service.getInstitutionMembersByType(
         institutionId,
         memberType,
-      );
+      )
 
       expect(prismaService.institutionMember.findMany).toHaveBeenCalledWith({
         where: {
@@ -211,22 +211,22 @@ describe('InstitutionMemberService', () => {
           media: true,
           institutionId: true,
         },
-      });
+      })
 
-      expect(result).toEqual(members);
-    });
-  });
+      expect(result).toEqual(members)
+    })
+  })
 
   describe('findInstitutionMemberById', () => {
     it('should return the member with media', async () => {
-      const memberId = 1;
+      const memberId = 1
       const member = {
         id: memberId,
         name: 'John Doe',
         institutionId: 1,
         memberType: InstitutionMemberType.COLLABORATOR,
         avatarId: 'media-id',
-      };
+      }
       const mediaResponse = {
         mediaResponse: {
           id: 'media-id',
@@ -240,16 +240,16 @@ describe('InstitutionMemberService', () => {
           blurhash: '',
         },
         processing: 2,
-      };
+      }
 
       jest
         .spyOn(prismaService.institutionMember, 'findUnique')
-        .mockResolvedValue(member);
+        .mockResolvedValue(member)
       jest
         .spyOn(mediaService, 'getMediaAttachmentById')
-        .mockResolvedValue(mediaResponse);
+        .mockResolvedValue(mediaResponse)
 
-      const result = await service.findInstitutionMemberById(memberId);
+      const result = await service.findInstitutionMemberById(memberId)
 
       expect(prismaService.institutionMember.findUnique).toHaveBeenCalledWith({
         where: { id: memberId },
@@ -260,28 +260,28 @@ describe('InstitutionMemberService', () => {
           media: true,
           institutionId: true,
         },
-      });
+      })
 
       expect(result).toEqual({
         ...member,
-      });
-    });
+      })
+    })
 
     it('should return the member without media if no avatarId', async () => {
-      const memberId = 1;
+      const memberId = 1
       const member = {
         id: memberId,
         name: 'John Doe',
         institutionId: 1,
         memberType: InstitutionMemberType.COLLABORATOR,
         avatarId: null,
-      };
+      }
 
       jest
         .spyOn(prismaService.institutionMember, 'findUnique')
-        .mockResolvedValue(member);
+        .mockResolvedValue(member)
 
-      const result = await service.findInstitutionMemberById(memberId);
+      const result = await service.findInstitutionMemberById(memberId)
 
       expect(prismaService.institutionMember.findUnique).toHaveBeenCalledWith({
         where: { id: memberId },
@@ -292,22 +292,22 @@ describe('InstitutionMemberService', () => {
           media: true,
           institutionId: true,
         },
-      });
+      })
 
       expect(result).toEqual({
         ...member,
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('updateInstitutionMember', () => {
     it('should update the member with new media', async () => {
-      const memberId = 1;
+      const memberId = 1
       const data = {
         name: 'Updated Name',
         memberType: InstitutionMemberType.VOLUNTEER,
         file: {} as Express.Multer.File,
-      };
+      }
 
       const existingMember = {
         id: memberId,
@@ -350,7 +350,7 @@ describe('InstitutionMemberService', () => {
           thumbnailUpdatedAt: null,
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
-      };
+      }
 
       const mediaResult = {
         isSynchronous: true,
@@ -365,7 +365,7 @@ describe('InstitutionMemberService', () => {
           description: '',
           blurhash: '',
         },
-      };
+      }
 
       const mediaResponse = {
         mediaResponse: {
@@ -380,7 +380,7 @@ describe('InstitutionMemberService', () => {
           blurhash: '',
         },
         processing: 2,
-      };
+      }
 
       const updatedMember = {
         id: memberId,
@@ -388,31 +388,31 @@ describe('InstitutionMemberService', () => {
         institutionId: 1,
         memberType: InstitutionMemberType.VOLUNTEER,
         avatarId: 'new-media-id',
-      };
+      }
 
       jest
         .spyOn(service, 'findInstitutionMemberById')
-        .mockResolvedValue(existingMember);
+        .mockResolvedValue(existingMember)
       jest
         .spyOn(mediaService, 'deleteMediaAttachment')
-        .mockResolvedValue(undefined);
-      jest.spyOn(mediaService, 'processMedia').mockResolvedValue(mediaResult);
+        .mockResolvedValue(undefined)
+      jest.spyOn(mediaService, 'processMedia').mockResolvedValue(mediaResult)
       jest
         .spyOn(mediaService, 'getMediaAttachmentById')
-        .mockResolvedValue(mediaResponse);
+        .mockResolvedValue(mediaResponse)
       jest
         .spyOn(prismaService.institutionMember, 'update')
-        .mockResolvedValue(updatedMember);
+        .mockResolvedValue(updatedMember)
 
-      const result = await service.updateInstitutionMember(memberId, data);
+      const result = await service.updateInstitutionMember(memberId, data)
 
-      expect(service.findInstitutionMemberById).toHaveBeenCalledWith(memberId);
+      expect(service.findInstitutionMemberById).toHaveBeenCalledWith(memberId)
       expect(mediaService.deleteMediaAttachment).toHaveBeenCalledWith(
         'old-media-id',
-      );
+      )
       expect(mediaService.processMedia).toHaveBeenCalledWith(data.file, {
         accountId: existingMember.institutionId,
-      });
+      })
       expect(prismaService.institutionMember.update).toHaveBeenCalledWith({
         where: { id: memberId },
         data: {
@@ -427,17 +427,17 @@ describe('InstitutionMemberService', () => {
           media: true,
           institutionId: true,
         },
-      });
+      })
       expect(result).toEqual({
         ...updatedMember,
-      });
-    });
+      })
+    })
 
     it('should update the member without changing media', async () => {
-      const memberId = 1;
+      const memberId = 1
       const data = {
         name: 'Updated Name',
-      };
+      }
 
       const existingMember = {
         id: memberId,
@@ -481,7 +481,7 @@ describe('InstitutionMemberService', () => {
           thumbnailUpdatedAt: null,
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
-      };
+      }
 
       const updatedMember = {
         id: memberId,
@@ -503,7 +503,7 @@ describe('InstitutionMemberService', () => {
           },
           processing: 2,
         },
-      };
+      }
 
       const mediaResponse = {
         mediaResponse: {
@@ -518,23 +518,23 @@ describe('InstitutionMemberService', () => {
           blurhash: '',
         },
         processing: 2,
-      };
+      }
 
       jest
         .spyOn(service, 'findInstitutionMemberById')
-        .mockResolvedValue(existingMember);
+        .mockResolvedValue(existingMember)
       jest
         .spyOn(prismaService.institutionMember, 'update')
-        .mockResolvedValue(updatedMember);
+        .mockResolvedValue(updatedMember)
       jest
         .spyOn(mediaService, 'getMediaAttachmentById')
-        .mockResolvedValue(mediaResponse);
+        .mockResolvedValue(mediaResponse)
 
-      const result = await service.updateInstitutionMember(memberId, data);
+      const result = await service.updateInstitutionMember(memberId, data)
 
-      expect(service.findInstitutionMemberById).toHaveBeenCalledWith(memberId);
-      expect(mediaService.deleteMediaAttachment).not.toHaveBeenCalled();
-      expect(mediaService.processMedia).not.toHaveBeenCalled();
+      expect(service.findInstitutionMemberById).toHaveBeenCalledWith(memberId)
+      expect(mediaService.deleteMediaAttachment).not.toHaveBeenCalled()
+      expect(mediaService.processMedia).not.toHaveBeenCalled()
       expect(prismaService.institutionMember.update).toHaveBeenCalledWith({
         where: { id: memberId },
         data: {
@@ -549,31 +549,31 @@ describe('InstitutionMemberService', () => {
           media: true,
           institutionId: true,
         },
-      });
+      })
       expect(result).toEqual({
         ...updatedMember,
-      });
-    });
+      })
+    })
 
     it('should throw NotFoundException if member not found', async () => {
-      const memberId = 1;
+      const memberId = 1
       const data = {
         name: 'Updated Name',
-      };
+      }
 
-      jest.spyOn(service, 'findInstitutionMemberById').mockResolvedValue(null);
+      jest.spyOn(service, 'findInstitutionMemberById').mockResolvedValue(null)
 
       await expect(
         service.updateInstitutionMember(memberId, data),
-      ).rejects.toThrow(new NotFoundException('Membro não encontrado'));
+      ).rejects.toThrow(new NotFoundException('Membro não encontrado'))
 
-      expect(service.findInstitutionMemberById).toHaveBeenCalledWith(memberId);
-    });
-  });
+      expect(service.findInstitutionMemberById).toHaveBeenCalledWith(memberId)
+    })
+  })
 
   describe('deleteInstitutionMember', () => {
     it('should delete the member with media', async () => {
-      const memberId = 1;
+      const memberId = 1
       const existingMember = {
         id: memberId,
         name: 'John Doe',
@@ -616,32 +616,32 @@ describe('InstitutionMemberService', () => {
           thumbnailUpdatedAt: null,
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
-      };
+      }
 
       jest
         .spyOn(service, 'findInstitutionMemberById')
-        .mockResolvedValue(existingMember);
+        .mockResolvedValue(existingMember)
       jest
         .spyOn(mediaService, 'deleteMediaAttachment')
-        .mockResolvedValue(undefined);
+        .mockResolvedValue(undefined)
       jest
         .spyOn(prismaService.institutionMember, 'delete')
-        .mockResolvedValue(existingMember);
+        .mockResolvedValue(existingMember)
 
-      const result = await service.deleteInstitutionMember(memberId);
+      const result = await service.deleteInstitutionMember(memberId)
 
-      expect(service.findInstitutionMemberById).toHaveBeenCalledWith(memberId);
+      expect(service.findInstitutionMemberById).toHaveBeenCalledWith(memberId)
       expect(mediaService.deleteMediaAttachment).toHaveBeenCalledWith(
         'old-media-id',
-      );
+      )
       expect(prismaService.institutionMember.delete).toHaveBeenCalledWith({
         where: { id: memberId },
-      });
-      expect(result).toEqual({ message: 'Membro deletado com sucesso' });
-    });
+      })
+      expect(result).toEqual({ message: 'Membro deletado com sucesso' })
+    })
 
     it('should delete the member without media', async () => {
-      const memberId = 1;
+      const memberId = 1
       const existingMember = {
         id: memberId,
         name: 'John Doe',
@@ -649,36 +649,36 @@ describe('InstitutionMemberService', () => {
         memberType: InstitutionMemberType.COLLABORATOR,
         avatarId: null,
         media: null,
-      };
+      }
 
       jest
         .spyOn(service, 'findInstitutionMemberById')
-        .mockResolvedValue(existingMember);
+        .mockResolvedValue(existingMember)
       jest
         .spyOn(prismaService.institutionMember, 'delete')
-        .mockResolvedValue(existingMember);
+        .mockResolvedValue(existingMember)
 
-      const result = await service.deleteInstitutionMember(memberId);
+      const result = await service.deleteInstitutionMember(memberId)
 
-      expect(service.findInstitutionMemberById).toHaveBeenCalledWith(memberId);
-      expect(mediaService.deleteMediaAttachment).not.toHaveBeenCalled();
+      expect(service.findInstitutionMemberById).toHaveBeenCalledWith(memberId)
+      expect(mediaService.deleteMediaAttachment).not.toHaveBeenCalled()
       expect(prismaService.institutionMember.delete).toHaveBeenCalledWith({
         where: { id: memberId },
-      });
-      expect(result).toEqual({ message: 'Membro deletado com sucesso' });
-    });
+      })
+      expect(result).toEqual({ message: 'Membro deletado com sucesso' })
+    })
 
     it('should throw NotFoundException if member not found', async () => {
-      const memberId = 1;
+      const memberId = 1
 
-      jest.spyOn(service, 'findInstitutionMemberById').mockResolvedValue(null);
+      jest.spyOn(service, 'findInstitutionMemberById').mockResolvedValue(null)
 
       await expect(service.deleteInstitutionMember(memberId)).rejects.toThrow(
         new NotFoundException('Membro não encontrado'),
-      );
+      )
 
-      expect(service.findInstitutionMemberById).toHaveBeenCalledWith(memberId);
-      expect(prismaService.institutionMember.delete).not.toHaveBeenCalled();
-    });
-  });
-});
+      expect(service.findInstitutionMemberById).toHaveBeenCalledWith(memberId)
+      expect(prismaService.institutionMember.delete).not.toHaveBeenCalled()
+    })
+  })
+})

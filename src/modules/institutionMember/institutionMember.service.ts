@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
-import { MediaService } from '../media-attachment/media-attachment.service';
-import { InstitutionMemberType } from '@prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { PrismaService } from '../../database/prisma.service'
+import { MediaService } from '../media-attachment/media-attachment.service'
+import { InstitutionMemberType } from '@prisma/client'
 
 const institutionMemberResponseFields = {
   id: true,
@@ -9,7 +9,7 @@ const institutionMemberResponseFields = {
   memberType: true,
   media: true,
   institutionId: true,
-};
+}
 
 @Injectable()
 export class InstitutionMemberService {
@@ -19,21 +19,21 @@ export class InstitutionMemberService {
   ) {}
 
   async createInstitutionMember(data: {
-    name: string;
-    institutionId: number;
-    memberType: InstitutionMemberType;
-    file?: Express.Multer.File;
+    name: string
+    institutionId: number
+    memberType: InstitutionMemberType
+    file?: Express.Multer.File
   }) {
-    const { name, institutionId, memberType, file } = data;
+    const { name, institutionId, memberType, file } = data
 
-    let avatarId: string | null = null;
+    let avatarId: string | null = null
 
     if (file) {
       const mediaResult = await this.mediaService.processMedia(file, {
         accountId: institutionId,
-      });
+      })
 
-      avatarId = mediaResult.mediaAttachment.id;
+      avatarId = mediaResult.mediaAttachment.id
     }
 
     const member = await this.prismaService.institutionMember.create({
@@ -44,9 +44,9 @@ export class InstitutionMemberService {
         avatarId,
       },
       select: institutionMemberResponseFields,
-    });
+    })
 
-    return member;
+    return member
   }
 
   async getInstitutionMembersByType(
@@ -59,64 +59,64 @@ export class InstitutionMemberService {
         memberType,
       },
       select: institutionMemberResponseFields,
-    });
+    })
 
-    return members;
+    return members
   }
 
   async deleteInstitutionMember(memberId: number) {
-    const member = await this.findInstitutionMemberById(memberId);
+    const member = await this.findInstitutionMemberById(memberId)
 
     if (!member) {
-      throw new NotFoundException('Membro não encontrado');
+      throw new NotFoundException('Membro não encontrado')
     }
 
     if (member.media?.id) {
-      await this.mediaService.deleteMediaAttachment(member.media.id);
+      await this.mediaService.deleteMediaAttachment(member.media.id)
     }
 
     await this.prismaService.institutionMember.delete({
       where: { id: memberId },
-    });
+    })
 
-    return { message: 'Membro deletado com sucesso' };
+    return { message: 'Membro deletado com sucesso' }
   }
 
   async findInstitutionMemberById(memberId: number) {
     const member = await this.prismaService.institutionMember.findUnique({
       where: { id: memberId },
       select: institutionMemberResponseFields,
-    });
+    })
 
-    return member;
+    return member
   }
 
   async updateInstitutionMember(
     memberId: number,
     data: {
-      name?: string;
-      memberType?: InstitutionMemberType;
-      file?: Express.Multer.File;
+      name?: string
+      memberType?: InstitutionMemberType
+      file?: Express.Multer.File
     },
   ) {
-    const { name, memberType, file } = data;
+    const { name, memberType, file } = data
 
-    const existingMember = await this.findInstitutionMemberById(memberId);
+    const existingMember = await this.findInstitutionMemberById(memberId)
 
     if (!existingMember) {
-      throw new NotFoundException('Membro não encontrado');
+      throw new NotFoundException('Membro não encontrado')
     }
 
-    let avatarId = existingMember.media?.id;
+    let avatarId = existingMember.media?.id
 
     if (file) {
       if (avatarId) {
-        await this.mediaService.deleteMediaAttachment(avatarId);
+        await this.mediaService.deleteMediaAttachment(avatarId)
       }
       const mediaResult = await this.mediaService.processMedia(file, {
         accountId: existingMember.institutionId,
-      });
-      avatarId = mediaResult.mediaAttachment.id;
+      })
+      avatarId = mediaResult.mediaAttachment.id
     }
 
     const updatedMember = await this.prismaService.institutionMember.update({
@@ -127,8 +127,8 @@ export class InstitutionMemberService {
         avatarId,
       },
       select: institutionMemberResponseFields,
-    });
+    })
 
-    return updatedMember;
+    return updatedMember
   }
 }

@@ -4,26 +4,26 @@ import {
   HttpStatus,
   NotFoundException,
   ForbiddenException,
-} from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
-import { MediaService } from '../media-attachment/media-attachment.service';
-import { UpdateProjectDto } from './dto/updateProject.dto';
-import { Prisma } from '@prisma/client';
+} from '@nestjs/common'
+import { PrismaService } from '../../database/prisma.service'
+import { MediaService } from '../media-attachment/media-attachment.service'
+import { UpdateProjectDto } from './dto/updateProject.dto'
+import { Prisma } from '@prisma/client'
 
 export type PostProjectData = {
-  description: string;
-  name: string;
-  media: Express.Multer.File;
-  institutionId: number;
-  category: string;
-  subtitle: string;
-  accountId: number;
-};
+  description: string
+  name: string
+  media: Express.Multer.File
+  institutionId: number
+  category: string
+  subtitle: string
+  accountId: number
+}
 
 export type FavoriteProjectData = {
-  projectId: number;
-  donorId: number;
-};
+  projectId: number
+  donorId: number
+}
 
 const projectResponseFields = {
   id: true,
@@ -59,7 +59,7 @@ const projectResponseFields = {
   createdAt: true,
   updatedAt: true,
   mediaId: true,
-};
+}
 
 @Injectable()
 export class ProjectService {
@@ -81,42 +81,42 @@ export class ProjectService {
       throw new HttpException(
         'Descrição, nome e categoria são obrigatórios',
         HttpStatus.BAD_REQUEST,
-      );
+      )
     }
 
     if (!media) {
       throw new HttpException(
         'Um arquivo de mídia é obrigatório para o projeto',
         HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      )
     }
 
     if (!media.mimetype.startsWith('image/')) {
       throw new HttpException(
         'Apenas arquivos de imagem são permitidos para projetos',
         HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      )
     }
 
-    let mediaId: string | null = null;
+    let mediaId: string | null = null
 
     if (media) {
       const mediaAttachment = await this.mediaService.processMedia(media, {
         accountId,
-      });
-      mediaId = mediaAttachment.mediaAttachment.id;
+      })
+      mediaId = mediaAttachment.mediaAttachment.id
     }
 
     let projectCategory = await this.prismaService.category.findFirst({
       where: { name: category },
-    });
+    })
 
     if (!projectCategory) {
       projectCategory = await this.prismaService.category.create({
         data: {
           name: category,
         },
-      });
+      })
     }
 
     const project = await this.prismaService.project.create({
@@ -137,65 +137,65 @@ export class ProjectService {
         subtitle,
       },
       select: projectResponseFields,
-    });
+    })
 
-    return project;
+    return project
   }
 
   async updateProjectService(
     projectId: number,
     updateData: UpdateProjectDto & {
-      file?: Express.Multer.File;
-      accountId: number;
+      file?: Express.Multer.File
+      accountId: number
     },
   ) {
-    const { file, accountId, ...updateFields } = updateData;
+    const { file, accountId, ...updateFields } = updateData
 
     // Verifica se o projeto existe
     const existingProject = await this.prismaService.project.findUnique({
       where: { id: projectId },
       include: { institution: true },
-    });
+    })
 
     if (!existingProject) {
-      throw new NotFoundException('Projeto não encontrado');
+      throw new NotFoundException('Projeto não encontrado')
     }
 
     // Verifica se a instituição é a proprietária do projeto
     if (existingProject.institution.accountId !== accountId) {
       throw new ForbiddenException(
         'Você não tem permissão para editar este projeto',
-      );
+      )
     }
 
-    let mediaId = existingProject.mediaId;
+    let mediaId = existingProject.mediaId
 
     // Se um novo arquivo for fornecido, atualiza o media attachment
     if (file) {
       // Opcionalmente, delete o antigo media attachment se necessário
       if (mediaId) {
-        await this.mediaService.deleteMediaAttachment(mediaId);
+        await this.mediaService.deleteMediaAttachment(mediaId)
       }
 
       const mediaAttachment = await this.mediaService.processMedia(file, {
         accountId,
-      });
-      mediaId = mediaAttachment.mediaAttachment.id;
+      })
+      mediaId = mediaAttachment.mediaAttachment.id
     }
 
     // Atualiza a categoria se fornecida
-    let projectCategory = null;
+    let projectCategory = null
     if (updateFields.category) {
       projectCategory = await this.prismaService.category.findFirst({
         where: { name: updateFields.category },
-      });
+      })
 
       if (!projectCategory) {
         projectCategory = await this.prismaService.category.create({
           data: {
             name: updateFields.category,
           },
-        });
+        })
       }
     }
 
@@ -210,7 +210,7 @@ export class ProjectService {
           : undefined,
       },
       select: projectResponseFields,
-    });
+    })
 
     /*
     const project = await this.prismaService.project.create({
@@ -242,7 +242,7 @@ export class ProjectService {
 
     */
 
-    return updatedProject;
+    return updatedProject
   }
 
   async toggleFavoriteService({ projectId, donorId }: FavoriteProjectData) {
@@ -255,7 +255,7 @@ export class ProjectService {
               projectId: projectId,
             },
           },
-        });
+        })
 
       if (existingFavorite) {
         await this.prismaService.favoriteProject.delete({
@@ -265,31 +265,31 @@ export class ProjectService {
               projectId: projectId,
             },
           },
-        });
+        })
       } else {
         await this.prismaService.favoriteProject.create({
           data: {
             projectId: projectId,
             donorId: donorId,
           },
-        });
+        })
       }
 
-      return { message: 'Status de favorito alterado com sucesso' };
-    } catch (error) {
+      return { message: 'Status de favorito alterado com sucesso' }
+    } catch (_error) {
       throw new HttpException(
         'erro ao favoritar projeto',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
   }
 
   async getAllProjectsService(donorId?: number) {
     const allProjects = await this.prismaService.project.findMany({
       select: projectResponseFields,
-    });
+    })
 
-    let favoriteProjectIds: number[] = [];
+    let favoriteProjectIds: number[] = []
 
     if (donorId) {
       const favoriteProjects =
@@ -300,31 +300,31 @@ export class ProjectService {
           select: {
             projectId: true,
           },
-        });
-      favoriteProjectIds = favoriteProjects.map((fp) => fp.projectId);
+        })
+      favoriteProjectIds = favoriteProjects.map((fp) => fp.projectId)
     }
 
     const projects = allProjects.map((project) => {
       return {
         ...project,
         isFavorite: favoriteProjectIds.includes(project.id),
-      };
-    });
+      }
+    })
 
-    return projects;
+    return projects
   }
 
   async getProjectByIdService(projectId: number) {
     const project = await this.prismaService.project.findUnique({
       where: { id: projectId },
       select: projectResponseFields,
-    });
+    })
 
     if (!project) {
-      throw new NotFoundException('Projeto não encontrado');
+      throw new NotFoundException('Projeto não encontrado')
     }
 
-    return project;
+    return project
   }
 
   async getFavoriteProjectService(donorId: number) {
@@ -337,11 +337,11 @@ export class ProjectService {
           select: projectResponseFields,
         },
       },
-    });
+    })
 
-    const projects = favoriteProjects.map((favorite) => favorite.project);
+    const projects = favoriteProjects.map((favorite) => favorite.project)
 
-    return projects;
+    return projects
   }
 
   async getProjectsByInstitutionService(institutionId: number) {
@@ -350,30 +350,30 @@ export class ProjectService {
         institutionId: institutionId,
       },
       select: projectResponseFields,
-    });
+    })
 
     if (projects.length === 0) {
-      return [];
+      return []
     }
 
-    return projects;
+    return projects
   }
 
   async getProjectCategoriesService(search: string = '') {
-    const sanitizedSearch = search.trim();
+    const sanitizedSearch = search.trim()
     if (sanitizedSearch.length > 100) {
       throw new HttpException(
         'A pesquisa deve ter no máximo 100 caracteres',
         HttpStatus.BAD_REQUEST,
-      );
+      )
     }
 
-    const query = `%${sanitizedSearch}%`;
-    const maxResults = 10;
+    const query = `%${sanitizedSearch}%`
+    const maxResults = 10
     try {
       const ids = await this.prismaService.$queryRaw<{ id: number }[]>(
         Prisma.sql`SELECT id FROM categories WHERE name ILIKE ${query} LIMIT ${maxResults}`,
-      );
+      )
       const categories = await this.prismaService.category.findMany({
         where: {
           id: {
@@ -381,13 +381,13 @@ export class ProjectService {
           },
         },
         orderBy: { name: 'asc' },
-      });
-      return categories;
-    } catch (error) {
+      })
+      return categories
+    } catch (_error) {
       throw new HttpException(
         'Erro ao buscar categorias',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
   }
 
@@ -396,29 +396,29 @@ export class ProjectService {
     const existingProject = await this.prismaService.project.findUnique({
       where: { id: projectId },
       include: { institution: true },
-    });
+    })
 
     if (!existingProject) {
-      throw new NotFoundException('Projeto não encontrado');
+      throw new NotFoundException('Projeto não encontrado')
     }
 
     // Verifica se a instituição é a proprietária do projeto
     if (existingProject.institution.accountId !== accountId) {
       throw new ForbiddenException(
         'Você não tem permissão para deletar este projeto',
-      );
+      )
     }
 
     // Opcionalmente, delete o media attachment associado
     if (existingProject.mediaId) {
-      await this.mediaService.deleteMediaAttachment(existingProject.mediaId);
+      await this.mediaService.deleteMediaAttachment(existingProject.mediaId)
     }
 
     // Deleta o projeto
     await this.prismaService.project.delete({
       where: { id: projectId },
-    });
+    })
 
-    return { message: 'Projeto deletado com sucesso' };
+    return { message: 'Projeto deletado com sucesso' }
   }
 }

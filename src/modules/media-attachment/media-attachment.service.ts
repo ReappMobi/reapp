@@ -1,21 +1,21 @@
-import { InjectQueue } from '@nestjs/bull';
+import { InjectQueue } from '@nestjs/bull'
 import {
   HttpException,
   HttpStatus,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { encode } from 'blurhash';
-import { Queue } from 'bull';
-import * as ffmpeg from 'fluent-ffmpeg';
-import * as mime from 'mime-types';
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import * as path from 'node:path';
-import { promisify } from 'node:util';
-import * as sharp from 'sharp';
-import { v4 as uuidv4 } from 'uuid';
-import { PrismaService } from '../../database/prisma.service';
+} from '@nestjs/common'
+import { encode } from 'blurhash'
+import { Queue } from 'bull'
+import * as ffmpeg from 'fluent-ffmpeg'
+import * as mime from 'mime-types'
+import * as fs from 'node:fs'
+import * as os from 'node:os'
+import * as path from 'node:path'
+import { promisify } from 'node:util'
+import * as sharp from 'sharp'
+import { v4 as uuidv4 } from 'uuid'
+import { PrismaService } from '../../database/prisma.service'
 
 import {
   AUDIO_MIME_TYPES,
@@ -27,34 +27,34 @@ import {
   SUPPORTED_IMAGE_MIME_TYPES,
   SUPPORTED_MIME_TYPES,
   VIDEO_MIME_TYPES,
-} from './media-attachment.constants';
+} from './media-attachment.constants'
 
 interface VideoMetadata {
-  length: string;
-  duration: number;
-  fps: number;
-  size: string;
-  width: number;
-  height: number;
-  aspect: number;
-  audio_encode: string | null;
-  audio_bitrate: number | null;
-  audio_channels: number | null;
+  length: string
+  duration: number
+  fps: number
+  size: string
+  width: number
+  height: number
+  aspect: number
+  audio_encode: string | null
+  audio_bitrate: number | null
+  audio_channels: number | null
   original: {
-    width: number;
-    height: number;
-    frame_rate: string;
-    duration: number;
-    bitrate: number;
-  };
+    width: number
+    height: number
+    frame_rate: string
+    duration: number
+    bitrate: number
+  }
 }
 
 type UploadOptions = {
-  thumbnail?: Express.Multer.File;
-  accountId: number;
-  description?: string;
-  focus?: string;
-};
+  thumbnail?: Express.Multer.File
+  accountId: number
+  description?: string
+  focus?: string
+}
 
 @Injectable()
 export class MediaService {
@@ -68,7 +68,7 @@ export class MediaService {
       throw new HttpException(
         'Arquivo inválido',
         HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      )
     }
 
     // Only include image or video files
@@ -76,19 +76,19 @@ export class MediaService {
       throw new HttpException(
         'Formato de arquivo não suportado',
         HttpStatus.BAD_REQUEST,
-      );
+      )
     }
 
-    let fileSizeLimit = MAX_VIDEO_SIZE;
+    let fileSizeLimit = MAX_VIDEO_SIZE
     if (SUPPORTED_IMAGE_MIME_TYPES.includes(file.mimetype)) {
-      fileSizeLimit = MAX_IMAGE_SIZE;
+      fileSizeLimit = MAX_IMAGE_SIZE
     }
 
     if (file.size > fileSizeLimit) {
       throw new HttpException(
         'Tamanho do arquivo excede o limite',
         HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      )
     }
   }
 
@@ -98,31 +98,31 @@ export class MediaService {
         throw new HttpException(
           'Formato de arquivo de miniatura não suportado',
           HttpStatus.UNPROCESSABLE_ENTITY,
-        );
+        )
       }
 
       if (thumbnailFile.size > MAX_THUMBNAIL_SIZE) {
         throw new HttpException(
           'Tamanho do arquivo de miniatura excede o limite',
           HttpStatus.UNPROCESSABLE_ENTITY,
-        );
+        )
       }
     }
   }
 
   private isSynchronous(file: Express.Multer.File): boolean {
-    const mediaType = this.getMediaTypeFromMime(file.mimetype);
-    return mediaType === 'image';
+    const mediaType = this.getMediaTypeFromMime(file.mimetype)
+    return mediaType === 'image'
   }
 
   private getMediaTypeFromMime(mimeType: string): string {
     if (SUPPORTED_IMAGE_MIME_TYPES.includes(mimeType)) {
-      if (mimeType === 'image/gif') return 'gifv';
-      return 'image';
+      if (mimeType === 'image/gif') return 'gifv'
+      return 'image'
     }
-    if (VIDEO_MIME_TYPES.includes(mimeType)) return 'video';
-    if (AUDIO_MIME_TYPES.includes(mimeType)) return 'audio';
-    return 'unknown';
+    if (VIDEO_MIME_TYPES.includes(mimeType)) return 'video'
+    if (AUDIO_MIME_TYPES.includes(mimeType)) return 'audio'
+    return 'unknown'
   }
 
   private async processImage(
@@ -133,9 +133,9 @@ export class MediaService {
     if (isThumbnail) {
       return await sharp(file.buffer)
         .resize(480, 270, { fit: 'inside' })
-        .toFile(filePath);
+        .toFile(filePath)
     }
-    return await sharp(file.buffer).toFile(filePath);
+    return await sharp(file.buffer).toFile(filePath)
   }
 
   private async createMediaMetadata(
@@ -143,45 +143,45 @@ export class MediaService {
     focus: string,
     type: string,
   ) {
-    let meta = {};
-    const focusPoint = this.parseFocus(focus);
+    let meta = {}
+    const focusPoint = this.parseFocus(focus)
 
     if (type === 'image' || type === 'gifv') {
       try {
-        const originalMetadata = await sharp(file.buffer).metadata();
+        const originalMetadata = await sharp(file.buffer).metadata()
         const originalMeta = {
           width: originalMetadata.width,
           height: originalMetadata.height,
           size: `${originalMetadata.width}x${originalMetadata.height}`,
           aspect: originalMetadata.width / originalMetadata.height,
-        };
+        }
 
         meta = {
           focus: focusPoint,
           original: originalMeta,
-        };
+        }
       } catch (error) {
-        console.error('Error extracting original image metadata:', error);
+        console.error('Error extracting original image metadata:', error)
         meta = {
           focus: focusPoint,
-        };
+        }
       }
     } else if (type === 'video') {
       try {
-        const videoMeta = await this.getVideoMetadata(file.buffer);
+        const videoMeta = await this.getVideoMetadata(file.buffer)
         meta = {
           ...videoMeta,
           focus: focusPoint,
-        };
+        }
       } catch (error) {
-        console.error('Error extracting video metadata:', error);
+        console.error('Error extracting video metadata:', error)
         meta = {
           focus: focusPoint,
-        };
+        }
       }
     }
 
-    return meta;
+    return meta
   }
 
   private getTypeEnum(type: string): number {
@@ -190,74 +190,74 @@ export class MediaService {
       video: 2,
       gifv: 3,
       audio: 4,
-    };
-    return getTypeEnum[type] || 0;
+    }
+    return getTypeEnum[type] || 0
   }
 
   private async processSynchronously(
     file: Express.Multer.File,
     options: UploadOptions,
   ) {
-    const fileType = this.getFileType(file.mimetype);
+    const fileType = this.getFileType(file.mimetype)
 
     if (fileType !== 'image') {
       throw new HttpException(
         'O processamento síncrono é suportado apenas para imagens',
         HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      )
     }
 
-    const { thumbnail, accountId, description, focus } = options;
+    const { thumbnail, accountId, description, focus } = options
 
-    const mediaId = uuidv4();
+    const mediaId = uuidv4()
     const uploadDir =
-      process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+      process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads')
 
-    const mediaDir = path.join(uploadDir, mediaId);
+    const mediaDir = path.join(uploadDir, mediaId)
 
-    fs.mkdirSync(mediaDir, { recursive: true });
+    fs.mkdirSync(mediaDir, { recursive: true })
 
-    const originalExtension = mime.extension(file.mimetype);
+    const originalExtension = mime.extension(file.mimetype)
 
-    const extension = originalExtension && `.${originalExtension}`;
+    const extension = originalExtension && `.${originalExtension}`
 
-    const originalFileName = `original${extension}`;
+    const originalFileName = `original${extension}`
 
-    const originalFilePath = path.join(mediaDir, originalFileName);
+    const originalFilePath = path.join(mediaDir, originalFileName)
 
-    const fileInfo = await this.processImage(file, originalFilePath);
+    const fileInfo = await this.processImage(file, originalFilePath)
 
-    const fileBlurhash = await this.generateBlurhash(file.buffer);
+    const fileBlurhash = await this.generateBlurhash(file.buffer)
 
-    const fileMeta = await this.createMediaMetadata(file, focus, fileType);
+    const fileMeta = await this.createMediaMetadata(file, focus, fileType)
 
-    const uploadBaseUrl = `${process.env.BASE_URL}/uploads`;
-    const mediaUploadUrl = `${uploadBaseUrl}/${mediaId}/`;
-    const mediaUrl = `${mediaUploadUrl}/${originalFileName}`;
+    const uploadBaseUrl = `${process.env.BASE_URL}/uploads`
+    const mediaUploadUrl = `${uploadBaseUrl}/${mediaId}/`
+    const mediaUrl = `${mediaUploadUrl}/${originalFileName}`
 
-    let thumbnailData = {};
+    let thumbnailData = {}
     if (thumbnail) {
-      const thumbnailFileExtension = mime.extension(thumbnail.mimetype);
+      const thumbnailFileExtension = mime.extension(thumbnail.mimetype)
       const thumbnailExtension = thumbnailFileExtension
         ? `.${thumbnailFileExtension}`
-        : '.png';
+        : '.png'
 
-      const thumbnailFileName = `thumbnail.${thumbnailExtension}`;
-      const thumbnailFilePath = path.join(mediaDir, thumbnailFileName);
-      const thumbnailUpdatedAt: Date = new Date();
+      const thumbnailFileName = `thumbnail.${thumbnailExtension}`
+      const thumbnailFilePath = path.join(mediaDir, thumbnailFileName)
+      const thumbnailUpdatedAt: Date = new Date()
       const thumbnailContentType: string = thumbnail
         ? thumbnail.mimetype
-        : 'image/png';
-      const thumb = await this.processImage(thumbnail, thumbnailFilePath, true);
-      const thumbnailFileSize = thumb.size;
+        : 'image/png'
+      const thumb = await this.processImage(thumbnail, thumbnailFilePath, true)
+      const thumbnailFileSize = thumb.size
       const thumbnailMeta = await this.createMediaMetadata(
         thumbnail,
         focus,
         'image',
-      );
+      )
 
-      const thumbnailRemoteUrl = `${uploadBaseUrl}/${mediaId}/thumbnail.${thumbnailExtension}`;
-      fileMeta['small'] = thumbnailMeta;
+      const thumbnailRemoteUrl = `${uploadBaseUrl}/${mediaId}/thumbnail.${thumbnailExtension}`
+      fileMeta['small'] = thumbnailMeta
 
       thumbnailData = {
         thumbnailFileName,
@@ -265,7 +265,7 @@ export class MediaService {
         thumbnailFileSize,
         thumbnailUpdatedAt,
         thumbnailRemoteUrl,
-      };
+      }
     }
 
     const mediaAttachment = await this.prismaService.mediaAttachment.create({
@@ -296,32 +296,32 @@ export class MediaService {
         thumbnailRemoteUrl: true,
         thumbnailContentType: true,
       },
-    });
+    })
 
-    return mediaAttachment;
+    return mediaAttachment
   }
 
   async processMedia(file: Express.Multer.File, options: UploadOptions) {
-    const { thumbnail, accountId, description, focus } = options;
+    const { thumbnail, accountId, description, focus } = options
 
     if (!file) {
       throw new HttpException(
         'O arquivo é obrigatório',
         HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      )
     }
 
     if (!accountId) {
       throw new HttpException(
         'A conta é obrigatória',
         HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      )
     }
 
-    this.validateMediaFile(file);
-    this.validateThumbnailFile(thumbnail);
+    this.validateMediaFile(file)
+    this.validateThumbnailFile(thumbnail)
 
-    const isSynchronous = this.isSynchronous(file);
+    const isSynchronous = this.isSynchronous(file)
 
     if (isSynchronous) {
       const mediaAttachment = await this.processSynchronously(file, {
@@ -329,8 +329,8 @@ export class MediaService {
         accountId,
         description,
         focus,
-      });
-      return { isSynchronous, mediaAttachment };
+      })
+      return { isSynchronous, mediaAttachment }
     }
 
     const mediaAttachment = await this.enqueueMediaProcessing(file, {
@@ -338,8 +338,8 @@ export class MediaService {
       accountId,
       description,
       focus,
-    });
-    return { isSynchronous, mediaAttachment };
+    })
+    return { isSynchronous, mediaAttachment }
   }
 
   async deleteMediaAttachment(id: string): Promise<void> {
@@ -347,47 +347,47 @@ export class MediaService {
       {
         where: { id },
       },
-    );
+    )
 
     if (!mediaAttachment) {
-      throw new NotFoundException('Media attachment não encontrado');
+      throw new NotFoundException('Media attachment não encontrado')
     }
 
-    const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads');
-    const mediaDir = path.join(uploadsDir, mediaAttachment.id);
+    const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads')
+    const mediaDir = path.join(uploadsDir, mediaAttachment.id)
 
     try {
-      await promisify(fs.access)(mediaDir, fs.constants.F_OK);
+      await promisify(fs.access)(mediaDir, fs.constants.F_OK)
 
-      await promisify(fs.rm)(mediaDir, { recursive: true, force: true });
+      await promisify(fs.rm)(mediaDir, { recursive: true, force: true })
     } catch (error) {
       if (error.code !== 'ENOENT') {
-        console.error(`Erro ao deletar os arquivos de mídia: ${error}`);
+        console.error(`Erro ao deletar os arquivos de mídia: ${error}`)
         throw new HttpException(
           'Falha ao deletar os arquivos de mídia',
           HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+        )
       }
     }
 
     await this.prismaService.mediaAttachment.delete({
       where: { id },
-    });
+    })
   }
 
   async enqueueMediaProcessing(
     file: Express.Multer.File,
     options: {
-      thumbnail: Express.Multer.File | undefined;
-      accountId: number;
-      description: string;
-      focus: string;
+      thumbnail: Express.Multer.File | undefined
+      accountId: number
+      description: string
+      focus: string
     },
   ) {
-    const { thumbnail, accountId, description, focus } = options;
-    this.validateMediaFile(file);
+    const { thumbnail, accountId, description, focus } = options
+    this.validateMediaFile(file)
 
-    const mediaId = uuidv4();
+    const mediaId = uuidv4()
     const tempDir = path.join(
       __dirname,
       '..',
@@ -395,33 +395,33 @@ export class MediaService {
       '..',
       'temp_uploads',
       mediaId,
-    );
+    )
 
-    fs.mkdirSync(tempDir, { recursive: true });
-    const originalExtension = mime.extension(file.mimetype);
+    fs.mkdirSync(tempDir, { recursive: true })
+    const originalExtension = mime.extension(file.mimetype)
     const originalExtensionWithDot = originalExtension
       ? `.${originalExtension}`
-      : '';
+      : ''
 
-    const originalFileName = `original${originalExtensionWithDot}`;
+    const originalFileName = `original${originalExtensionWithDot}`
 
-    const originalFilePath = path.join(tempDir, originalFileName);
+    const originalFilePath = path.join(tempDir, originalFileName)
 
-    fs.writeFileSync(originalFilePath, file.buffer);
+    fs.writeFileSync(originalFilePath, file.buffer)
 
-    let thumbnailFilePath: string | undefined;
+    let thumbnailFilePath: string | undefined
     if (thumbnail) {
-      let thumbnailExtension = '.png';
-      const thumbExtension = mime.extension(thumbnail.mimetype);
+      let thumbnailExtension = '.png'
+      const thumbExtension = mime.extension(thumbnail.mimetype)
       if (thumbExtension) {
-        thumbnailExtension = `.${thumbExtension}`;
+        thumbnailExtension = `.${thumbExtension}`
       }
-      const thumbnailFileName = `thumbnail${thumbnailExtension}`;
-      thumbnailFilePath = path.join(tempDir, thumbnailFileName);
-      fs.writeFileSync(thumbnailFilePath, thumbnail.buffer);
+      const thumbnailFileName = `thumbnail${thumbnailExtension}`
+      thumbnailFilePath = path.join(tempDir, thumbnailFileName)
+      fs.writeFileSync(thumbnailFilePath, thumbnail.buffer)
     }
 
-    const type = this.getMediaTypeFromMime(file.mimetype);
+    const type = this.getMediaTypeFromMime(file.mimetype)
 
     const mediaAttachment = await this.prismaService.mediaAttachment.create({
       data: {
@@ -447,7 +447,7 @@ export class MediaService {
         thumbnailUpdatedAt: new Date(),
         thumbnailRemoteUrl: '',
       },
-    });
+    })
 
     await this.mediaQueue.add('process-media', {
       mediaId: mediaAttachment.id,
@@ -455,7 +455,7 @@ export class MediaService {
       thumbnailFilePath,
       description,
       focus,
-    });
+    })
 
     const response = {
       id: mediaAttachment.id.toString(),
@@ -467,9 +467,9 @@ export class MediaService {
       meta: null,
       description: mediaAttachment.description,
       blurhash: null,
-    };
+    }
 
-    return response;
+    return response
   }
 
   async getMediaAttachmentsByIds(mediaIds: string[]) {
@@ -477,31 +477,31 @@ export class MediaService {
       where: {
         id: { in: mediaIds },
       },
-    });
+    })
 
-    const baseUrl = `${process.env.BASE_URL}/uploads`;
+    const baseUrl = `${process.env.BASE_URL}/uploads`
 
-    const mediaAttachmentMap = new Map<string, any>();
+    const mediaAttachmentMap = new Map<string, any>()
     mediaAttachments.forEach((mediaAttachment) => {
-      mediaAttachmentMap.set(mediaAttachment.id, mediaAttachment);
-    });
+      mediaAttachmentMap.set(mediaAttachment.id, mediaAttachment)
+    })
 
     const mediaResponses = mediaIds.map((id) => {
-      const mediaAttachment = mediaAttachmentMap.get(id);
+      const mediaAttachment = mediaAttachmentMap.get(id)
 
       if (!mediaAttachment) {
-        return { mediaResponse: null, processing: null };
+        return { mediaResponse: null, processing: null }
       }
 
-      const processing = mediaAttachment.processing;
-      const isProcessed = processing === 2;
+      const processing = mediaAttachment.processing
+      const isProcessed = processing === 2
 
       const originalFileExtension = mediaAttachment.fileContentType
         ? mediaAttachment.fileContentType.split('/')[1]
-        : '';
+        : ''
       const thumbnailFileExtension = mediaAttachment.thumbnailContentType
         ? mediaAttachment.thumbnailContentType.split('/')[1]
-        : '';
+        : ''
 
       const mediaResponse = {
         id: mediaAttachment.id.toString(),
@@ -519,12 +519,12 @@ export class MediaService {
         meta: isProcessed ? mediaAttachment.fileMeta : null,
         description: mediaAttachment.description,
         blurhash: isProcessed ? mediaAttachment.blurhash : null,
-      };
+      }
 
-      return { mediaResponse, processing };
-    });
+      return { mediaResponse, processing }
+    })
 
-    return mediaResponses;
+    return mediaResponses
   }
 
   async getMediaAttachmentById(id: string) {
@@ -532,20 +532,20 @@ export class MediaService {
       {
         where: { id: id },
       },
-    );
+    )
 
     if (!mediaAttachment) {
-      return { mediaResponse: null, processing: null };
+      return { mediaResponse: null, processing: null }
     }
 
-    const baseUrl = `${process.env.BASE_URL}/uploads`;
-    const processing = mediaAttachment.processing;
+    const baseUrl = `${process.env.BASE_URL}/uploads`
+    const processing = mediaAttachment.processing
 
-    const isProcessed = processing === 2;
+    const isProcessed = processing === 2
 
-    const originalFileExtension = mediaAttachment.fileContentType.split('/')[1];
+    const originalFileExtension = mediaAttachment.fileContentType.split('/')[1]
     const thumbnailFileExtension =
-      mediaAttachment.thumbnailContentType.split('/')[1];
+      mediaAttachment.thumbnailContentType.split('/')[1]
     const mediaResponse = {
       id: mediaAttachment.id.toString(),
       type: this.getTypeStr(mediaAttachment.type),
@@ -560,9 +560,9 @@ export class MediaService {
       meta: isProcessed ? mediaAttachment.fileMeta : null,
       description: mediaAttachment.description,
       blurhash: isProcessed ? mediaAttachment.blurhash : null,
-    };
+    }
 
-    return { mediaResponse, processing };
+    return { mediaResponse, processing }
   }
 
   async processAsynchronously(
@@ -572,15 +572,15 @@ export class MediaService {
     description: string,
     focus: string,
   ) {
-    await this.updateMediaProcessingStatus(mediaId, 'processing');
+    await this.updateMediaProcessingStatus(mediaId, 'processing')
 
-    const fileBuffer = fs.readFileSync(originalFilePath);
-    const originalFileType = path.extname(originalFilePath);
-    let thumbnailBuffer: Buffer | undefined;
-    let thumbnailFileType: string | undefined;
+    const fileBuffer = fs.readFileSync(originalFilePath)
+    const originalFileType = path.extname(originalFilePath)
+    let thumbnailBuffer: Buffer | undefined
+    let thumbnailFileType: string | undefined
     if (thumbnailFilePath) {
-      thumbnailBuffer = fs.readFileSync(thumbnailFilePath);
-      thumbnailFileType = path.extname(thumbnailFilePath);
+      thumbnailBuffer = fs.readFileSync(thumbnailFilePath)
+      thumbnailFileType = path.extname(thumbnailFilePath)
     }
 
     const mediaData = await this.processMediaFile(
@@ -591,74 +591,74 @@ export class MediaService {
       focus,
       originalFileType,
       thumbnailFileType,
-    );
+    )
 
     // Clean up temporary files
-    fs.unlinkSync(originalFilePath);
+    fs.unlinkSync(originalFilePath)
     if (thumbnailFilePath) {
-      fs.unlinkSync(thumbnailFilePath);
+      fs.unlinkSync(thumbnailFilePath)
     }
 
     // Update processing status to 'complete' (2)
-    await this.updateMediaProcessingStatus(mediaId, 'complete', mediaData);
+    await this.updateMediaProcessingStatus(mediaId, 'complete', mediaData)
   }
 
   async processMediaFile(
     mediaId: string,
     fileBuffer: Buffer,
     thumbnailBuffer: Buffer | undefined,
-    description: string,
+    _description: string,
     focus: string,
     originalFileType: string,
     thumbnailFileType: string | undefined,
   ) {
-    const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads');
-    const mediaDir = path.join(uploadDir, mediaId.toString());
-    fs.mkdirSync(mediaDir, { recursive: true });
+    const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads')
+    const mediaDir = path.join(uploadDir, mediaId.toString())
+    fs.mkdirSync(mediaDir, { recursive: true })
 
-    const originalFileName = `original${originalFileType}`;
-    const originalFilePath = path.join(mediaDir, originalFileName);
-    fs.writeFileSync(originalFilePath, fileBuffer);
+    const originalFileName = `original${originalFileType}`
+    const originalFilePath = path.join(mediaDir, originalFileName)
+    fs.writeFileSync(originalFilePath, fileBuffer)
 
-    let thumbnailFileExtension: string;
+    let thumbnailFileExtension: string
     if (thumbnailFileType) {
-      thumbnailFileExtension = thumbnailFileType;
+      thumbnailFileExtension = thumbnailFileType
     } else {
       // Default to .png if thumbnailBuffer is not provided
-      thumbnailFileExtension = '.png';
+      thumbnailFileExtension = '.png'
     }
 
-    let thumbnailFileSize: number | undefined;
+    let thumbnailFileSize: number | undefined
     if (thumbnailBuffer) {
-      thumbnailFileSize = thumbnailBuffer.byteLength;
+      thumbnailFileSize = thumbnailBuffer.byteLength
     }
 
     // Process video
     const thumbnailFilePath = path.join(
       mediaDir,
       `thumbnail${thumbnailFileExtension}`,
-    );
+    )
     await this.processVideo(
       originalFilePath,
       thumbnailFilePath,
       thumbnailBuffer,
-    );
+    )
 
     const fileMeta = await this.generateMetaForVideo(
       originalFilePath,
       thumbnailFilePath,
       focus,
-    );
+    )
     const blurhash = await this.generateBlurhash(
       fs.readFileSync(thumbnailFilePath),
-    );
+    )
 
     return {
       fileMeta,
       blurhash,
       thumbnailFileSize,
       thumbnailContentType: `image/${thumbnailFileExtension.split('.')[1]}`,
-    };
+    }
   }
 
   async generateMetaForVideo(
@@ -666,81 +666,81 @@ export class MediaService {
     thumbnailFilePath: string,
     focus: string,
   ) {
-    const videoMeta = await this.getVideoMetadataFromFile(originalFilePath);
+    const videoMeta = await this.getVideoMetadataFromFile(originalFilePath)
 
-    const thumbnailBuffer = fs.readFileSync(thumbnailFilePath);
-    const thumbnailMetadata = await sharp(thumbnailBuffer).metadata();
+    const thumbnailBuffer = fs.readFileSync(thumbnailFilePath)
+    const thumbnailMetadata = await sharp(thumbnailBuffer).metadata()
     const smallMeta = {
       width: thumbnailMetadata.width,
       height: thumbnailMetadata.height,
       size: `${thumbnailMetadata.width}x${thumbnailMetadata.height}`,
       aspect: thumbnailMetadata.width / thumbnailMetadata.height,
-    };
+    }
 
-    const focusPoint = this.parseFocus(focus);
+    const focusPoint = this.parseFocus(focus)
 
     const meta = {
       ...videoMeta,
       small: smallMeta,
       focus: focusPoint,
-    };
+    }
 
-    return meta;
+    return meta
   }
 
   async getVideoMetadataFromFile(filePath: string): Promise<any> {
     return new Promise<any>((resolve, reject) => {
       ffmpeg.ffprobe(filePath, (err, data) => {
-        if (err) return reject(err);
+        if (err) return reject(err)
 
         try {
           // Extract video stream
           const videoStream = data.streams.find(
             (stream) => stream.codec_type === 'video',
-          );
+          )
           if (!videoStream) {
-            return reject(new Error('No video stream found'));
+            return reject(new Error('No video stream found'))
           }
 
           // Extract audio stream
           const audioStream = data.streams.find(
             (stream) => stream.codec_type === 'audio',
-          );
+          )
 
           // Extract video metadata
-          const durationValue = data.format.duration;
-          let duration: number;
+          const durationValue = data.format.duration
+          let duration: number
 
           if (typeof durationValue === 'string') {
-            duration = parseFloat(durationValue);
+            duration = parseFloat(durationValue)
           } else if (typeof durationValue === 'number') {
-            duration = durationValue;
+            duration = durationValue
           } else {
-            duration = 0;
+            duration = 0
           }
 
-          const length = this.formatDuration(duration);
+          const length = this.formatDuration(duration)
 
-          const width = videoStream.width || 0;
-          const height = videoStream.height || 0;
-          const size = `${width}x${height}`;
+          const width = videoStream.width || 0
+          const height = videoStream.height || 0
+          const size = `${width}x${height}`
           const aspect =
-            width && height ? parseFloat((width / height).toFixed(7)) : 0;
+            width && height ? parseFloat((width / height).toFixed(7)) : 0
 
           const frameRateStr =
-            videoStream.r_frame_rate || videoStream.avg_frame_rate;
+            videoStream.r_frame_rate || videoStream.avg_frame_rate
           const fps = frameRateStr
             ? parseFloat(this.parseFrameRate(frameRateStr).toFixed(2))
-            : 0;
+            : 0
 
-          const bitrateValue = videoStream.bit_rate || data.format.bit_rate;
-          let bitrate: number;
+          const bitrateValue = videoStream.bit_rate || data.format.bit_rate
+          let bitrate: number
           if (typeof bitrateValue === 'string') {
-            bitrate = parseInt(bitrateValue, 10);
+            bitrate = parseInt(bitrateValue, 10)
           } else if (typeof bitrateValue === 'number') {
-            bitrate = bitrateValue;
+            bitrate = bitrateValue
           } else {
-            bitrate = 0;
+            bitrate = 0
           }
 
           // Original metadata
@@ -750,22 +750,22 @@ export class MediaService {
             frame_rate: frameRateStr,
             duration,
             bitrate,
-          };
+          }
 
           // Audio metadata
-          let audio_encode = null;
-          let audio_bitrate = null;
-          let audio_channels = null;
+          let audio_encode = null
+          let audio_bitrate = null
+          let audio_channels = null
 
           if (audioStream) {
             audio_encode =
-              `${audioStream.codec_long_name || ''} (${audioStream.codec_name || ''} / ${audioStream.codec_tag_string || ''})`.trim();
+              `${audioStream.codec_long_name || ''} (${audioStream.codec_name || ''} / ${audioStream.codec_tag_string || ''})`.trim()
             audio_bitrate = audioStream.sample_rate
               ? `${audioStream.sample_rate} Hz`
-              : null;
+              : null
             audio_channels = audioStream.channels
               ? this.getAudioChannelLayout(audioStream.channels)
-              : null;
+              : null
           }
 
           const meta = {
@@ -780,39 +780,39 @@ export class MediaService {
             audio_bitrate,
             audio_channels,
             original,
-          };
+          }
 
-          resolve(meta);
+          resolve(meta)
         } catch (error) {
-          reject(error);
+          reject(error)
         }
-      });
-    });
+      })
+    })
   }
 
   parseFrameRate(frameRateStr: string): number {
     if (!frameRateStr) {
-      return 0;
+      return 0
     }
-    const parts = frameRateStr.split('/');
+    const parts = frameRateStr.split('/')
     if (parts.length === 2) {
-      const numerator = parseFloat(parts[0]);
-      const denominator = parseFloat(parts[1]);
+      const numerator = parseFloat(parts[0])
+      const denominator = parseFloat(parts[1])
       if (denominator !== 0) {
-        return numerator / denominator;
+        return numerator / denominator
       }
     }
-    return parseFloat(frameRateStr) || 0;
+    return parseFloat(frameRateStr) || 0
   }
 
   getAudioChannelLayout(channels: number): string {
     switch (channels) {
       case 1:
-        return 'mono';
+        return 'mono'
       case 2:
-        return 'stereo';
+        return 'stereo'
       default:
-        return `${channels} channels`;
+        return `${channels} channels`
     }
   }
 
@@ -821,11 +821,11 @@ export class MediaService {
     thumbnailFilePath: string,
     thumbnailBuffer: Buffer | undefined,
   ) {
-    const processedFilePath = originalFilePath + '_processed.mp4';
-    const backupFilePath = originalFilePath + '_backup';
+    const processedFilePath = originalFilePath + '_processed.mp4'
+    const backupFilePath = originalFilePath + '_backup'
 
     try {
-      fs.renameSync(originalFilePath, backupFilePath);
+      fs.renameSync(originalFilePath, backupFilePath)
 
       // Transcode the video
       const transcodingCommand = ffmpeg(backupFilePath)
@@ -836,52 +836,52 @@ export class MediaService {
           '-c:a aac',
           '-b:a 128k',
         ])
-        .save(processedFilePath);
+        .save(processedFilePath)
 
       await new Promise<void>((resolve, reject) => {
         transcodingCommand
           .on('end', () => resolve())
-          .on('error', (err: Error) => reject(err));
-      });
+          .on('error', (err: Error) => reject(err))
+      })
       // Replace the original file with the processed file
-      fs.renameSync(processedFilePath, originalFilePath);
+      fs.renameSync(processedFilePath, originalFilePath)
 
       // Delete the backup file
-      fs.unlinkSync(backupFilePath);
+      fs.unlinkSync(backupFilePath)
 
       if (thumbnailBuffer) {
-        fs.writeFileSync(thumbnailFilePath, thumbnailBuffer);
+        fs.writeFileSync(thumbnailFilePath, thumbnailBuffer)
       } else {
         const thumbnailCommand = ffmpeg(originalFilePath).screenshots({
           timestamps: [1],
           filename: path.basename(thumbnailFilePath),
           folder: path.dirname(thumbnailFilePath),
           size: '640x?',
-        });
+        })
 
         await new Promise<void>((resolve, reject) => {
           thumbnailCommand
             .on('end', () => resolve())
-            .on('error', (err: Error) => reject(err));
-        });
+            .on('error', (err: Error) => reject(err))
+        })
       }
     } catch (error) {
-      console.error('Error processing video:', error);
+      console.error('Error processing video:', error)
       if (fs.existsSync(processedFilePath)) {
-        fs.unlinkSync(processedFilePath);
+        fs.unlinkSync(processedFilePath)
       }
       // Restore the original file if necessary
       if (fs.existsSync(backupFilePath)) {
-        fs.renameSync(backupFilePath, originalFilePath);
+        fs.renameSync(backupFilePath, originalFilePath)
       }
-      throw error;
+      throw error
     }
   }
 
   getMimeType(filePath: string): string | null {
-    const mimeType = mime.lookup(filePath);
+    const mimeType = mime.lookup(filePath)
 
-    return mimeType || null;
+    return mimeType || null
   }
 
   async updateMediaProcessingStatus(
@@ -890,104 +890,104 @@ export class MediaService {
     mediaData?: any,
   ) {
     const processingStatus =
-      status === 'processing' ? 1 : status === 'complete' ? 2 : -1;
+      status === 'processing' ? 1 : status === 'complete' ? 2 : -1
     await this.prismaService.mediaAttachment.update({
       where: { id: mediaId },
       data: {
         processing: processingStatus,
         ...mediaData,
       },
-    });
+    })
   }
 
   isLargerMediaFormat(mimeType: string): boolean {
     return (
       VIDEO_MIME_TYPES.includes(mimeType) || AUDIO_MIME_TYPES.includes(mimeType)
-    );
+    )
   }
 
   parseFocus(focus: string) {
-    if (!focus) return { x: 0, y: 0 };
-    const [x, y] = focus.split(',').map(Number);
-    return { x, y };
+    if (!focus) return { x: 0, y: 0 }
+    const [x, y] = focus.split(',').map(Number)
+    return { x, y }
   }
 
   getTypeStr(type: number): string {
     switch (type) {
       case 1:
-        return 'image';
+        return 'image'
       case 2:
-        return 'video';
+        return 'video'
       case 3:
-        return 'gifv';
+        return 'gifv'
       case 4:
-        return 'audio';
+        return 'audio'
       default:
-        return '';
+        return ''
     }
   }
 
   getFileType(mimeType: string): string {
-    if (mimeType.startsWith('image/')) return 'image';
-    if (mimeType.startsWith('video/')) return 'video';
-    if (mimeType.startsWith('audio/')) return 'audio';
-    return 'unknown';
+    if (mimeType.startsWith('image/')) return 'image'
+    if (mimeType.startsWith('video/')) return 'video'
+    if (mimeType.startsWith('audio/')) return 'audio'
+    return 'unknown'
   }
 
   async getVideoMetadata(buffer: Buffer) {
-    const writeFile = promisify(fs.writeFile);
-    const unlink = promisify(fs.unlink);
+    const writeFile = promisify(fs.writeFile)
+    const unlink = promisify(fs.unlink)
     const tempVideoPath = path.join(
       os.tmpdir(),
       `temp_video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    );
+    )
 
     try {
-      await writeFile(tempVideoPath, buffer);
+      await writeFile(tempVideoPath, buffer)
 
       const data = await new Promise<ffmpeg.FfprobeData>((resolve, reject) => {
         ffmpeg.ffprobe(tempVideoPath, (err, data) => {
-          if (err) return reject(err);
-          resolve(data);
-        });
-      });
+          if (err) return reject(err)
+          resolve(data)
+        })
+      })
 
       const videoStream = data.streams.find(
         (stream) => stream.codec_type === 'video',
-      );
+      )
       const audioStream = data.streams.find(
         (stream) => stream.codec_type === 'audio',
-      );
+      )
 
       if (!videoStream) {
         throw new HttpException(
           { error: 'Video has no video stream' },
           HttpStatus.UNPROCESSABLE_ENTITY,
-        );
+        )
       }
 
-      const width = videoStream.width;
-      const height = videoStream.height;
+      const width = videoStream.width
+      const height = videoStream.height
       if (width * height > MAX_VIDEO_MATRIX_LIMIT) {
         throw new HttpException(
           {
             error: `Videos with dimensions ${width}x${height} are not supported`,
           },
           HttpStatus.UNPROCESSABLE_ENTITY,
-        );
+        )
       }
 
       const [numerator, denominator] = videoStream.avg_frame_rate
         .split('/')
-        .map(Number);
-      const frameRate = numerator / (denominator || 1);
+        .map(Number)
+      const frameRate = numerator / (denominator || 1)
       if (frameRate > MAX_VIDEO_FRAME_RATE) {
         throw new HttpException(
           {
             error: `Videos with frame rate ${frameRate}fps are not supported`,
           },
           HttpStatus.UNPROCESSABLE_ENTITY,
-        );
+        )
       }
 
       const meta: VideoMetadata = {
@@ -1008,18 +1008,18 @@ export class MediaService {
           duration: data.format.duration,
           bitrate: Number(data.format.bit_rate),
         },
-      };
+      }
 
-      return meta;
+      return meta
     } finally {
-      await unlink(tempVideoPath);
+      await unlink(tempVideoPath)
     }
   }
 
   formatDuration(duration: number): string {
-    const minutes = Math.floor(duration / 60);
-    const seconds = (duration % 60).toFixed(2);
-    return `${minutes}:${seconds.padStart(5, '0')}`;
+    const minutes = Math.floor(duration / 60)
+    const seconds = (duration % 60).toFixed(2)
+    return `${minutes}:${seconds.padStart(5, '0')}`
   }
 
   async generateBlurhash(imageBuffer: Buffer): Promise<string> {
@@ -1027,8 +1027,8 @@ export class MediaService {
       .raw()
       .ensureAlpha()
       .resize(32, 32, { fit: 'inside' })
-      .toBuffer({ resolveWithObject: true });
+      .toBuffer({ resolveWithObject: true })
 
-    return encode(new Uint8ClampedArray(data), info.width, info.height, 4, 4);
+    return encode(new Uint8ClampedArray(data), info.width, info.height, 4, 4)
   }
 }

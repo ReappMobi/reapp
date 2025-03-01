@@ -6,15 +6,15 @@ import {
   Query,
   Req,
   UseGuards,
-} from '@nestjs/common';
-import { Post } from '@nestjs/common';
-import { RequestDonationDto } from './dto/request-donation.dto';
-import { DonationService } from './donation.service';
-import { NotificationRequestDto } from './dto/notification.dto';
-import { AuthGuard } from '../auth/auth.guard';
+} from '@nestjs/common'
+import { Post } from '@nestjs/common'
+import { RequestDonationDto } from './dto/request-donation.dto'
+import { DonationService } from './donation.service'
+import { NotificationRequestDto } from './dto/notification.dto'
+import { AuthGuard } from '../auth/auth.guard'
 
 interface RequestWithUser extends Request {
-  user?: { id: number };
+  user?: { id: number }
 }
 
 @Controller('donation')
@@ -27,17 +27,17 @@ export class DonationController {
     @Body() requestDonationDto: RequestDonationDto,
     @Req() req: RequestWithUser,
   ) {
-    const accountId = req.user.id;
+    const accountId = req.user.id
     return this.donationService.requestDonation(
       requestDonationDto,
       Number(accountId),
-    );
+    )
   }
 
   @UseGuards(AuthGuard)
   @Get('all')
   findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
-    return this.donationService.getAllDonations(page, limit);
+    return this.donationService.getAllDonations(page, limit)
   }
 
   @UseGuards(AuthGuard)
@@ -53,7 +53,7 @@ export class DonationController {
       page,
       limit,
       period as 'week' | 'month' | '6months' | 'year' | 'all',
-    );
+    )
   }
 
   @UseGuards(AuthGuard)
@@ -69,7 +69,7 @@ export class DonationController {
       page,
       limit,
       period as 'week' | 'month' | '6months' | 'year' | 'all',
-    );
+    )
   }
 
   @UseGuards(AuthGuard)
@@ -85,7 +85,7 @@ export class DonationController {
       page,
       limit,
       period as 'week' | 'month' | '6months' | 'year' | 'all',
-    );
+    )
   }
 
   @UseGuards(AuthGuard)
@@ -96,13 +96,13 @@ export class DonationController {
     @Query('limit') limit: number = 10,
     @Req() req: RequestWithUser,
   ) {
-    const { user } = req;
+    const { user } = req
     return this.donationService.getDonationsByInstitutionId(
       +institutionId,
       +page,
       +limit,
       user,
-    );
+    )
   }
 
   @UseGuards(AuthGuard)
@@ -118,7 +118,7 @@ export class DonationController {
       page,
       limit,
       req.user,
-    );
+    )
   }
 
   @UseGuards(AuthGuard)
@@ -132,9 +132,9 @@ export class DonationController {
     @Query('projectId') projectId?: number,
     @Query('period') period: string = 'week',
   ) {
-    const user = req.user;
-    const parsedInstitutionId = institutionId ? +institutionId : null;
-    const parsedProjectId = projectId ? +projectId : null;
+    const user = req.user
+    const parsedInstitutionId = institutionId ? +institutionId : null
+    const parsedProjectId = projectId ? +projectId : null
 
     return this.donationService.getDonationsByDonor(
       +donorId,
@@ -144,11 +144,11 @@ export class DonationController {
       parsedProjectId,
       user,
       period as 'week' | 'month' | '6months' | 'year' | 'all',
-    );
+    )
   }
 
   @Post('notify')
   notifyDonation(@Body() requestBody: NotificationRequestDto) {
-    return this.donationService.notifyDonation(requestBody);
+    return this.donationService.notifyDonation(requestBody)
   }
 }

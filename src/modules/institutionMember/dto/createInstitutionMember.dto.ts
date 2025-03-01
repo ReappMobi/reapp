@@ -1,12 +1,12 @@
-import { IsString, IsEnum, IsNotEmpty } from 'class-validator';
-import { InstitutionMemberType } from '@prisma/client';
+import { IsString, IsEnum, IsNotEmpty } from 'class-validator'
+import { InstitutionMemberType } from '@prisma/client'
 
 export class CreateInstitutionMemberDto {
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name: string
 
   @IsEnum(InstitutionMemberType)
   @IsNotEmpty()
-  memberType: InstitutionMemberType;
+  memberType: InstitutionMemberType
 }

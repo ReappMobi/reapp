@@ -1,19 +1,19 @@
-import { MercadopagoService } from '../..//services/mercadopago/mercadopago.service';
-import { PrismaService } from '../..//database/prisma.service';
-import { RequestDonationDto } from './dto/request-donation.dto';
-import { Injectable, HttpStatus, HttpException } from '@nestjs/common';
+import { MercadopagoService } from '../..//services/mercadopago/mercadopago.service'
+import { PrismaService } from '../..//database/prisma.service'
+import { RequestDonationDto } from './dto/request-donation.dto'
+import { Injectable, HttpStatus, HttpException } from '@nestjs/common'
 import {
   PreferenceRequest,
   PreferenceResponse,
-} from 'mercadopago/dist/clients/preference/commonTypes';
-import { NotificationRequestDto } from './dto/notification.dto';
-import { v4 as uuidv4 } from 'uuid';
-import { DonationStatus } from '@prisma/client';
+} from 'mercadopago/dist/clients/preference/commonTypes'
+import { NotificationRequestDto } from './dto/notification.dto'
+import { v4 as uuidv4 } from 'uuid'
+import { DonationStatus } from '@prisma/client'
 
 type ExtendedDonationRequest = RequestDonationDto & {
-  name: string;
-  email: string;
-};
+  name: string
+  email: string
+}
 // TODO: Simplify this class and fix error handling
 @Injectable()
 export class DonationService {
@@ -45,96 +45,96 @@ export class DonationService {
       notification_url:
         process.env.MERCADOPAGO_NOTIFICATION_URL ||
         'https://exemploAplicacao.com/donation/notify',
-    };
+    }
   }
 
   private async createMercadopagoRequest(mpRequestBody: PreferenceRequest) {
     try {
       const response =
-        await this.mercadopagoService.processPayment(mpRequestBody);
-      return response;
-    } catch (error) {
+        await this.mercadopagoService.processPayment(mpRequestBody)
+      return response
+    } catch (_error) {
       throw new HttpException(
         'Erro ao processar pagamento',
         HttpStatus.BAD_REQUEST,
-      );
+      )
     }
   }
 
   private async requestProjectDonation(
     requestDonationDto: ExtendedDonationRequest,
   ) {
-    const { projectId } = requestDonationDto;
+    const { projectId } = requestDonationDto
     const project = await this.prismaService.project.findUnique({
       where: { id: projectId },
-    });
+    })
 
     if (!project) {
-      throw new HttpException('Projeto não encontrado', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Projeto não encontrado', HttpStatus.BAD_REQUEST)
     }
 
     const mpRequestBody = this.buildRequestBody(
       requestDonationDto,
       project.name,
-    );
+    )
 
-    const response = await this.createMercadopagoRequest(mpRequestBody);
+    const response = await this.createMercadopagoRequest(mpRequestBody)
     if (!response.init_point) {
       throw new HttpException(
         'Erro ao processar pagamento',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
-    return response;
+    return response
   }
 
   private async requestInstitutionDonation(
     requestDonationDto: ExtendedDonationRequest,
   ) {
-    const { institutionId } = requestDonationDto;
+    const { institutionId } = requestDonationDto
 
     const institution = await this.prismaService.institution.findUnique({
       where: { id: institutionId },
       select: {
         account: true,
       },
-    });
+    })
 
     if (!institution) {
       throw new HttpException(
         'Instituição não encontrada',
         HttpStatus.BAD_REQUEST,
-      );
+      )
     }
 
     const mpRequestBody = this.buildRequestBody(
       requestDonationDto,
       institution.account.name,
-    );
+    )
 
-    const response = await this.createMercadopagoRequest(mpRequestBody);
+    const response = await this.createMercadopagoRequest(mpRequestBody)
     if (!response.init_point) {
       throw new HttpException(
         'Erro ao processar pagamento',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
-    return response;
+    return response
   }
 
   private async requestGeneralDonation(
     requestDonationDto: ExtendedDonationRequest,
   ) {
-    const mpRequestBody = this.buildRequestBody(requestDonationDto);
+    const mpRequestBody = this.buildRequestBody(requestDonationDto)
 
-    const response = await this.createMercadopagoRequest(mpRequestBody);
+    const response = await this.createMercadopagoRequest(mpRequestBody)
     if (!response.init_point) {
       throw new HttpException(
         'Erro ao processar pagamento',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
-    return response;
+    return response
   }
 
   async requestDonation(
@@ -145,7 +145,7 @@ export class DonationService {
       throw new HttpException(
         'A quantidade de doação não pode ser negativa',
         HttpStatus.BAD_REQUEST,
-      );
+      )
     }
 
     const account = await this.prismaService.account.findUnique({
@@ -159,36 +159,36 @@ export class DonationService {
         email: true,
         donor: true,
       },
-    });
+    })
 
     if (!account) {
-      throw new HttpException('Usuário não encontrado', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Usuário não encontrado', HttpStatus.BAD_REQUEST)
     }
 
     if (account.institution) {
       throw new HttpException(
         'Usuário é uma instituição e não pode fazer doações',
         HttpStatus.BAD_REQUEST,
-      );
+      )
     }
 
     if (requestDonationDto.amount < 0.01) {
-      throw new HttpException('Valor inválido', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Valor inválido', HttpStatus.BAD_REQUEST)
     }
 
     const requestData: ExtendedDonationRequest = {
       ...requestDonationDto,
       name: account.name,
       email: account.email,
-    };
+    }
 
-    let response: PreferenceResponse;
+    let response: PreferenceResponse
     if (requestDonationDto.projectId) {
-      response = await this.requestProjectDonation(requestData);
+      response = await this.requestProjectDonation(requestData)
     } else if (requestDonationDto.institutionId) {
-      response = await this.requestInstitutionDonation(requestData);
+      response = await this.requestInstitutionDonation(requestData)
     } else {
-      response = await this.requestGeneralDonation(requestData);
+      response = await this.requestGeneralDonation(requestData)
     }
 
     try {
@@ -213,14 +213,14 @@ export class DonationService {
             },
           }),
         },
-      });
-      return response.init_point;
+      })
+      return response.init_point
     } catch (error) {
-      console.error(error);
+      console.error(error)
       throw new HttpException(
         'Erro ao salvar doação',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
   }
 
@@ -228,8 +228,8 @@ export class DonationService {
     const donations = await this.prismaService.donation.findMany({
       skip: (page - 1) * limit,
       take: Number(limit),
-    });
-    return donations;
+    })
+    return donations
   }
 
   async getDonationsByInstitution(
@@ -242,7 +242,7 @@ export class DonationService {
       throw new HttpException(
         'Apenas usuários logados podem ver as doações recebidas',
         HttpStatus.FORBIDDEN,
-      );
+      )
     }
 
     const thisAccount = await this.prismaService.account.findUnique({
@@ -250,35 +250,35 @@ export class DonationService {
         id: +user.id,
       },
       select: { institution: { select: { id: true } } },
-    });
+    })
 
     if (!thisAccount.institution) {
       throw new HttpException(
         'Apenas instituições podem ver as doações recebidas',
         HttpStatus.FORBIDDEN,
-      );
+      )
     }
 
     try {
-      const today = new Date();
-      let startDate = new Date();
+      const today = new Date()
+      let startDate = new Date()
 
       switch (period) {
         case 'week':
-          startDate.setDate(today.getDate() - 7);
-          break;
+          startDate.setDate(today.getDate() - 7)
+          break
         case 'month':
-          startDate.setDate(today.getDate() - 30);
-          break;
+          startDate.setDate(today.getDate() - 30)
+          break
         case '6months':
-          startDate.setMonth(today.getMonth() - 6);
-          break;
+          startDate.setMonth(today.getMonth() - 6)
+          break
         case 'year':
-          startDate.setFullYear(today.getFullYear() - 1);
-          break;
+          startDate.setFullYear(today.getFullYear() - 1)
+          break
         case 'all':
-          startDate = new Date(0);
-          break;
+          startDate = new Date(0)
+          break
       }
 
       const whereClause = {
@@ -290,7 +290,7 @@ export class DonationService {
         createdAt: {
           gte: period !== 'all' ? startDate : undefined,
         },
-      };
+      }
 
       const [donations, totals] = await Promise.all([
         this.prismaService.donation.findMany({
@@ -320,19 +320,19 @@ export class DonationService {
           },
           _count: true,
         }),
-      ]);
+      ])
 
       return {
         donations,
         totalAmount: totals._sum.amount || 0,
         totalDonations: totals._count,
-      };
+      }
     } catch (error) {
-      console.error(error);
+      console.error(error)
       throw new HttpException(
         'Erro ao buscar doações',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
   }
 
@@ -346,7 +346,7 @@ export class DonationService {
       throw new HttpException(
         'Apenas usuários logados podem ver as doações recebidas',
         HttpStatus.FORBIDDEN,
-      );
+      )
     }
 
     const thisAccount = await this.prismaService.account.findUnique({
@@ -354,35 +354,35 @@ export class DonationService {
         id: +user.id,
       },
       select: { institution: { select: { id: true } } },
-    });
+    })
 
     if (!thisAccount.institution) {
       throw new HttpException(
         'Apenas instituições podem ver as doações recebidas',
         HttpStatus.FORBIDDEN,
-      );
+      )
     }
 
     try {
-      const today = new Date();
-      let startDate = new Date();
+      const today = new Date()
+      let startDate = new Date()
 
       switch (period) {
         case 'week':
-          startDate.setDate(today.getDate() - 7);
-          break;
+          startDate.setDate(today.getDate() - 7)
+          break
         case 'month':
-          startDate.setDate(today.getDate() - 30);
-          break;
+          startDate.setDate(today.getDate() - 30)
+          break
         case '6months':
-          startDate.setMonth(today.getMonth() - 6);
-          break;
+          startDate.setMonth(today.getMonth() - 6)
+          break
         case 'year':
-          startDate.setFullYear(today.getFullYear() - 1);
-          break;
+          startDate.setFullYear(today.getFullYear() - 1)
+          break
         case 'all':
-          startDate = new Date(0);
-          break;
+          startDate = new Date(0)
+          break
       }
 
       const whereClause = {
@@ -394,7 +394,7 @@ export class DonationService {
         createdAt: {
           gte: period !== 'all' ? startDate : undefined,
         },
-      };
+      }
 
       const [donations, totals] = await Promise.all([
         // Query paginada
@@ -425,19 +425,19 @@ export class DonationService {
           },
           _count: true,
         }),
-      ]);
+      ])
 
       return {
         donations,
         totalAmount: totals._sum.amount || 0,
         totalDonations: totals._count,
-      };
+      }
     } catch (error) {
-      console.error(error);
+      console.error(error)
       throw new HttpException(
         'Erro ao buscar doações',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
   }
 
@@ -451,7 +451,7 @@ export class DonationService {
       throw new HttpException(
         'Apenas usuários logados podem ver as doações recebidas',
         HttpStatus.FORBIDDEN,
-      );
+      )
     }
 
     const thisAccount = await this.prismaService.account.findUnique({
@@ -459,35 +459,35 @@ export class DonationService {
         id: +user.id,
       },
       select: { institution: { select: { id: true } } },
-    });
+    })
 
     if (!thisAccount.institution) {
       throw new HttpException(
         'Apenas instituições podem ver as doações recebidas',
         HttpStatus.FORBIDDEN,
-      );
+      )
     }
 
     try {
-      const today = new Date();
-      let startDate = new Date();
+      const today = new Date()
+      let startDate = new Date()
 
       switch (period) {
         case 'week':
-          startDate.setDate(today.getDate() - 7);
-          break;
+          startDate.setDate(today.getDate() - 7)
+          break
         case 'month':
-          startDate.setDate(today.getDate() - 30);
-          break;
+          startDate.setDate(today.getDate() - 30)
+          break
         case '6months':
-          startDate.setMonth(today.getMonth() - 6);
-          break;
+          startDate.setMonth(today.getMonth() - 6)
+          break
         case 'year':
-          startDate.setFullYear(today.getFullYear() - 1);
-          break;
+          startDate.setFullYear(today.getFullYear() - 1)
+          break
         case 'all':
-          startDate = new Date(0);
-          break;
+          startDate = new Date(0)
+          break
       }
 
       const whereClause = {
@@ -499,7 +499,7 @@ export class DonationService {
         createdAt: {
           gte: period !== 'all' ? startDate : undefined,
         },
-      };
+      }
       const [donations, totals] = await Promise.all([
         this.prismaService.donation.findMany({
           where: whereClause,
@@ -528,18 +528,18 @@ export class DonationService {
           },
           _count: true,
         }),
-      ]);
+      ])
       return {
         donations,
         totalAmount: totals._sum.amount || 0,
         totalDonations: totals._count,
-      };
+      }
     } catch (error) {
-      console.error(error);
+      console.error(error)
       throw new HttpException(
         'Erro ao buscar doações',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
   }
 
@@ -554,20 +554,20 @@ export class DonationService {
         id: +user.id,
       },
       select: { institution: { select: { id: true } } },
-    });
+    })
 
     if (!thisAccount.institution) {
       throw new HttpException(
         'Apenas instituições podem ver as doações recebidas',
         HttpStatus.FORBIDDEN,
-      );
+      )
     }
 
     if (thisAccount.institution.id !== institutionId) {
       throw new HttpException(
         'Instituições não podem ver doações de outras instituições',
         HttpStatus.FORBIDDEN,
-      );
+      )
     }
 
     try {
@@ -593,14 +593,14 @@ export class DonationService {
         },
         skip: (page - 1) * limit,
         take: Number(limit),
-      });
-      return donations;
+      })
+      return donations
     } catch (error) {
-      console.error(error);
+      console.error(error)
       throw new HttpException(
         'Erro ao buscar doações',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
   }
 
@@ -612,8 +612,8 @@ export class DonationService {
         },
         skip: (page - 1) * limit,
         take: Number(limit),
-      })) || [];
-    return donations;
+      })) || []
+    return donations
   }
 
   async getDonationsByDonor(
@@ -625,7 +625,7 @@ export class DonationService {
     user: any,
     period: 'week' | 'month' | '6months' | 'year' | 'all' = 'week',
   ) {
-    const { id } = user;
+    const { id } = user
 
     const userExist = await this.prismaService.account.findUnique({
       where: { id },
@@ -633,35 +633,35 @@ export class DonationService {
         id: true,
         donor: true,
       },
-    });
+    })
 
     if (userExist && userExist.donor && donorId !== userExist.donor.id) {
       throw new HttpException(
         'Doadores não podem ver doações de outros doadores',
         HttpStatus.FORBIDDEN,
-      );
+      )
     }
 
     try {
-      const today = new Date();
-      let startDate = new Date();
+      const today = new Date()
+      let startDate = new Date()
 
       switch (period) {
         case 'week':
-          startDate.setDate(today.getDate() - 7);
-          break;
+          startDate.setDate(today.getDate() - 7)
+          break
         case 'month':
-          startDate.setDate(today.getDate() - 30);
-          break;
+          startDate.setDate(today.getDate() - 30)
+          break
         case '6months':
-          startDate.setMonth(today.getMonth() - 6);
-          break;
+          startDate.setMonth(today.getMonth() - 6)
+          break
         case 'year':
-          startDate.setFullYear(today.getFullYear() - 1);
-          break;
+          startDate.setFullYear(today.getFullYear() - 1)
+          break
         case 'all':
-          startDate = new Date(0);
-          break;
+          startDate = new Date(0)
+          break
       }
 
       const whereClause = {
@@ -674,7 +674,7 @@ export class DonationService {
         createdAt: {
           gte: period !== 'all' ? startDate : undefined,
         },
-      };
+      }
 
       const [donations, totals] = await Promise.all([
         this.prismaService.donation.findMany({
@@ -708,40 +708,40 @@ export class DonationService {
           },
           _count: true,
         }),
-      ]);
+      ])
 
       return {
         donations,
         totalAmount: totals._sum.amount || 0,
         totalDonations: totals._count,
-      };
+      }
     } catch (error) {
-      console.error(error);
+      console.error(error)
       throw new HttpException(
         'Erro ao buscar doações',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
   }
 
   async notifyDonation(data: NotificationRequestDto) {
-    console.log(data);
-    if (data.type !== 'payment') return;
+    console.log(data)
+    if (data.type !== 'payment') return
 
-    const payment = await this.mercadopagoService.getPayment(data.data.id);
+    const payment = await this.mercadopagoService.getPayment(data.data.id)
 
     if (!payment) {
       throw new HttpException(
         'Pagamento não encontrado',
         HttpStatus.BAD_REQUEST,
-      );
+      )
     }
 
     const statusMap = {
       approved: 'APPROVED',
       cancelled: 'CANCELED',
       rejected: 'REJECTED',
-    };
+    }
     if (statusMap[payment.status]) {
       await this.prismaService.donation.update({
         where: {
@@ -750,7 +750,7 @@ export class DonationService {
         data: {
           status: statusMap[payment.status],
         },
-      });
+      })
     }
   }
 }

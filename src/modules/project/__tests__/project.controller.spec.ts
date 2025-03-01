@@ -1,15 +1,15 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ProjectController } from '../project.controller';
-import { ProjectService } from '../project.service';
-import { AccountService } from '../../account/account.service';
-import { AuthGuard } from '../../auth/auth.guard';
-import { ForbiddenException } from '@nestjs/common';
-import { UpdateProjectDto } from '../dto/updateProject.dto';
+import { Test, TestingModule } from '@nestjs/testing'
+import { ProjectController } from '../project.controller'
+import { ProjectService } from '../project.service'
+import { AccountService } from '../../account/account.service'
+import { AuthGuard } from '../../auth/auth.guard'
+import { ForbiddenException } from '@nestjs/common'
+import { UpdateProjectDto } from '../dto/updateProject.dto'
 
 describe('ProjectController', () => {
-  let controller: ProjectController;
-  let projectService: ProjectService;
-  let accountService: AccountService;
+  let controller: ProjectController
+  let projectService: ProjectService
+  let accountService: AccountService
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -42,16 +42,16 @@ describe('ProjectController', () => {
       .useValue({
         canActivate: jest.fn().mockReturnValue(true),
       })
-      .compile();
+      .compile()
 
-    controller = module.get<ProjectController>(ProjectController);
-    projectService = module.get<ProjectService>(ProjectService);
-    accountService = module.get<AccountService>(AccountService);
-  });
+    controller = module.get<ProjectController>(ProjectController)
+    projectService = module.get<ProjectService>(ProjectService)
+    accountService = module.get<AccountService>(AccountService)
+  })
 
   afterEach(() => {
-    jest.clearAllMocks();
-  });
+    jest.clearAllMocks()
+  })
 
   describe('postProject', () => {
     it('should create a project and return it', async () => {
@@ -66,16 +66,16 @@ describe('ProjectController', () => {
         destination: '',
         filename: '',
         path: '',
-      };
+      }
 
       const createProjectDto = {
         description: 'Test project description',
         name: 'Test Project',
         category: '1',
         subtitle: 'Test Subtitle',
-      };
+      }
 
-      const accountId = 1;
+      const accountId = 1
 
       const institution = {
         id: 1,
@@ -94,9 +94,9 @@ describe('ProjectController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
 
-      const req = { user: { id: accountId } };
+      const req = { user: { id: accountId } }
 
       const project = {
         id: 1,
@@ -196,30 +196,30 @@ describe('ProjectController', () => {
             },
           },
         },
-      };
+      }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(projectService, 'postProjectService')
-        .mockResolvedValue(project);
+        .mockResolvedValue(project)
 
       const result = await controller.postProject(
         mockFile,
         createProjectDto,
         req as any,
-      );
+      )
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId)
       expect(projectService.postProjectService).toHaveBeenCalledWith({
         ...createProjectDto,
         media: mockFile,
         institutionId: institution.id,
         accountId: req.user.id,
-      });
-      expect(result).toEqual(project);
-    });
+      })
+      expect(result).toEqual(project)
+    })
 
     it('should throw ForbiddenException if institution accountId does not match user id', async () => {
       const mockFile: Express.Multer.File = {
@@ -233,16 +233,16 @@ describe('ProjectController', () => {
         destination: '',
         filename: '',
         path: '',
-      };
+      }
 
       const createProjectDto = {
         description: 'Test project description',
         name: 'Test Project',
         category: '1',
         subtitle: 'Test Subtitle',
-      };
+      }
 
-      const accountId = 1;
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -260,24 +260,24 @@ describe('ProjectController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
 
-      const req = { user: { id: accountId } };
+      const req = { user: { id: accountId } }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
 
       await expect(
         controller.postProject(mockFile, createProjectDto, req as any),
-      ).rejects.toThrow(ForbiddenException);
-    });
-  });
+      ).rejects.toThrow(ForbiddenException)
+    })
+  })
 
   describe('updateProject', () => {
     it('should update a project and return it', async () => {
-      const projectId = 1;
-      const accountId = 1;
+      const projectId = 1
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -295,7 +295,7 @@ describe('ProjectController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
 
       const project = {
         id: projectId,
@@ -397,13 +397,13 @@ describe('ProjectController', () => {
             },
           },
         },
-      };
+      }
 
       const updatedProjectData = {
         name: 'New Project Name',
         description: 'New Description',
         subtitle: 'New Subtitle',
-      };
+      }
 
       const mockFile: Express.Multer.File = {
         fieldname: 'file',
@@ -416,7 +416,7 @@ describe('ProjectController', () => {
         destination: '',
         filename: '',
         path: '',
-      };
+      }
 
       const updatedProject = {
         ...project,
@@ -458,31 +458,31 @@ describe('ProjectController', () => {
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
         mediaId: 'new-media-id',
-      };
+      }
 
-      const req = { user: { id: accountId } };
+      const req = { user: { id: accountId } }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(projectService, 'getProjectByIdService')
-        .mockResolvedValue(project);
+        .mockResolvedValue(project)
       jest
         .spyOn(projectService, 'updateProjectService')
-        .mockResolvedValue(updatedProject);
+        .mockResolvedValue(updatedProject)
 
       const result = await controller.updateProject(
         projectId,
         mockFile,
         updatedProjectData,
         req as any,
-      );
+      )
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId)
       expect(projectService.getProjectByIdService).toHaveBeenCalledWith(
         projectId,
-      );
+      )
       expect(projectService.updateProjectService).toHaveBeenCalledWith(
         projectId,
         {
@@ -490,13 +490,13 @@ describe('ProjectController', () => {
           file: mockFile,
           accountId,
         },
-      );
-      expect(result).toEqual(updatedProject);
-    });
+      )
+      expect(result).toEqual(updatedProject)
+    })
 
     it('should throw ForbiddenException if institution accountId does not match user id', async () => {
-      const projectId = 1;
-      const accountId = 1;
+      const projectId = 1
+      const accountId = 1
 
       const institution = {
         id: 1,
@@ -515,11 +515,11 @@ describe('ProjectController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
 
       const updatedProjectData: UpdateProjectDto = {
         name: 'New Project Name',
-      };
+      }
 
       const mockFile: Express.Multer.File = {
         fieldname: 'file',
@@ -532,13 +532,13 @@ describe('ProjectController', () => {
         destination: '',
         filename: '',
         path: '',
-      };
+      }
 
-      const req = { user: { id: accountId } };
+      const req = { user: { id: accountId } }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
 
       await expect(
         controller.updateProject(
@@ -547,16 +547,16 @@ describe('ProjectController', () => {
           updatedProjectData,
           req as any,
         ),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(ForbiddenException)
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId);
-      expect(projectService.getProjectByIdService).not.toHaveBeenCalled();
-      expect(projectService.updateProjectService).not.toHaveBeenCalled();
-    });
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId)
+      expect(projectService.getProjectByIdService).not.toHaveBeenCalled()
+      expect(projectService.updateProjectService).not.toHaveBeenCalled()
+    })
 
     it('should throw ForbiddenException if project institutionId does not match institution id', async () => {
-      const projectId = 1;
-      const accountId = 1;
+      const projectId = 1
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -574,7 +574,7 @@ describe('ProjectController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
 
       const project = {
         id: projectId,
@@ -676,11 +676,11 @@ describe('ProjectController', () => {
             },
           },
         },
-      };
+      }
 
       const updatedProjectData: UpdateProjectDto = {
         name: 'New Project Name',
-      };
+      }
 
       const mockFile: Express.Multer.File = {
         fieldname: 'file',
@@ -693,16 +693,16 @@ describe('ProjectController', () => {
         destination: '',
         filename: '',
         path: '',
-      };
+      }
 
-      const req = { user: { id: accountId } };
+      const req = { user: { id: accountId } }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(projectService, 'getProjectByIdService')
-        .mockResolvedValue(project);
+        .mockResolvedValue(project)
 
       await expect(
         controller.updateProject(
@@ -711,20 +711,20 @@ describe('ProjectController', () => {
           updatedProjectData,
           req as any,
         ),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(ForbiddenException)
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId)
       expect(projectService.getProjectByIdService).toHaveBeenCalledWith(
         projectId,
-      );
-      expect(projectService.updateProjectService).not.toHaveBeenCalled();
-    });
-  });
+      )
+      expect(projectService.updateProjectService).not.toHaveBeenCalled()
+    })
+  })
 
   describe('deleteProject', () => {
     it('should delete a project', async () => {
-      const projectId = 1;
-      const accountId = 1;
+      const projectId = 1
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -742,7 +742,7 @@ describe('ProjectController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
 
       const project = {
         id: projectId,
@@ -844,36 +844,36 @@ describe('ProjectController', () => {
             },
           },
         },
-      };
+      }
 
-      const req = { user: { id: accountId } };
+      const req = { user: { id: accountId } }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(projectService, 'getProjectByIdService')
-        .mockResolvedValue(project);
+        .mockResolvedValue(project)
       jest
         .spyOn(projectService, 'deleteProjectService')
-        .mockResolvedValue({ message: 'Projeto deletado com sucesso' });
+        .mockResolvedValue({ message: 'Projeto deletado com sucesso' })
 
-      const result = await controller.deleteProject(projectId, req as any);
+      const result = await controller.deleteProject(projectId, req as any)
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId)
       expect(projectService.getProjectByIdService).toHaveBeenCalledWith(
         projectId,
-      );
+      )
       expect(projectService.deleteProjectService).toHaveBeenCalledWith(
         projectId,
         accountId,
-      );
-      expect(result).toBeUndefined();
-    });
+      )
+      expect(result).toBeUndefined()
+    })
 
     it('should throw ForbiddenException if institution accountId does not match user id', async () => {
-      const projectId = 1;
-      const accountId = 1;
+      const projectId = 1
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -891,26 +891,26 @@ describe('ProjectController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
 
-      const req = { user: { id: accountId } };
+      const req = { user: { id: accountId } }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
 
       await expect(
         controller.deleteProject(projectId, req as any),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(ForbiddenException)
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId);
-      expect(projectService.getProjectByIdService).not.toHaveBeenCalled();
-      expect(projectService.deleteProjectService).not.toHaveBeenCalled();
-    });
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId)
+      expect(projectService.getProjectByIdService).not.toHaveBeenCalled()
+      expect(projectService.deleteProjectService).not.toHaveBeenCalled()
+    })
 
     it('should throw ForbiddenException if project institutionId does not match institution id', async () => {
-      const projectId = 1;
-      const accountId = 1;
+      const projectId = 1
+      const accountId = 1
       const institution = {
         id: 1,
         account: {
@@ -928,7 +928,7 @@ describe('ProjectController', () => {
         },
         isFollowing: false,
         fields: [],
-      };
+      }
 
       const project = {
         id: projectId,
@@ -1030,33 +1030,33 @@ describe('ProjectController', () => {
             },
           },
         },
-      };
+      }
 
-      const req = { user: { id: accountId } };
+      const req = { user: { id: accountId } }
 
       jest
         .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution);
+        .mockResolvedValue(institution)
       jest
         .spyOn(projectService, 'getProjectByIdService')
-        .mockResolvedValue(project);
+        .mockResolvedValue(project)
 
       await expect(
         controller.deleteProject(projectId, req as any),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(ForbiddenException)
 
-      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId);
+      expect(accountService.findOneInstitution).toHaveBeenCalledWith(accountId)
       expect(projectService.getProjectByIdService).toHaveBeenCalledWith(
         projectId,
-      );
-      expect(projectService.deleteProjectService).not.toHaveBeenCalled();
-    });
-  });
+      )
+      expect(projectService.deleteProjectService).not.toHaveBeenCalled()
+    })
+  })
 
   describe('toggleFavorite', () => {
     it('should toggle favorite and return the result', async () => {
-      const projectId = '1';
-      const accountId = 1;
+      const projectId = '1'
+      const accountId = 1
 
       const donor = {
         id: 2,
@@ -1069,30 +1069,30 @@ describe('ProjectController', () => {
           note: null,
         },
         donations: [],
-      };
+      }
 
-      const req = { user: { id: accountId } };
-      const toggleResult = { message: 'Favorite toggled' };
+      const req = { user: { id: accountId } }
+      const toggleResult = { message: 'Favorite toggled' }
 
-      jest.spyOn(accountService, 'findOneDonor').mockResolvedValue(donor);
+      jest.spyOn(accountService, 'findOneDonor').mockResolvedValue(donor)
       jest
         .spyOn(projectService, 'toggleFavoriteService')
-        .mockResolvedValue(toggleResult);
+        .mockResolvedValue(toggleResult)
 
-      const result = await controller.toggleFavorite(projectId, req as any);
+      const result = await controller.toggleFavorite(projectId, req as any)
 
-      expect(accountService.findOneDonor).toHaveBeenCalledWith(accountId);
+      expect(accountService.findOneDonor).toHaveBeenCalledWith(accountId)
       expect(projectService.toggleFavoriteService).toHaveBeenCalledWith({
         projectId: Number(projectId),
         donorId: donor.id,
-      });
-      expect(result).toEqual(toggleResult);
-    });
-  });
+      })
+      expect(result).toEqual(toggleResult)
+    })
+  })
 
   describe('getAllProjects', () => {
     it('should return all projects', async () => {
-      const accountId = 1;
+      const accountId = 1
       const donor = {
         id: 2,
         account: {
@@ -1104,7 +1104,7 @@ describe('ProjectController', () => {
           note: null,
         },
         donations: [],
-      };
+      }
 
       const projects = [
         {
@@ -1209,25 +1209,25 @@ describe('ProjectController', () => {
             },
           },
         },
-      ];
+      ]
 
-      const req = { user: { id: 1 } };
-      jest.spyOn(accountService, 'findOneDonor').mockResolvedValue(donor);
+      const req = { user: { id: 1 } }
+      jest.spyOn(accountService, 'findOneDonor').mockResolvedValue(donor)
       jest
         .spyOn(projectService, 'getAllProjectsService')
-        .mockResolvedValue(projects);
-      const result = await controller.getAllProjects(req as any);
+        .mockResolvedValue(projects)
+      const result = await controller.getAllProjects(req as any)
 
-      expect(accountService.findOneDonor).toHaveBeenCalledWith(accountId);
+      expect(accountService.findOneDonor).toHaveBeenCalledWith(accountId)
       expect(projectService.getAllProjectsService).toHaveBeenCalledWith(
         donor.id,
-      );
-      expect(result).toEqual(projects);
-    });
+      )
+      expect(result).toEqual(projects)
+    })
 
     it('should call getAllProjectsService with null if donor not found', async () => {
-      const accountId = 1;
-      const req = { user: { id: accountId } };
+      const accountId = 1
+      const req = { user: { id: accountId } }
       const projects = [
         {
           id: 1,
@@ -1331,24 +1331,24 @@ describe('ProjectController', () => {
             },
           },
         },
-      ];
+      ]
 
-      jest.spyOn(accountService, 'findOneDonor').mockResolvedValue(null);
+      jest.spyOn(accountService, 'findOneDonor').mockResolvedValue(null)
       jest
         .spyOn(projectService, 'getAllProjectsService')
-        .mockResolvedValue(projects);
+        .mockResolvedValue(projects)
 
-      const result = await controller.getAllProjects(req as any);
+      const result = await controller.getAllProjects(req as any)
 
-      expect(accountService.findOneDonor).toHaveBeenCalledWith(accountId);
-      expect(projectService.getAllProjectsService).toHaveBeenCalledWith(null);
-      expect(result).toEqual(projects);
-    });
-  });
+      expect(accountService.findOneDonor).toHaveBeenCalledWith(accountId)
+      expect(projectService.getAllProjectsService).toHaveBeenCalledWith(null)
+      expect(result).toEqual(projects)
+    })
+  })
 
   describe('getFavoriteProjects', () => {
     it('should return favorite projects', async () => {
-      const accountId = 1;
+      const accountId = 1
       const donor = {
         id: 2,
         account: {
@@ -1360,8 +1360,8 @@ describe('ProjectController', () => {
           note: null,
         },
         donations: [],
-      };
-      const req = { user: { id: accountId } };
+      }
+      const req = { user: { id: accountId } }
 
       const favoriteProjects = [
         {
@@ -1466,41 +1466,41 @@ describe('ProjectController', () => {
             },
           },
         },
-      ];
+      ]
 
-      jest.spyOn(accountService, 'findOneDonor').mockResolvedValue(donor);
+      jest.spyOn(accountService, 'findOneDonor').mockResolvedValue(donor)
       jest
         .spyOn(projectService, 'getFavoriteProjectService')
-        .mockResolvedValue(favoriteProjects);
+        .mockResolvedValue(favoriteProjects)
 
-      const result = await controller.getFavoriteProjects(req as any);
+      const result = await controller.getFavoriteProjects(req as any)
 
-      expect(accountService.findOneDonor).toHaveBeenCalledWith(accountId);
+      expect(accountService.findOneDonor).toHaveBeenCalledWith(accountId)
       expect(projectService.getFavoriteProjectService).toHaveBeenCalledWith(
         donor.id,
-      );
-      expect(result).toEqual(favoriteProjects);
-    });
-  });
+      )
+      expect(result).toEqual(favoriteProjects)
+    })
+  })
 
   describe('getProjectCategories', () => {
     it('should return project categories', async () => {
-      const categories = [{ id: 1, name: 'Category 1' }];
+      const categories = [{ id: 1, name: 'Category 1' }]
 
       jest
         .spyOn(projectService, 'getProjectCategoriesService')
-        .mockResolvedValue(categories);
+        .mockResolvedValue(categories)
 
-      const result = await controller.getProjectCategories('');
+      const result = await controller.getProjectCategories('')
 
-      expect(projectService.getProjectCategoriesService).toHaveBeenCalled();
-      expect(result).toEqual(categories);
-    });
-  });
+      expect(projectService.getProjectCategoriesService).toHaveBeenCalled()
+      expect(result).toEqual(categories)
+    })
+  })
 
   describe('getProjectById', () => {
     it('should return project by id', async () => {
-      const projectId = 1;
+      const projectId = 1
       const project = {
         id: projectId,
         name: 'Old Project Name',
@@ -1601,24 +1601,24 @@ describe('ProjectController', () => {
             },
           },
         },
-      };
+      }
 
       jest
         .spyOn(projectService, 'getProjectByIdService')
-        .mockResolvedValue(project);
+        .mockResolvedValue(project)
 
-      const result = await controller.getProjectById(projectId);
+      const result = await controller.getProjectById(projectId)
 
       expect(projectService.getProjectByIdService).toHaveBeenCalledWith(
         projectId,
-      );
-      expect(result).toEqual(project);
-    });
-  });
+      )
+      expect(result).toEqual(project)
+    })
+  })
 
   describe('getProjectsByInstitution', () => {
     it('should return projects by institution id', async () => {
-      const institutionId = 1;
+      const institutionId = 1
       const projects = [
         {
           id: 1,
@@ -1722,18 +1722,18 @@ describe('ProjectController', () => {
             },
           },
         },
-      ];
+      ]
 
       jest
         .spyOn(projectService, 'getProjectsByInstitutionService')
-        .mockResolvedValue(projects);
+        .mockResolvedValue(projects)
 
-      const result = await controller.getProjectsByInstitution(institutionId);
+      const result = await controller.getProjectsByInstitution(institutionId)
 
       expect(
         projectService.getProjectsByInstitutionService,
-      ).toHaveBeenCalledWith(institutionId);
-      expect(result).toEqual(projects);
-    });
-  });
-});
+      ).toHaveBeenCalledWith(institutionId)
+      expect(result).toEqual(projects)
+    })
+  })
+})

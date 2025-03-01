@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsString,
   MaxLength,
-} from 'class-validator';
+} from 'class-validator'
 
 export abstract class RequestDonationDto {
   @IsNotEmpty({ message: 'O valor é obrigatório.' })
@@ -20,7 +20,7 @@ export abstract class RequestDonationDto {
   )
   @IsPositive({ message: 'O valor deve ser positivo.' })
   @Min(0.01, { message: 'O valor deve ser maior que 0.' })
-  amount: number;
+  amount: number
 
   @IsOptional()
   @IsNotEmpty({ message: 'O id da instituição é obrigatório.' })
@@ -33,7 +33,7 @@ export abstract class RequestDonationDto {
     { message: 'O id da instituição deve ser um número inteiro.' },
   )
   @IsPositive({ message: 'O id da instituição deve ser positivo.' })
-  institutionId: number;
+  institutionId: number
 
   @IsOptional()
   @IsNumber(
@@ -45,10 +45,10 @@ export abstract class RequestDonationDto {
     { message: 'O id do projeto deve ser um número inteiro.' },
   )
   @IsPositive({ message: 'O id do projeto deve ser positivo.' })
-  projectId?: number;
+  projectId?: number
 
   @IsOptional()
   @IsString({ message: 'A descrição deve ser uma string.' })
   @MaxLength(25, { message: 'A descrição deve ter no máximo 25 aracteres.' })
-  description: string;
+  description: string
 }

@@ -12,18 +12,18 @@ import {
   ParseIntPipe,
   UnauthorizedException,
   UseGuards,
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { Request } from 'express';
-import { InstitutionMemberService } from './institutionMember.service';
-import { AccountService } from '../account/account.service';
-import { AuthGuard } from '../auth/auth.guard';
-import { InstitutionMemberType } from '@prisma/client';
-import { CreateInstitutionMemberDto } from './dto/createInstitutionMember.dto';
-import { UpdateInstitutionMemberDto } from './dto/updateInstitutionMember.dto';
+} from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { Request } from 'express'
+import { InstitutionMemberService } from './institutionMember.service'
+import { AccountService } from '../account/account.service'
+import { AuthGuard } from '../auth/auth.guard'
+import { InstitutionMemberType } from '@prisma/client'
+import { CreateInstitutionMemberDto } from './dto/createInstitutionMember.dto'
+import { UpdateInstitutionMemberDto } from './dto/updateInstitutionMember.dto'
 
 interface RequestWithUser extends Request {
-  user?: any;
+  user?: any
 }
 
 @UseGuards(AuthGuard)
@@ -41,25 +41,25 @@ export class InstitutionMemberController {
     @Body() createMemberDto: CreateInstitutionMemberDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const accountId = request.user?.id;
+    const accountId = request.user?.id
 
     const institution = await this.accountService.findOneInstitution(
       Number(accountId),
-    );
+    )
 
     if (!institution) {
-      throw new UnauthorizedException('Instituição não encontrada');
+      throw new UnauthorizedException('Instituição não encontrada')
     }
 
-    const institutionId = institution.id;
+    const institutionId = institution.id
 
     const result = await this.institutionMemberService.createInstitutionMember({
       ...createMemberDto,
       institutionId,
       file,
-    });
+    })
 
-    return result;
+    return result
   }
 
   @Get('collaborators/:institutionId')
@@ -70,8 +70,8 @@ export class InstitutionMemberController {
       await this.institutionMemberService.getInstitutionMembersByType(
         institutionId,
         InstitutionMemberType.COLLABORATOR,
-      );
-    return result;
+      )
+    return result
   }
 
   @Get('volunteers/:institutionId')
@@ -82,8 +82,8 @@ export class InstitutionMemberController {
       await this.institutionMemberService.getInstitutionMembersByType(
         institutionId,
         InstitutionMemberType.VOLUNTEER,
-      );
-    return result;
+      )
+    return result
   }
 
   @Get('partners/:institutionId')
@@ -94,8 +94,8 @@ export class InstitutionMemberController {
       await this.institutionMemberService.getInstitutionMembersByType(
         institutionId,
         InstitutionMemberType.PARTNER,
-      );
-    return result;
+      )
+    return result
   }
 
   @Get('member/:memberId')
@@ -103,26 +103,26 @@ export class InstitutionMemberController {
     @Param('memberId', ParseIntPipe) memberId: number,
     @Req() request: RequestWithUser,
   ) {
-    const accountId = request.user?.id;
+    const accountId = request.user?.id
 
-    const institution = await this.accountService.findOneInstitution(accountId);
+    const institution = await this.accountService.findOneInstitution(accountId)
 
     if (!institution) {
-      throw new UnauthorizedException('Instituição não encontrada');
+      throw new UnauthorizedException('Instituição não encontrada')
     }
 
     const member =
-      await this.institutionMemberService.findInstitutionMemberById(memberId);
+      await this.institutionMemberService.findInstitutionMemberById(memberId)
 
     if (!member) {
-      throw new UnauthorizedException('Membro não encontrado');
+      throw new UnauthorizedException('Membro não encontrado')
     }
 
     if (institution.id !== member.institutionId) {
-      throw new UnauthorizedException('Acesso não autorizado');
+      throw new UnauthorizedException('Acesso não autorizado')
     }
 
-    return member;
+    return member
   }
 
   @Put(':memberId')
@@ -133,23 +133,23 @@ export class InstitutionMemberController {
     @Body() updateMemberDto: UpdateInstitutionMemberDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    const accountId = request.user?.id;
+    const accountId = request.user?.id
 
-    const institution = await this.accountService.findOneInstitution(accountId);
+    const institution = await this.accountService.findOneInstitution(accountId)
 
     if (!institution) {
-      throw new UnauthorizedException('Instituição não encontrada');
+      throw new UnauthorizedException('Instituição não encontrada')
     }
 
     const member =
-      await this.institutionMemberService.findInstitutionMemberById(memberId);
+      await this.institutionMemberService.findInstitutionMemberById(memberId)
 
     if (!member) {
-      throw new UnauthorizedException('Membro não encontrado');
+      throw new UnauthorizedException('Membro não encontrado')
     }
 
     if (institution.id !== member.institutionId) {
-      throw new UnauthorizedException('Acesso não autorizado');
+      throw new UnauthorizedException('Acesso não autorizado')
     }
 
     const result = await this.institutionMemberService.updateInstitutionMember(
@@ -158,9 +158,9 @@ export class InstitutionMemberController {
         ...updateMemberDto,
         file,
       },
-    );
+    )
 
-    return result;
+    return result
   }
 
   @Delete(':memberId')
@@ -168,27 +168,27 @@ export class InstitutionMemberController {
     @Param('memberId', ParseIntPipe) memberId: number,
     @Req() request: RequestWithUser,
   ) {
-    const accountId = request.user?.id;
+    const accountId = request.user?.id
 
-    const institution = await this.accountService.findOneInstitution(accountId);
+    const institution = await this.accountService.findOneInstitution(accountId)
 
     if (!institution) {
-      throw new UnauthorizedException('Instituição não encontrada');
+      throw new UnauthorizedException('Instituição não encontrada')
     }
 
     const member =
-      await this.institutionMemberService.findInstitutionMemberById(memberId);
+      await this.institutionMemberService.findInstitutionMemberById(memberId)
 
     if (!member) {
-      throw new UnauthorizedException('Membro não encontrado');
+      throw new UnauthorizedException('Membro não encontrado')
     }
 
     if (institution.id !== member.institutionId) {
-      throw new UnauthorizedException('Acesso não autorizado');
+      throw new UnauthorizedException('Acesso não autorizado')
     }
 
-    await this.institutionMemberService.deleteInstitutionMember(memberId);
+    await this.institutionMemberService.deleteInstitutionMember(memberId)
 
-    return { message: 'Membro deletado com sucesso' };
+    return { message: 'Membro deletado com sucesso' }
   }
 }
