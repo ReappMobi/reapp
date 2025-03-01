@@ -46,6 +46,7 @@
     "uuid": "^11.0.5"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@commitlint/cli": "^19.4.0",
     "@commitlint/config-conventional": "^19.2.2",
     "@dotenvx/dotenvx": "^1.11.5",
