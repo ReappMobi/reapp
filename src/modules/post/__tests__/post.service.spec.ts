@@ -493,6 +493,14 @@ describe('PostService', () => {
           postId: post.id,
           accountId: accountId,
         },
+        include: {
+          account: {
+            select: {
+              name: true,
+              media: true,
+            },
+          },
+        },
       });
       expect(result).toEqual({
         id: 100,
