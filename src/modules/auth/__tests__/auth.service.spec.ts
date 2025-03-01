@@ -94,7 +94,7 @@ describe('AuthService', () => {
     });
 
     it('should return token and user if credentials are valid', async () => {
-      const user = { id: 1, email: loginDto.email };
+      const user = { id: 1, email: loginDto.email, status: 'ACTIVE' };
       jest.spyOn(authService, 'validateUser').mockResolvedValue(user);
       mockJwtService.sign.mockReturnValue('mockToken');
 
