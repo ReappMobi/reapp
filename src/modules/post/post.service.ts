@@ -129,9 +129,7 @@ export class PostService {
       where: {
         postId: id,
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       include: {
         account: {
           select: {

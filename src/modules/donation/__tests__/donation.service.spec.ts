@@ -4,6 +4,7 @@ import { MercadopagoService } from '../../../services/mercadopago/mercadopago.se
 import { PrismaService } from '../../../database/prisma.service';
 import { RequestDonationDto } from '../dto/request-donation.dto';
 import { NotificationRequestDto } from '../dto/notification.dto';
+import { HttpException } from '@nestjs/common';
 
 describe('DonationService tests', () => {
   let service: DonationService;
@@ -35,6 +36,8 @@ describe('DonationService tests', () => {
             donation: {
               create: jest.fn(),
               update: jest.fn(),
+              findMany: jest.fn(),
+              aggregate: jest.fn(),
             },
           },
         },
@@ -357,6 +360,227 @@ describe('DonationService tests', () => {
       });
       await service.notifyDonation(data);
       expect(prismaService.donation.update).not.toHaveBeenCalled();
+    });
+  });
+  describe('getDonationsByInstitution', () => {
+    it('should throw error if no user is provided', async () => {
+      await expect(
+        service.getDonationsByInstitution(null, 1, 10, 'week'),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should throw error if the user is not associated to an institution', async () => {
+      (prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+        institution: null,
+      });
+      const user = { id: 1 };
+      await expect(
+        service.getDonationsByInstitution(user, 1, 10, 'week'),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should return donations data for institution', async () => {
+      const user = { id: 1 };
+      const institutionId = 100;
+      (prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+        institution: { id: institutionId },
+      });
+
+      const mockDonations = [{ id: 1, createdAt: new Date() }];
+      const mockTotals = { _sum: { amount: 200 }, _count: 3 };
+
+      (prismaService.donation.findMany as jest.Mock).mockResolvedValue(
+        mockDonations,
+      );
+      (prismaService.donation.aggregate as jest.Mock).mockResolvedValue(
+        mockTotals,
+      );
+
+      const result = await service.getDonationsByInstitution(
+        user,
+        1,
+        10,
+        'month',
+      );
+
+      expect(prismaService.account.findUnique).toHaveBeenCalledWith({
+        where: { id: +user.id },
+        select: { institution: { select: { id: true } } },
+      });
+      expect(result).toEqual({
+        donations: mockDonations,
+        totalAmount: mockTotals._sum.amount,
+        totalDonations: mockTotals._count,
+      });
+    });
+  });
+  describe('getGeneralDonations', () => {
+    it('should throw error if no user is provided', async () => {
+      await expect(
+        service.getGeneralDonations(null, 1, 10, 'week'),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should throw error if the user is not associated to an institution', async () => {
+      (prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+        institution: null,
+      });
+      const user = { id: 1 };
+      await expect(
+        service.getGeneralDonations(user, 1, 10, 'week'),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should return general donations data (with period "all")', async () => {
+      const user = { id: 1 };
+      (prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+        institution: { id: 200 },
+      });
+      const mockDonations = [{ id: 2, createdAt: new Date() }];
+      const mockTotals = { _sum: { amount: 50 }, _count: 1 };
+
+      (prismaService.donation.findMany as jest.Mock).mockResolvedValue(
+        mockDonations,
+      );
+      (prismaService.donation.aggregate as jest.Mock).mockResolvedValue(
+        mockTotals,
+      );
+
+      const result = await service.getGeneralDonations(user, 1, 10, 'all');
+      expect(result).toEqual({
+        donations: mockDonations,
+        totalAmount: mockTotals._sum.amount,
+        totalDonations: mockTotals._count,
+      });
+    });
+  });
+
+  describe('getProjectsDonationsByInstitution', () => {
+    it('should throw error if no user is provided', async () => {
+      await expect(
+        service.getProjectsDonationsByInstitution(null, 1, 10, 'week'),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should throw error if the user is not associated to an institution', async () => {
+      (prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+        institution: null,
+      });
+      const user = { id: 1 };
+      await expect(
+        service.getProjectsDonationsByInstitution(user, 1, 10, 'week'),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should return projects donations data for institution', async () => {
+      const user = { id: 1 };
+      const institutionId = 300;
+      (prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+        institution: { id: institutionId },
+      });
+      const mockDonations = [{ id: 3, createdAt: new Date() }];
+      const mockTotals = { _sum: { amount: 350 }, _count: 4 };
+
+      (prismaService.donation.findMany as jest.Mock).mockResolvedValue(
+        mockDonations,
+      );
+      (prismaService.donation.aggregate as jest.Mock).mockResolvedValue(
+        mockTotals,
+      );
+
+      const result = await service.getProjectsDonationsByInstitution(
+        user,
+        1,
+        10,
+        'week',
+      );
+
+      expect(result).toEqual({
+        donations: mockDonations,
+        totalAmount: mockTotals._sum.amount,
+        totalDonations: mockTotals._count,
+      });
+    });
+  });
+
+  describe('getDonationsByDonor', () => {
+    it('should throw error if the logged user is different from the donor', async () => {
+      const user = { id: 1 };
+      // Simula que a conta possui um doador com id diferente
+      (prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+        id: 1,
+        donor: { id: 2 },
+      });
+      await expect(
+        service.getDonationsByDonor(3, 1, 10, null, null, user, 'week'),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should return donations by donor with institutionId and projectId filters', async () => {
+      const user = { id: 1, donor: { id: 1 } };
+      // Conta com doador correspondente
+      (prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+        id: 1,
+        donor: { id: 1 },
+      });
+      const mockDonations = [{ id: 4, createdAt: new Date() }];
+      const mockTotals = { _sum: { amount: 150 }, _count: 3 };
+
+      (prismaService.donation.findMany as jest.Mock).mockResolvedValue(
+        mockDonations,
+      );
+      (prismaService.donation.aggregate as jest.Mock).mockResolvedValue(
+        mockTotals,
+      );
+
+      const result = await service.getDonationsByDonor(
+        1,
+        1,
+        10,
+        5,
+        10,
+        user,
+        'month',
+      );
+
+      expect(result).toEqual({
+        donations: mockDonations,
+        totalAmount: mockTotals._sum.amount,
+        totalDonations: mockTotals._count,
+      });
+    });
+
+    it('should return donations by donor without institutionId and projectId filters', async () => {
+      const user = { id: 1, donor: { id: 1 } };
+      (prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+        id: 1,
+        donor: { id: 1 },
+      });
+      const mockDonations = [{ id: 5, createdAt: new Date() }];
+      const mockTotals = { _sum: { amount: 75 }, _count: 1 };
+
+      (prismaService.donation.findMany as jest.Mock).mockResolvedValue(
+        mockDonations,
+      );
+      (prismaService.donation.aggregate as jest.Mock).mockResolvedValue(
+        mockTotals,
+      );
+
+      const result = await service.getDonationsByDonor(
+        1,
+        1,
+        10,
+        null,
+        null,
+        user,
+        'week',
+      );
+
+      expect(result).toEqual({
+        donations: mockDonations,
+        totalAmount: mockTotals._sum.amount,
+        totalDonations: mockTotals._count,
+      });
     });
   });
 });

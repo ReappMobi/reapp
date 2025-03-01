@@ -8,6 +8,7 @@ import {
 } from 'mercadopago/dist/clients/preference/commonTypes';
 import { NotificationRequestDto } from './dto/notification.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { DonationStatus } from '@prisma/client';
 
 type ExtendedDonationRequest = RequestDonationDto & {
   name: string;
@@ -231,7 +232,12 @@ export class DonationService {
     return donations;
   }
 
-  async getDonationsByInstitution(user: any, page: number, limit: number) {
+  async getDonationsByInstitution(
+    user: any,
+    page: number,
+    limit: number,
+    period: 'week' | 'month' | '6months' | 'year' | 'all' = 'week',
+  ) {
     if (!user) {
       throw new HttpException(
         'Apenas usuários logados podem ver as doações recebidas',
@@ -254,33 +260,280 @@ export class DonationService {
     }
 
     try {
-      const donations = await this.prismaService.donation.findMany({
-        where: {
-          institutionId: thisAccount.institution.id,
-          status: {
-            equals: 'APPROVED',
-          },
+      const today = new Date();
+      let startDate = new Date();
+
+      switch (period) {
+        case 'week':
+          startDate.setDate(today.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setDate(today.getDate() - 30);
+          break;
+        case '6months':
+          startDate.setMonth(today.getMonth() - 6);
+          break;
+        case 'year':
+          startDate.setFullYear(today.getFullYear() - 1);
+          break;
+        case 'all':
+          startDate = new Date(0);
+          break;
+      }
+
+      const whereClause = {
+        institutionId: thisAccount.institution.id,
+        projectId: null,
+        status: {
+          equals: DonationStatus.APPROVED,
         },
-        orderBy: {
-          createdAt: 'desc',
+        createdAt: {
+          gte: period !== 'all' ? startDate : undefined,
         },
-        include: {
-          project: true,
-          donor: {
-            include: {
-              account: {
-                select: {
-                  name: true,
-                  media: true,
+      };
+
+      const [donations, totals] = await Promise.all([
+        this.prismaService.donation.findMany({
+          where: whereClause,
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          include: {
+            project: true,
+            donor: {
+              include: {
+                account: {
+                  select: {
+                    name: true,
+                    media: true,
+                  },
                 },
               },
             },
           },
+          skip: (page - 1) * limit,
+          take: Number(limit),
+        }),
+
+        this.prismaService.donation.aggregate({
+          where: whereClause,
+          _sum: {
+            amount: true,
+          },
+          _count: true,
+        }),
+      ]);
+
+      return {
+        donations,
+        totalAmount: totals._sum.amount || 0,
+        totalDonations: totals._count,
+      };
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(
+        'Erro ao buscar doações',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getGeneralDonations(
+    user: any,
+    page: number,
+    limit: number,
+    period: 'week' | 'month' | '6months' | 'year' | 'all' = 'week',
+  ) {
+    if (!user) {
+      throw new HttpException(
+        'Apenas usuários logados podem ver as doações recebidas',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const thisAccount = await this.prismaService.account.findUnique({
+      where: {
+        id: +user.id,
+      },
+      select: { institution: { select: { id: true } } },
+    });
+
+    if (!thisAccount.institution) {
+      throw new HttpException(
+        'Apenas instituições podem ver as doações recebidas',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    try {
+      const today = new Date();
+      let startDate = new Date();
+
+      switch (period) {
+        case 'week':
+          startDate.setDate(today.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setDate(today.getDate() - 30);
+          break;
+        case '6months':
+          startDate.setMonth(today.getMonth() - 6);
+          break;
+        case 'year':
+          startDate.setFullYear(today.getFullYear() - 1);
+          break;
+        case 'all':
+          startDate = new Date(0);
+          break;
+      }
+
+      const whereClause = {
+        institutionId: null,
+        projectId: null,
+        status: {
+          equals: DonationStatus.APPROVED,
         },
-        skip: (page - 1) * limit,
-        take: Number(limit),
-      });
-      return donations;
+        createdAt: {
+          gte: period !== 'all' ? startDate : undefined,
+        },
+      };
+
+      const [donations, totals] = await Promise.all([
+        // Query paginada
+        this.prismaService.donation.findMany({
+          where: whereClause,
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          include: {
+            project: true,
+            donor: {
+              include: {
+                account: {
+                  select: {
+                    name: true,
+                    media: true,
+                  },
+                },
+              },
+            },
+          },
+          skip: (page - 1) * limit,
+          take: Number(limit),
+        }),
+
+        this.prismaService.donation.aggregate({
+          where: whereClause,
+          _sum: {
+            amount: true,
+          },
+          _count: true,
+        }),
+      ]);
+
+      return {
+        donations,
+        totalAmount: totals._sum.amount || 0,
+        totalDonations: totals._count,
+      };
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(
+        'Erro ao buscar doações',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getProjectsDonationsByInstitution(
+    user: any,
+    page: number,
+    limit: number,
+    period: 'week' | 'month' | '6months' | 'year' | 'all' = 'week',
+  ) {
+    if (!user) {
+      throw new HttpException(
+        'Apenas usuários logados podem ver as doações recebidas',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const thisAccount = await this.prismaService.account.findUnique({
+      where: {
+        id: +user.id,
+      },
+      select: { institution: { select: { id: true } } },
+    });
+
+    if (!thisAccount.institution) {
+      throw new HttpException(
+        'Apenas instituições podem ver as doações recebidas',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    try {
+      const today = new Date();
+      let startDate = new Date();
+
+      switch (period) {
+        case 'week':
+          startDate.setDate(today.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setDate(today.getDate() - 30);
+          break;
+        case '6months':
+          startDate.setMonth(today.getMonth() - 6);
+          break;
+        case 'year':
+          startDate.setFullYear(today.getFullYear() - 1);
+          break;
+        case 'all':
+          startDate = new Date(0);
+          break;
+      }
+
+      const whereClause = {
+        institutionId: thisAccount.institution.id,
+        projectId: { not: null },
+        status: {
+          equals: DonationStatus.APPROVED,
+        },
+        createdAt: {
+          gte: period !== 'all' ? startDate : undefined,
+        },
+      };
+      const [donations, totals] = await Promise.all([
+        this.prismaService.donation.findMany({
+          where: whereClause,
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          include: {
+            project: true,
+            donor: {
+              include: {
+                account: {
+                  select: {
+                    name: true,
+                    media: true,
+                  },
+                },
+              },
+            },
+          },
+          skip: (page - 1) * limit,
+          take: Number(limit),
+        }),
+
+        this.prismaService.donation.aggregate({
+          where: whereClause,
+          _sum: {
+            amount: true,
+          },
+          _count: true,
+        }),
+      ]);
+      return {
+        donations,
+        totalAmount: totals._sum.amount || 0,
+        totalDonations: totals._count,
+      };
     } catch (error) {
       console.error(error);
       throw new HttpException(
@@ -370,6 +623,7 @@ export class DonationService {
     institutionId: number = null,
     projectId: number = null,
     user: any,
+    period: 'week' | 'month' | '6months' | 'year' | 'all' = 'week',
   ) {
     const { id } = user;
 
@@ -389,37 +643,78 @@ export class DonationService {
     }
 
     try {
-      const donations = await this.prismaService.donation.findMany({
-        where: {
-          donorId: Number(donorId),
-          projectId: projectId ? projectId : undefined,
-          institutionId: institutionId ? institutionId : undefined,
-          status: 'APPROVED',
+      const today = new Date();
+      let startDate = new Date();
+
+      switch (period) {
+        case 'week':
+          startDate.setDate(today.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setDate(today.getDate() - 30);
+          break;
+        case '6months':
+          startDate.setMonth(today.getMonth() - 6);
+          break;
+        case 'year':
+          startDate.setFullYear(today.getFullYear() - 1);
+          break;
+        case 'all':
+          startDate = new Date(0);
+          break;
+      }
+
+      const whereClause = {
+        donorId: id,
+        projectId: projectId ? projectId : undefined,
+        institutionId: institutionId ? institutionId : undefined,
+        status: {
+          equals: DonationStatus.APPROVED,
         },
-        include: {
-          project: {
-            select: {
-              id: true,
-              name: true,
-              media: true,
+        createdAt: {
+          gte: period !== 'all' ? startDate : undefined,
+        },
+      };
+
+      const [donations, totals] = await Promise.all([
+        this.prismaService.donation.findMany({
+          where: whereClause,
+          include: {
+            project: {
+              select: {
+                id: true,
+                name: true,
+                media: true,
+              },
             },
-          },
-          institution: {
-            select: {
-              account: {
-                select: {
-                  name: true,
-                  media: true,
+            institution: {
+              select: {
+                account: {
+                  select: {
+                    name: true,
+                    media: true,
+                  },
                 },
               },
             },
           },
-        },
-        skip: (page - 1) * limit,
-        take: Number(limit),
-      });
+          skip: (page - 1) * limit,
+          take: Number(limit),
+        }),
+        this.prismaService.donation.aggregate({
+          where: whereClause,
+          _sum: {
+            amount: true,
+          },
+          _count: true,
+        }),
+      ]);
 
-      return donations;
+      return {
+        donations,
+        totalAmount: totals._sum.amount || 0,
+        totalDonations: totals._count,
+      };
     } catch (error) {
       console.error(error);
       throw new HttpException(

@@ -124,6 +124,7 @@ export class AccountService {
               phone: createAccountDto.phone,
             },
           },
+          status: 'PENDING',
         },
         select: institutionResponseFields,
       });
@@ -177,6 +178,7 @@ export class AccountService {
           passwordHash: hashedPassword,
           name: createAccountDto.name,
           note: createAccountDto.note,
+          status: 'ACTIVE',
           donor: {
             create: {},
           },
