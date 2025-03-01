@@ -49,6 +49,7 @@ export class AuthService {
         email: true,
         name: true,
         media: true,
+        status: true,
         accountType: true,
         followingCount: true,
         followersCount: true,
@@ -82,7 +83,12 @@ export class AuthService {
     if (!user) {
       throw new HttpException('Credenciais inválidas', HttpStatus.UNAUTHORIZED);
     }
-
+    if (user.status != 'ACTIVE') {
+      throw new HttpException(
+        'Cadastro pendente de autorização',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
     const token = await this.generateJwtToken(user);
     return { token, user };
   }
