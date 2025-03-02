@@ -1,14 +1,15 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
+import { AccountType } from '@prisma/client'
+import * as bcrypt from 'bcrypt'
+import { OAuth2Client } from 'google-auth-library'
+import { PrismaService } from '../../database/prisma.service'
+import { MediaService } from '../media-attachment/media-attachment.service'
 import {
   CreateAccountDto,
   CreateAccountGoogleDto,
 } from './dto/create-account.dto'
+import { ResetPasswordDto } from './dto/reset-password.dto'
 import { UpdateAccountDto } from './dto/update-account.dto'
-import { AccountType } from '@prisma/client'
-import { PrismaService } from '../../database/prisma.service'
-import * as bcrypt from 'bcrypt'
-import { OAuth2Client } from 'google-auth-library'
-import { MediaService } from '../media-attachment/media-attachment.service'
 
 const donorResponseFields = {
   id: true,
@@ -692,5 +693,50 @@ export class AccountService {
     return this.prismaService.follow.delete({
       where: { id: existRegister.id },
     })
+  }
+
+  async resetPassword(data: ResetPasswordDto) {
+    const { token: tokenId, password, passwordConfirmation } = data
+    if (!tokenId) {
+      throw new HttpException('Token inválido', HttpStatus.BAD_REQUEST)
+    }
+
+    if (password !== passwordConfirmation) {
+      throw new HttpException('Senhas não conferem', HttpStatus.BAD_REQUEST)
+    }
+
+    const token = await this.prismaService.token.findFirst({
+      where: {
+        id: tokenId,
+        AND: {
+          expiresAt: { gte: new Date() },
+          active: { equals: true },
+          tokenType: 'PASSWORD_RESET',
+        },
+      },
+      include: {
+        account: {
+          select: { id: true },
+        },
+      },
+    })
+
+    if (!token) {
+      throw new HttpException('Token inválido', HttpStatus.BAD_REQUEST)
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    await this.prismaService.account.update({
+      where: { id: token.account.id },
+      data: { passwordHash: hashedPassword },
+    })
+
+    await this.prismaService.token.update({
+      where: { id: tokenId },
+      data: { active: false },
+    })
+
+    return { message: 'Senha alterada com sucesso!' }
   }
 }

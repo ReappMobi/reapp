@@ -1,24 +1,25 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Param,
+  Controller,
   Delete,
-  UseGuards,
+  Get,
+  Param,
+  Post,
   Put,
   Req,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { AuthGuard } from '../auth/auth.guard'
 import { AccountService } from './account.service'
 import {
   CreateAccountDto,
   CreateAccountGoogleDto,
 } from './dto/create-account.dto'
+import { ResetPasswordDto } from './dto/reset-password.dto'
 import { UpdateAccountDto } from './dto/update-account.dto'
-import { AuthGuard } from '../auth/auth.guard'
-import { FileInterceptor } from '@nestjs/platform-express'
 
 @Controller('account')
 export class AccountController {
@@ -106,5 +107,10 @@ export class AccountController {
   ) {
     const accountId = request.user.id
     return this.accountService.update(accountId, updateAccountDto, media)
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() body: ResetPasswordDto) {
+    return this.accountService.resetPassword(body)
   }
 }
