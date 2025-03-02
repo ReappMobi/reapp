@@ -35,6 +35,10 @@ enum InstitutionMemberType {
   COLLABORATOR
 }
 
+enum TokenType {
+  EMAIL_CONFIRMATION
+  PASSWORD_RESET
+}
 
 model Account {
   id               Int               @id @default(autoincrement())
@@ -57,7 +61,8 @@ model Account {
   mediaAttachments MediaAttachment[] @relation(name: "AccountMediaAttachments")
   following        Follow[]          @relation("Following")
   followers        Follow[]          @relation("Followers")
-  status           AccountStatus @default(ACTIVE) 
+  status           AccountStatus     @default(ACTIVE)
+  Token            Token[]
 }
 
 model Follow {
@@ -192,6 +197,7 @@ model Category {
   name         String        @unique @db.VarChar(255)
   projects     Project[]
   institutions Institution[]
+
   @@map("categories")
 }
 
@@ -234,4 +240,15 @@ model MediaAttachment {
   projects                 Project[]
   institutionMember        InstitutionMember[]
   accountAvatar            Account?            @relation(name: "AccountAvatar")
+}
+
+model Token {
+  id        String    @id @default(uuid())
+  accountId Int
+  tokenType TokenType
+  account   Account   @relation(fields: [accountId], references: [id])
+  code      String?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
 }
