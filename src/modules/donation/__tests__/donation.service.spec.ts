@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing'
-import { DonationService } from '../donation.service'
-import { MercadopagoService } from '../../../services/mercadopago/mercadopago.service'
-import { PrismaService } from '../../../database/prisma.service'
-import { RequestDonationDto } from '../dto/request-donation.dto'
-import { NotificationRequestDto } from '../dto/notification.dto'
 import { HttpException } from '@nestjs/common'
+import { Test, TestingModule } from '@nestjs/testing'
+import { PrismaService } from '../../../database/prisma.service'
+import { MercadopagoService } from '../../../services/mercadopago/mercadopago.service'
+import { DonationService } from '../donation.service'
+import { NotificationRequestDto } from '../dto/notification.dto'
+import { RequestDonationDto } from '../dto/request-donation.dto'
 
 describe('DonationService tests', () => {
   let service: DonationService
@@ -180,7 +180,7 @@ describe('DonationService tests', () => {
         external_reference: expect.stringMatching(
           /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
         ),
-        notification_url: 'https://reapp.dev.br/donation/notify',
+        notification_url: process.env.MERCADOPAGO_NOTIFICATION_URL,
       })
     })
 
@@ -223,7 +223,7 @@ describe('DonationService tests', () => {
         external_reference: expect.stringMatching(
           /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
         ),
-        notification_url: 'https://reapp.dev.br/donation/notify',
+        notification_url: process.env.MERCADOPAGO_NOTIFICATION_URL,
       })
     })
 
@@ -262,7 +262,7 @@ describe('DonationService tests', () => {
         external_reference: expect.stringMatching(
           /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
         ),
-        notification_url: 'https://reapp.dev.br/donation/notify',
+        notification_url: process.env.MERCADOPAGO_NOTIFICATION_URL,
       })
     })
   })
