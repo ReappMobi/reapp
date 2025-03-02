@@ -1,12 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AuthenticationController } from '../auth.controller';
-import { AuthService } from '../auth.service';
-import { LoginDto } from '../dto/login.dto';
-import { LoginGoogleDto } from '../dto/loginGoogle.dto';
+import { Test, TestingModule } from '@nestjs/testing'
+import { AuthenticationController } from '../auth.controller'
+import { AuthService } from '../auth.service'
+import { LoginDto } from '../dto/login.dto'
+import { LoginGoogleDto } from '../dto/loginGoogle.dto'
 
 describe('AuthenticationController', () => {
-  let controller: AuthenticationController;
-  let authService: AuthService;
+  let controller: AuthenticationController
+  let authService: AuthService
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -20,32 +20,32 @@ describe('AuthenticationController', () => {
           },
         },
       ],
-    }).compile();
+    }).compile()
 
-    controller = module.get<AuthenticationController>(AuthenticationController);
-    authService = module.get<AuthService>(AuthService);
-  });
+    controller = module.get<AuthenticationController>(AuthenticationController)
+    authService = module.get<AuthService>(AuthService)
+  })
 
   describe('login', () => {
     it('should call authService.login with the correct data', async () => {
       const loginDto: LoginDto = {
         email: 'test@example.com',
         password: 'password',
-      };
+      }
 
-      await controller.login(loginDto);
+      await controller.login(loginDto)
 
-      expect(authService.login).toHaveBeenCalledWith(loginDto);
-    });
-  });
+      expect(authService.login).toHaveBeenCalledWith(loginDto)
+    })
+  })
 
   describe('loginWithGoogle', () => {
     it('should call authService.loginWithGoogle with the correct data', async () => {
-      const loginGoogleDto: LoginGoogleDto = { idToken: 'test-id-token' };
+      const loginGoogleDto: LoginGoogleDto = { idToken: 'test-id-token' }
 
-      await controller.loginWithGoogle(loginGoogleDto);
+      await controller.loginWithGoogle(loginGoogleDto)
 
-      expect(authService.loginWithGoogle).toHaveBeenCalledWith(loginGoogleDto);
-    });
-  });
-});
+      expect(authService.loginWithGoogle).toHaveBeenCalledWith(loginGoogleDto)
+    })
+  })
+})

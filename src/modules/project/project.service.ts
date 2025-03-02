@@ -4,25 +4,62 @@ import {
   HttpStatus,
   NotFoundException,
   ForbiddenException,
-} from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
-import { MediaService } from '../media-attachment/media-attachment.service';
-import { UpdateProjectDto } from './dto/updateProject.dto';
+} from '@nestjs/common'
+import { PrismaService } from '../../database/prisma.service'
+import { MediaService } from '../media-attachment/media-attachment.service'
+import { UpdateProjectDto } from './dto/updateProject.dto'
+import { Prisma } from '@prisma/client'
 
 export type PostProjectData = {
-  description: string;
-  name: string;
-  file: Express.Multer.File;
-  institutionId: number;
-  category: string;
-  subtitle: string;
-  accountId: number;
-};
+  description: string
+  name: string
+  media: Express.Multer.File
+  institutionId: number
+  category: string
+  subtitle: string
+  accountId: number
+}
 
 export type FavoriteProjectData = {
-  projectId: number;
-  donorId: number;
-};
+  projectId: number
+  donorId: number
+}
+
+const projectResponseFields = {
+  id: true,
+  name: true,
+  description: true,
+  subtitle: true,
+  category: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  institution: {
+    select: {
+      id: true,
+      phone: true,
+      category: {
+        select: {
+          name: true,
+        },
+      },
+      account: {
+        select: {
+          id: true,
+          name: true,
+          avatarId: true,
+          media: true,
+        },
+      },
+    },
+  },
+  media: true,
+  createdAt: true,
+  updatedAt: true,
+  mediaId: true,
+}
 
 @Injectable()
 export class ProjectService {
@@ -35,128 +72,130 @@ export class ProjectService {
     description,
     name,
     category,
-    file,
+    media,
     subtitle,
     institutionId,
     accountId,
   }: PostProjectData) {
-    if (!file) {
+    if (!description || !name || !category) {
       throw new HttpException(
-        'File is required',
+        'Descrição, nome e categoria são obrigatórios',
+        HttpStatus.BAD_REQUEST,
+      )
+    }
+
+    if (!media) {
+      throw new HttpException(
+        'Um arquivo de mídia é obrigatório para o projeto',
         HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      )
     }
 
-    try {
-      let projectCategory = await this.prismaService.category.findFirst({
-        where: { name: category },
-      });
-
-      if (!projectCategory) {
-        projectCategory = await this.prismaService.category.create({
-          data: {
-            name: category,
-          },
-        });
-      }
-
-      const mediaAttachment = await this.mediaService.processMedia(file, {
-        accountId,
-      });
-
-      const mediaId = mediaAttachment.mediaAttachment.id;
-
-      const media = (await this.mediaService.getMediaAttachmentById(mediaId))
-        .mediaResponse;
-
-      const project = await this.prismaService.project.create({
-        data: {
-          description,
-          name,
-          category: {
-            connect: {
-              id: projectCategory.id,
-            },
-          },
-          media: {
-            connect: {
-              id: mediaId,
-            },
-          },
-          institution: {
-            connect: {
-              id: institutionId,
-            },
-          },
-          subtitle,
-        },
-      });
-      return {
-        ...project,
-        media,
-      };
-    } catch (error) {
+    if (!media.mimetype.startsWith('image/')) {
       throw new HttpException(
-        'erro ao criar projeto',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+        'Apenas arquivos de imagem são permitidos para projetos',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      )
     }
+
+    let mediaId: string | null = null
+
+    if (media) {
+      const mediaAttachment = await this.mediaService.processMedia(media, {
+        accountId,
+      })
+      mediaId = mediaAttachment.mediaAttachment.id
+    }
+
+    let projectCategory = await this.prismaService.category.findFirst({
+      where: { name: category },
+    })
+
+    if (!projectCategory) {
+      projectCategory = await this.prismaService.category.create({
+        data: {
+          name: category,
+        },
+      })
+    }
+
+    const project = await this.prismaService.project.create({
+      data: {
+        description,
+        name,
+        category: {
+          connect: {
+            id: projectCategory.id,
+          },
+        },
+        media: mediaId ? { connect: { id: mediaId } } : undefined,
+        institution: {
+          connect: {
+            id: institutionId,
+          },
+        },
+        subtitle,
+      },
+      select: projectResponseFields,
+    })
+
+    return project
   }
 
   async updateProjectService(
     projectId: number,
     updateData: UpdateProjectDto & {
-      file?: Express.Multer.File;
-      accountId: number;
+      file?: Express.Multer.File
+      accountId: number
     },
   ) {
-    const { file, accountId, ...updateFields } = updateData;
+    const { file, accountId, ...updateFields } = updateData
 
     // Verifica se o projeto existe
     const existingProject = await this.prismaService.project.findUnique({
       where: { id: projectId },
       include: { institution: true },
-    });
+    })
 
     if (!existingProject) {
-      throw new NotFoundException('Projeto não encontrado');
+      throw new NotFoundException('Projeto não encontrado')
     }
 
     // Verifica se a instituição é a proprietária do projeto
     if (existingProject.institution.accountId !== accountId) {
       throw new ForbiddenException(
         'Você não tem permissão para editar este projeto',
-      );
+      )
     }
 
-    let mediaId = existingProject.mediaId;
+    let mediaId = existingProject.mediaId
 
     // Se um novo arquivo for fornecido, atualiza o media attachment
     if (file) {
       // Opcionalmente, delete o antigo media attachment se necessário
       if (mediaId) {
-        await this.mediaService.deleteMediaAttachment(mediaId);
+        await this.mediaService.deleteMediaAttachment(mediaId)
       }
 
       const mediaAttachment = await this.mediaService.processMedia(file, {
         accountId,
-      });
-      mediaId = mediaAttachment.mediaAttachment.id;
+      })
+      mediaId = mediaAttachment.mediaAttachment.id
     }
 
     // Atualiza a categoria se fornecida
-    let projectCategory = null;
+    let projectCategory = null
     if (updateFields.category) {
       projectCategory = await this.prismaService.category.findFirst({
         where: { name: updateFields.category },
-      });
+      })
 
       if (!projectCategory) {
         projectCategory = await this.prismaService.category.create({
           data: {
             name: updateFields.category,
           },
-        });
+        })
       }
     }
 
@@ -170,7 +209,8 @@ export class ProjectService {
           ? { connect: { id: projectCategory.id } }
           : undefined,
       },
-    });
+      select: projectResponseFields,
+    })
 
     /*
     const project = await this.prismaService.project.create({
@@ -202,15 +242,7 @@ export class ProjectService {
 
     */
 
-    // Obtém o media atualizado
-    const media = mediaId
-      ? (await this.mediaService.getMediaAttachmentById(mediaId)).mediaResponse
-      : null;
-
-    return {
-      ...updatedProject,
-      media,
-    };
+    return updatedProject
   }
 
   async toggleFavoriteService({ projectId, donorId }: FavoriteProjectData) {
@@ -223,7 +255,7 @@ export class ProjectService {
               projectId: projectId,
             },
           },
-        });
+        })
 
       if (existingFavorite) {
         await this.prismaService.favoriteProject.delete({
@@ -233,30 +265,31 @@ export class ProjectService {
               projectId: projectId,
             },
           },
-        });
+        })
       } else {
         await this.prismaService.favoriteProject.create({
           data: {
             projectId: projectId,
             donorId: donorId,
           },
-        });
+        })
       }
 
-      return { message: 'Status de favorito alterado com sucesso' };
-    } catch (error) {
-      console.log(error);
+      return { message: 'Status de favorito alterado com sucesso' }
+    } catch (_error) {
       throw new HttpException(
         'erro ao favoritar projeto',
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      )
     }
   }
 
   async getAllProjectsService(donorId?: number) {
-    const allProjects = await this.prismaService.project.findMany();
+    const allProjects = await this.prismaService.project.findMany({
+      select: projectResponseFields,
+    })
 
-    let favoriteProjectIds: number[] = [];
+    let favoriteProjectIds: number[] = []
 
     if (donorId) {
       const favoriteProjects =
@@ -267,66 +300,31 @@ export class ProjectService {
           select: {
             projectId: true,
           },
-        });
-      favoriteProjectIds = favoriteProjects.map((fp) => fp.projectId);
+        })
+      favoriteProjectIds = favoriteProjects.map((fp) => fp.projectId)
     }
 
-    const mediaIds = Array.from(
-      new Set(
-        allProjects
-          .map((project) => project.mediaId)
-          .filter((mediaId): mediaId is string => mediaId !== null),
-      ),
-    );
-
-    const mediaResponses =
-      await this.mediaService.getMediaAttachmentsByIds(mediaIds);
-
-    const mediaMap = new Map<string, any>();
-    mediaResponses.forEach((mediaResponseObj) => {
-      if (mediaResponseObj.mediaResponse) {
-        mediaMap.set(
-          mediaResponseObj.mediaResponse.id,
-          mediaResponseObj.mediaResponse,
-        );
-      }
-    });
-
     const projects = allProjects.map((project) => {
-      const media = project.mediaId ? mediaMap.get(project.mediaId) : null;
       return {
         ...project,
-        media,
         isFavorite: favoriteProjectIds.includes(project.id),
-      };
-    });
+      }
+    })
 
-    return projects;
+    return projects
   }
 
   async getProjectByIdService(projectId: number) {
     const project = await this.prismaService.project.findUnique({
       where: { id: projectId },
-    });
+      select: projectResponseFields,
+    })
 
     if (!project) {
-      throw new NotFoundException('Projeto não encontrado');
+      throw new NotFoundException('Projeto não encontrado')
     }
 
-    let media = null;
-    if (project.mediaId) {
-      const mediaResult = await this.mediaService.getMediaAttachmentById(
-        project.mediaId,
-      );
-      media = mediaResult.mediaResponse;
-    }
-
-    const projectWithMedia = {
-      ...project,
-      media,
-    };
-
-    return projectWithMedia;
+    return project
   }
 
   async getFavoriteProjectService(donorId: number) {
@@ -335,43 +333,15 @@ export class ProjectService {
         donorId: donorId,
       },
       include: {
-        project: true,
+        project: {
+          select: projectResponseFields,
+        },
       },
-    });
+    })
 
-    const projects = favoriteProjects.map((favorite) => favorite.project);
+    const projects = favoriteProjects.map((favorite) => favorite.project)
 
-    const mediaIds = Array.from(
-      new Set(
-        projects
-          .map((project) => project.mediaId)
-          .filter((mediaId): mediaId is string => mediaId !== null),
-      ),
-    );
-
-    const mediaResponses =
-      await this.mediaService.getMediaAttachmentsByIds(mediaIds);
-
-    const mediaMap = new Map<string, any>();
-    mediaResponses.forEach((mediaResponseObj) => {
-      if (mediaResponseObj.mediaResponse) {
-        mediaMap.set(
-          mediaResponseObj.mediaResponse.id,
-          mediaResponseObj.mediaResponse,
-        );
-      }
-    });
-
-    const projectsWithMedia = projects.map((project) => {
-      const media = project.mediaId ? mediaMap.get(project.mediaId) : null;
-      return {
-        ...project,
-        media,
-        isFavorite: true,
-      };
-    });
-
-    return projectsWithMedia;
+    return projects
   }
 
   async getProjectsByInstitutionService(institutionId: number) {
@@ -379,54 +349,46 @@ export class ProjectService {
       where: {
         institutionId: institutionId,
       },
-    });
+      select: projectResponseFields,
+    })
 
     if (projects.length === 0) {
-      return [];
+      return []
     }
 
-    const mediaIds = Array.from(
-      new Set(
-        projects
-          .map((project) => project.mediaId)
-          .filter((mediaId): mediaId is string => mediaId !== null),
-      ),
-    );
-
-    const mediaResponses =
-      await this.mediaService.getMediaAttachmentsByIds(mediaIds);
-
-    const mediaMap = new Map<string, any>();
-    mediaResponses.forEach((mediaResponseObj) => {
-      if (mediaResponseObj.mediaResponse) {
-        mediaMap.set(
-          mediaResponseObj.mediaResponse.id,
-          mediaResponseObj.mediaResponse,
-        );
-      }
-    });
-
-    const projectsWithMedia = projects.map((project) => {
-      const media = project.mediaId ? mediaMap.get(project.mediaId) : null;
-      return {
-        ...project,
-        media,
-      };
-    });
-
-    return projectsWithMedia;
+    return projects
   }
 
-  async getProjectCategoriesService() {
-    const categories = await this.prismaService.category.findMany({
-      where: {
-        projects: {
-          some: {},
-        },
-      },
-    });
+  async getProjectCategoriesService(search: string = '') {
+    const sanitizedSearch = search.trim()
+    if (sanitizedSearch.length > 100) {
+      throw new HttpException(
+        'A pesquisa deve ter no máximo 100 caracteres',
+        HttpStatus.BAD_REQUEST,
+      )
+    }
 
-    return categories;
+    const query = `%${sanitizedSearch}%`
+    const maxResults = 10
+    try {
+      const ids = await this.prismaService.$queryRaw<{ id: number }[]>(
+        Prisma.sql`SELECT id FROM categories WHERE name ILIKE ${query} LIMIT ${maxResults}`,
+      )
+      const categories = await this.prismaService.category.findMany({
+        where: {
+          id: {
+            in: ids.map((id) => id.id),
+          },
+        },
+        orderBy: { name: 'asc' },
+      })
+      return categories
+    } catch (_error) {
+      throw new HttpException(
+        'Erro ao buscar categorias',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      )
+    }
   }
 
   async deleteProjectService(projectId: number, accountId: number) {
@@ -434,29 +396,29 @@ export class ProjectService {
     const existingProject = await this.prismaService.project.findUnique({
       where: { id: projectId },
       include: { institution: true },
-    });
+    })
 
     if (!existingProject) {
-      throw new NotFoundException('Projeto não encontrado');
+      throw new NotFoundException('Projeto não encontrado')
     }
 
     // Verifica se a instituição é a proprietária do projeto
     if (existingProject.institution.accountId !== accountId) {
       throw new ForbiddenException(
         'Você não tem permissão para deletar este projeto',
-      );
+      )
     }
 
     // Opcionalmente, delete o media attachment associado
     if (existingProject.mediaId) {
-      await this.mediaService.deleteMediaAttachment(existingProject.mediaId);
+      await this.mediaService.deleteMediaAttachment(existingProject.mediaId)
     }
 
     // Deleta o projeto
     await this.prismaService.project.delete({
       where: { id: projectId },
-    });
+    })
 
-    return { message: 'Projeto deletado com sucesso' };
+    return { message: 'Projeto deletado com sucesso' }
   }
 }

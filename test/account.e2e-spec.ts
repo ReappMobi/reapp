@@ -6,7 +6,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AccountService } from '../src/modules/account/account.service';
 import { PrismaService } from '../src/database/prisma.service';
 import { AccountModule } from '../src/modules/account/account.module';
-import { AccountType } from '../src/modules/account/dto/create-account.dto';
+import { AccountType } from '@prisma/client';
 
 describe('DonorController (e2e)', () => {
   let app: INestApplication;

@@ -13,6 +13,14 @@ enum AccountType {
   INSTITUTION
 }
 
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+  PENDING
+}
+
 enum DonationStatus {
   PENDING
   APPROVED
@@ -27,20 +35,46 @@ enum InstitutionMemberType {
   COLLABORATOR
 }
 
+enum TokenType {
+  EMAIL_CONFIRMATION
+  PASSWORD_RESET
+}
+
 model Account {
   id               Int               @id @default(autoincrement())
   name             String            @db.VarChar(255)
-  email            String            @unique @db.VarChar(255)
+  email            String            @unique @db.VarChar(200)
+  note             String?           @db.VarChar(255)
   passwordHash     String            @db.Char(60)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
-  avatar           String?           @db.VarChar(255)
+  media            MediaAttachment?  @relation(name: "AccountAvatar", fields: [avatarId], references: [id])
+  avatarId         String?           @unique @db.VarChar(255)
   accountType      AccountType       @default(DONOR)
   followingCount   Int               @default(0)
   followersCount   Int               @default(0)
   institution      Institution?
   donor            Donor?
-  mediaAttachments MediaAttachment[] // Relacionamento inverso com MediaAttachment
+  saves            Save[]
+  likes            Like[]
+  comments         Comment[]
+  mediaAttachments MediaAttachment[] @relation(name: "AccountMediaAttachments")
+  following        Follow[]          @relation("Following")
+  followers        Follow[]          @relation("Followers")
+  status           AccountStatus     @default(ACTIVE)
+  Token            Token[]
+}
+
+model Follow {
+  id          Int      @id @default(autoincrement())
+  followerId  Int
+  followingId Int
+  createdAt   DateTime @default(now())
+
+  follower  Account @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  following Account @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
 }
 
 model Donor {
@@ -48,7 +82,6 @@ model Donor {
   account   Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
   accountId Int               @unique
   donations Donation[]
-  likes     Like[]
   favorites FavoriteProject[]
 }
 
@@ -80,6 +113,7 @@ model Post {
   body          String           @db.Text
   comments      Comment[]
   likes         Like[]
+  saves         Save[]
   institution   Institution      @relation(fields: [institutionId], references: [id])
   institutionId Int
   mediaId       String? // Chave estrangeira para MediaAttachment (opcional)
@@ -89,18 +123,29 @@ model Post {
 }
 
 model Like {
-  id      Int   @id @default(autoincrement())
-  post    Post  @relation(fields: [postId], references: [id])
-  postId  Int
-  donor   Donor @relation(fields: [donorId], references: [id])
-  donorId Int
+  id        Int     @id @default(autoincrement())
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int
+  Account   Account @relation(fields: [accountId], references: [id])
+  accountId Int
 }
 
 model Comment {
-  id     Int    @id @default(autoincrement())
-  body   String @db.Text
-  post   Post   @relation(fields: [postId], references: [id])
-  postId Int
+  id        Int      @id @default(autoincrement())
+  body      String   @db.Text
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int
+  account   Account  @relation(fields: [accountId], references: [id])
+  accountId Int
+  createdAt DateTime @default(now())
+}
+
+model Save {
+  id        Int     @id @default(autoincrement())
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int
+  account   Account @relation(fields: [accountId], references: [id])
+  accountId Int
 }
 
 model Project {
@@ -142,7 +187,7 @@ model Donation {
   projectId            Int?
   project              Project?       @relation(fields: [projectId], references: [id])
   institutionId        Int?
-  Institution          Institution?   @relation(fields: [institutionId], references: [id])
+  institution          Institution?   @relation(fields: [institutionId], references: [id])
   donorId              Int
   donor                Donor          @relation(fields: [donorId], references: [id])
 }
@@ -152,29 +197,32 @@ model Category {
   name         String        @unique @db.VarChar(255)
   projects     Project[]
   institutions Institution[]
+
+  @@map("categories")
 }
 
 model InstitutionMember {
   id            Int                   @id @default(autoincrement())
   name          String                @db.VarChar(50)
-  avatar        String                @db.VarChar(255)
+  media         MediaAttachment?      @relation(fields: [avatarId], references: [id])
+  avatarId      String?               @db.VarChar(255)
   memberType    InstitutionMemberType
   institution   Institution?          @relation(fields: [institutionId], references: [id])
   institutionId Int?
 }
 
 model MediaAttachment {
-  id                       String    @id
+  id                       String              @id
   statusId                 BigInt?
   fileFileName             String?
   fileContentType          String?
   fileFileSize             Int?
   fileUpdatedAt            DateTime?
-  remoteUrl                String    @default("")
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
+  remoteUrl                String              @default("")
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
   shortcode                String?
-  type                     Int       @default(0)
+  type                     Int                 @default(0)
   fileMeta                 Json?
   accountId                Int? // Chave estrangeira para Account
   description              String?
@@ -187,7 +235,20 @@ model MediaAttachment {
   thumbnailFileSize        Int?
   thumbnailUpdatedAt       DateTime?
   thumbnailRemoteUrl       String?
-  account                  Account?  @relation(fields: [accountId], references: [id])
+  account                  Account?            @relation(name: "AccountMediaAttachments", fields: [accountId], references: [id])
   posts                    Post[] // Relacionamento inverso com Post
   projects                 Project[]
+  institutionMember        InstitutionMember[]
+  accountAvatar            Account?            @relation(name: "AccountAvatar")
+}
+
+model Token {
+  id        String    @id @default(uuid())
+  accountId Int
+  tokenType TokenType
+  account   Account   @relation(fields: [accountId], references: [id])
+  code      String?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
 }

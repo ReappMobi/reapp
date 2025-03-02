@@ -14,17 +14,18 @@ import {
   ParseIntPipe,
   Put,
   Delete,
-} from '@nestjs/common';
-import { Request } from 'express';
-import { AuthGuard } from '../auth/auth.guard';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { CreateProjectDto } from './dto/createProject.dto';
-import { UpdateProjectDto } from './dto/updateProject.dto';
-import { ProjectService } from './project.service';
-import { AccountService } from '../account/account.service';
+  Query,
+} from '@nestjs/common'
+import { Request } from 'express'
+import { AuthGuard } from '../auth/auth.guard'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { CreateProjectDto } from './dto/createProject.dto'
+import { UpdateProjectDto } from './dto/updateProject.dto'
+import { ProjectService } from './project.service'
+import { AccountService } from '../account/account.service'
 
 interface RequestWithUser extends Request {
-  user?: { id: number };
+  user?: { id: number }
 }
 
 @Controller('project')
@@ -36,36 +37,35 @@ export class ProjectController {
 
   @Post()
   @UseGuards(AuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
-  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(FileInterceptor('media'))
   async postProject(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() media: Express.Multer.File,
     @Body() createProjectDto: CreateProjectDto,
     @Req() req: RequestWithUser,
   ) {
-    const { description, name, category, subtitle } = createProjectDto;
+    const { description, name, category, subtitle } = createProjectDto
 
-    const accountId = req.user.id;
+    const accountId = req.user.id
 
     const institution = await this.accountService.findOneInstitution(
       Number(accountId),
-    );
+    )
 
-    if (institution.accountId != req.user?.id) {
-      throw new ForbiddenException('Acesso não autorizado');
+    if (institution.account.id != req.user?.id) {
+      throw new ForbiddenException('Acesso não autorizado')
     }
 
     const project = await this.projectService.postProjectService({
       description,
       name,
-      file,
+      media,
       subtitle,
       category,
       institutionId: institution.id,
       accountId: req.user.id,
-    });
+    })
 
-    return project;
+    return project
   }
 
   @Put(':projectId')
@@ -77,19 +77,19 @@ export class ProjectController {
     @Body() updateProjectDto: UpdateProjectDto,
     @Req() req: RequestWithUser,
   ) {
-    const accountId = req.user.id;
-    const institution = await this.accountService.findOneInstitution(accountId);
+    const accountId = req.user.id
+    const institution = await this.accountService.findOneInstitution(accountId)
 
-    if (!institution || institution.accountId !== accountId) {
-      throw new ForbiddenException('Acesso não autorizado');
+    if (!institution || institution.account.id !== accountId) {
+      throw new ForbiddenException('Acesso não autorizado')
     }
 
-    const project = await this.projectService.getProjectByIdService(projectId);
+    const project = await this.projectService.getProjectByIdService(projectId)
 
-    if (project.institutionId !== institution.id) {
+    if (project.institution.id !== institution.id) {
       throw new ForbiddenException(
         'Você não tem permissão para editar este projeto',
-      );
+      )
     }
 
     const updatedProject = await this.projectService.updateProjectService(
@@ -99,56 +99,56 @@ export class ProjectController {
         file,
         accountId,
       },
-    );
+    )
 
-    return updatedProject;
+    return updatedProject
   }
 
   @Post('toggle-favorite/:id')
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   async toggleFavorite(@Param('id') id: string, @Req() req: RequestWithUser) {
-    const projectId = Number(id);
-    const accountId = req.user.id;
-    const donor = await this.accountService.findOneDonor(Number(accountId));
+    const projectId = Number(id)
+    const accountId = req.user.id
+    const donor = await this.accountService.findOneDonor(Number(accountId))
     const result = await this.projectService.toggleFavoriteService({
       projectId,
       donorId: donor.id,
-    });
-    return result;
+    })
+    return result
   }
 
   @Get()
   @UseGuards(AuthGuard)
   async getAllProjects(@Req() req: RequestWithUser) {
-    const accountId = req.user.id;
-    const donor = await this.accountService.findOneDonor(Number(accountId));
+    const accountId = req.user.id
+    const donor = await this.accountService.findOneDonor(Number(accountId))
 
-    const donorId = donor ? donor.id : null;
-    const result = await this.projectService.getAllProjectsService(donorId);
+    const donorId = donor ? donor.id : null
+    const result = await this.projectService.getAllProjectsService(donorId)
 
-    return result;
+    return result
   }
 
   @Get('favorite')
   @UseGuards(AuthGuard)
   async getFavoriteProjects(@Req() req: RequestWithUser) {
-    const donor = await this.accountService.findOneDonor(Number(req.user.id));
-    const donorId = donor.id;
-    const result = await this.projectService.getFavoriteProjectService(donorId);
-    return result;
+    const donor = await this.accountService.findOneDonor(Number(req.user.id))
+    const donorId = donor.id
+    const result = await this.projectService.getFavoriteProjectService(donorId)
+    return result
   }
 
   @Get('categories')
-  async getProjectCategories() {
-    const result = await this.projectService.getProjectCategoriesService();
-    return result;
+  async getProjectCategories(@Query('search') search: string) {
+    const result = await this.projectService.getProjectCategoriesService(search)
+    return result
   }
 
   @Get(':projectId')
   async getProjectById(@Param('projectId', ParseIntPipe) projectId: number) {
-    const result = await this.projectService.getProjectByIdService(projectId);
-    return result;
+    const result = await this.projectService.getProjectByIdService(projectId)
+    return result
   }
 
   @Get('institution/:institutionId')
@@ -156,8 +156,8 @@ export class ProjectController {
     @Param('institutionId', ParseIntPipe) institutionId: number,
   ) {
     const result =
-      await this.projectService.getProjectsByInstitutionService(institutionId);
-    return result;
+      await this.projectService.getProjectsByInstitutionService(institutionId)
+    return result
   }
 
   @Delete(':projectId')
@@ -167,21 +167,21 @@ export class ProjectController {
     @Param('projectId', ParseIntPipe) projectId: number,
     @Req() req: RequestWithUser,
   ) {
-    const accountId = req.user.id;
-    const institution = await this.accountService.findOneInstitution(accountId);
+    const accountId = req.user.id
+    const institution = await this.accountService.findOneInstitution(accountId)
 
-    if (!institution || institution.accountId !== accountId) {
-      throw new ForbiddenException('Acesso não autorizado');
+    if (!institution || institution.account.id !== accountId) {
+      throw new ForbiddenException('Acesso não autorizado')
     }
 
-    const project = await this.projectService.getProjectByIdService(projectId);
+    const project = await this.projectService.getProjectByIdService(projectId)
 
-    if (project.institutionId !== institution.id) {
+    if (project.institution.id !== institution.id) {
       throw new ForbiddenException(
         'Você não tem permissão para deletar este projeto',
-      );
+      )
     }
 
-    await this.projectService.deleteProjectService(projectId, accountId);
+    await this.projectService.deleteProjectService(projectId, accountId)
   }
 }

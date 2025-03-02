@@ -1,0 +1,4 @@
+CREATE TYPE "AccountStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED', 'BANNED', 'PENDING');
+
+ALTER TABLE "Account" 
+ADD COLUMN "status" "AccountStatus" NOT NULL DEFAULT 'ACTIVE';
