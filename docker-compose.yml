@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   app:
     build:
@@ -20,7 +19,7 @@ services:
 
   database:
     container_name: database
-    image: postgres:16
+    image: postgres:17-alpine3.21
     restart: always
     healthcheck:
       test: ['CMD', 'pg_isready', '-q', '-d', 'reapp', '-U', 'reapp']
@@ -36,7 +35,7 @@ services:
 
   redis:
     container_name: redis
-    image: redis:alpine
+    image: redis:7.4-alpine3.21
     restart: always
     ports:
       - "6379:6379"
