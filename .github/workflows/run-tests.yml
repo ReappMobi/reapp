@@ -25,6 +25,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://reapp:reapp@localhost:5432/test
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      MERCADOPAGO_NOTIFICATION_URL: http://test.reapp/donation/notify
 
     steps:
       - uses: actions/checkout@v4
