@@ -1,10 +1,12 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common'
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
+import * as PrismaClient from '@prisma/client'
+import * as bcrypt from 'bcrypt'
+
+import { OAuth2Client } from 'google-auth-library'
 import { PrismaService } from '../../database/prisma.service'
 import { LoginDto } from './dto/login.dto'
 import { LoginGoogleDto } from './dto/loginGoogle.dto'
-import { JwtService } from '@nestjs/jwt'
-import * as bcrypt from 'bcrypt'
-import { OAuth2Client } from 'google-auth-library'
 
 const authResponseFields = {
   id: true,
@@ -16,6 +18,7 @@ const authResponseFields = {
   followersCount: true,
   note: true,
 }
+
 @Injectable()
 export class AuthService {
   private client: OAuth2Client
@@ -27,7 +30,9 @@ export class AuthService {
     this.client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
   }
 
-  private async generateJwtToken(user: any): Promise<string> {
+  private async generateJwtToken(
+    user: Partial<PrismaClient.Account>,
+  ): Promise<string> {
     const jwtSecretKey = process.env.JWT_SECRET
     if (!jwtSecretKey) {
       throw new HttpException(
@@ -35,13 +40,24 @@ export class AuthService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       )
     }
+
+    const payload = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      accountType: user.accountType,
+    }
+
     return this.jwtService.sign(
-      { id: user.id },
+      { user: payload },
       { secret: jwtSecretKey, expiresIn: '7d' },
     )
   }
 
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<Partial<PrismaClient.Account> | null> {
     const user = await this.prismaService.account.findFirst({
       where: { email },
       select: {
@@ -77,8 +93,7 @@ export class AuthService {
     return null
   }
 
-  async login(loginDto: LoginDto) {
-    const { email, password } = loginDto
+  async login({ email, password }: LoginDto) {
     const user = await this.validateUser(email.toLowerCase(), password)
     if (!user) {
       throw new HttpException('Credenciais inválidas', HttpStatus.UNAUTHORIZED)
