@@ -1,10 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing'
-import { AuthService } from '../auth.service'
-import { PrismaService } from '../../../database/prisma.service'
+import { HttpException, HttpStatus } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
+import { Test, TestingModule } from '@nestjs/testing'
+import * as PrismaClient from '@prisma/client'
 import * as bcrypt from 'bcrypt'
 import { OAuth2Client } from 'google-auth-library'
-import { HttpException, HttpStatus } from '@nestjs/common'
+import { PrismaService } from '../../../database/prisma.service'
+import { AuthService } from '../auth.service'
 import { LoginDto } from '../dto/login.dto'
 
 const mockPrismaService = {
@@ -94,7 +95,11 @@ describe('AuthService', () => {
     })
 
     it('should return token and user if credentials are valid', async () => {
-      const user = { id: 1, email: loginDto.email, status: 'ACTIVE' }
+      const user = {
+        id: 1,
+        email: loginDto.email,
+        status: 'ACTIVE',
+      } as Partial<PrismaClient.Account>
       jest.spyOn(authService, 'validateUser').mockResolvedValue(user)
       mockJwtService.sign.mockReturnValue('mockToken')
 

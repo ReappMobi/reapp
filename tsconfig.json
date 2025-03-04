@@ -8,14 +8,20 @@
     "allowSyntheticDefaultImports": true,
     "target": "ES2021",
     "sourceMap": true,
+    "moduleResolution": "node",
     "outDir": "./dist",
-    "baseUrl": "./",
+    "rootDir": "./",
+    "paths": {
+      "@app/*": ["./src/*"]
+    },
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
-  }
+    "noFallthroughCasesInSwitch": false,
+  },
+  "exclude": ["node_modules", "dist"]
+
 }
