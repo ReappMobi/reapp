@@ -1,6 +1,6 @@
+import { PrismaService } from '@app/database/prisma.service'
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
 import * as PrismaClient from '@prisma/client'
-import { PrismaService } from 'src/database/prisma.service'
 import { MailService } from '../mail/mail.service'
 
 @Injectable()

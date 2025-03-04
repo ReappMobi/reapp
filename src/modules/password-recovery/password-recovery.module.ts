@@ -1,5 +1,5 @@
+import { PrismaService } from '@app/database/prisma.service'
 import { Module } from '@nestjs/common'
-import { PrismaService } from 'src/database/prisma.service'
 import { MailService } from '../mail/mail.service'
 import { PasswordRecoveryController } from './password-recovery.controller'
 import { PasswordRecoveryService } from './password-recovery.service'
