@@ -1,5 +1,5 @@
-import resetDb from './reset-db';
+import resetDb from './reset-db'
 
 beforeEach(async () => {
-  await resetDb();
-});
+  await resetDb()
+})
