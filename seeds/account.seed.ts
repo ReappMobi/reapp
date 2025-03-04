@@ -1,11 +1,23 @@
-import { PrismaClient } from "@prisma/client";
-import * as bcrypt from 'bcrypt';
+import { PrismaClient } from '@prisma/client'
+import * as bcrypt from 'bcrypt'
 
-const prisma = new PrismaClient();
-const defaultPassword = 'pass1234';
+const prisma = new PrismaClient()
+const defaultPassword = 'pass1234'
 
 async function main() {
-  const passwordHash = await bcrypt.hash(defaultPassword, 10);
+  const passwordHash = await bcrypt.hash(defaultPassword, 10)
+
+  await prisma.account.create({
+    data: {
+      email: 'admin@reapp.com',
+      passwordHash,
+      name: 'Admin',
+      note: 'Admin account',
+      status: 'ACTIVE',
+      accountType: 'ADMIN',
+    },
+  })
+
   await prisma.account.create({
     data: {
       email: 'donor@reapp.com',
