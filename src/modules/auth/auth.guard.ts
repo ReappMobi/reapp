@@ -35,6 +35,8 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('O token fornecido é inválido')
     }
 
+    if(!roles)  return true
+
     const userRoles = request['user'].accountType as Role[]
     const hasRole = () => roles.some((role) => userRoles.includes(role))
     if (!hasRole()) {
