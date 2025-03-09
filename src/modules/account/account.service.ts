@@ -213,6 +213,16 @@ export class AccountService {
     }
   }
 
+  private get accountResponseFields(): Prisma.AccountSelect {
+    return Object.keys(Prisma.AccountScalarFieldEnum).reduce(
+      (fields, field) => {
+        fields[field] = true
+        return fields
+      },
+      {} as Prisma.AccountSelect,
+    )
+  }
+
   async create(
     createAccountDto: CreateAccountDto,
     media?: Express.Multer.File,
