@@ -305,13 +305,11 @@ export class AccountService {
     const account = await this.prismaService.account.findUnique({
       where: { id },
       select: {
-        id: true,
-        email: true,
-        name: true,
-        accountType: true,
-        avatarId: true,
+        ...this.accountResponseFields,
+        passwordHash: false,
+        institution: true,
+        donor: true,
         media: true,
-        note: true,
       },
     })
 
