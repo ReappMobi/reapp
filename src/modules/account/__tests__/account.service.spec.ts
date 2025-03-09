@@ -1,12 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { AccountService } from '../account.service'
+import { Account, AccountType } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import { PrismaService } from '../../../database/prisma.service'
+import { MediaService } from '../../media-attachment/media-attachment.service'
+import { AccountService } from '../account.service'
 import {
   CreateAccountDto,
   CreateAccountGoogleDto,
 } from '../dto/create-account.dto'
-import { AccountType } from '@prisma/client'
-import { MediaService } from '../../media-attachment/media-attachment.service'
 import { UpdateAccountDto } from '../dto/update-account.dto'
 
 describe('AccountService', () => {
@@ -432,7 +433,7 @@ describe('AccountService', () => {
       ]
 
       mockPrismaService.account.findMany.mockResolvedValue(accounts)
-      const result = await service.findAll()
+      const result = await service.findAll({})
       expect(result).toEqual(accounts)
     })
   })
@@ -597,11 +598,16 @@ describe('AccountService', () => {
       const updateDto: UpdateAccountDto = { name: 'Updated Name' }
       const file = {} as Express.Multer.File
 
-      const result = await service.update(1, updateDto, file)
+      const result = await service.update(
+        { id: 1 } as Account,
+        1,
+        updateDto,
+        file,
+      )
 
       expect(mockPrismaService.account.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
-        include: { institution: true, donor: true },
+        include: { institution: true },
       })
 
       expect(mockMediaService.deleteMediaAttachment).toHaveBeenCalledWith(
@@ -614,8 +620,32 @@ describe('AccountService', () => {
 
       expect(mockPrismaService.account.update).toHaveBeenCalledWith({
         where: { id: 1 },
-        data: { name: 'Updated Name', avatarId: 'new-media-id' },
-        select: expect.any(Object),
+        data: {
+          media: {
+            connect: {
+              id: 'new-media-id',
+            },
+          },
+          name: 'Updated Name',
+          note: undefined,
+        },
+        select: {
+          accountType: true,
+          avatarId: true,
+          createdAt: true,
+          donor: true,
+          email: true,
+          followersCount: true,
+          followingCount: true,
+          id: true,
+          institution: true,
+          media: true,
+          name: true,
+          note: true,
+          passwordHash: true,
+          status: true,
+          updatedAt: true,
+        },
       })
 
       expect(result).toEqual({
@@ -639,7 +669,7 @@ describe('AccountService', () => {
         avatarId: 'old-media-id',
         institution: {
           id: 1,
-          phone: '123456789',
+          phone: '987654321',
           category: { id: 1, name: 'Old Category' },
         },
         donor: null,
@@ -679,11 +709,16 @@ describe('AccountService', () => {
 
       const file = {} as Express.Multer.File
 
-      const result = await service.update(2, updateDto, file)
+      const result = await service.update(
+        { accountType: 'ADMIN' } as Account,
+        2,
+        updateDto,
+        file,
+      )
 
       expect(mockPrismaService.account.findUnique).toHaveBeenCalledWith({
         where: { id: 2 },
-        include: { institution: true, donor: true },
+        include: { institution: true },
       })
 
       expect(mockMediaService.deleteMediaAttachment).toHaveBeenCalledWith(
@@ -705,16 +740,42 @@ describe('AccountService', () => {
       expect(mockPrismaService.account.update).toHaveBeenCalledWith({
         where: { id: 2 },
         data: {
-          name: 'Updated Institution',
-          avatarId: 'new-media-id',
           institution: {
             update: {
+              category: {
+                connect: {
+                  id: 2,
+                },
+              },
+              cnpj: undefined,
               phone: '987654321',
-              category: { connect: { id: newCategory.id } },
             },
           },
+          media: {
+            connect: {
+              id: 'new-media-id',
+            },
+          },
+          name: 'Updated Institution',
+          note: undefined,
         },
-        select: expect.any(Object),
+        select: {
+          accountType: true,
+          avatarId: true,
+          createdAt: true,
+          donor: true,
+          email: true,
+          followersCount: true,
+          followingCount: true,
+          id: true,
+          institution: true,
+          media: true,
+          name: true,
+          note: true,
+          passwordHash: true,
+          status: true,
+          updatedAt: true,
+        },
       })
 
       expect(result).toEqual({
@@ -743,9 +804,9 @@ describe('AccountService', () => {
         confirmPassword: 'senha1234',
       }
 
-      await expect(service.update(999, updateDto)).rejects.toThrow(
-        'Conta não encontrada',
-      )
+      await expect(
+        service.update({ accountType: 'ADMIN' } as Account, 999, updateDto),
+      ).rejects.toThrow('Conta não encontrada')
     })
   })
 })
