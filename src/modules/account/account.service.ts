@@ -270,32 +270,24 @@ export class AccountService {
     return await this.createDonor(createAccountDto)
   }
 
-  async findAll() {
+  async findAll({ status, type: accountType }: GetAccountsQuery) {
+    const where: Prisma.AccountWhereInput = {
+      accountType,
+      status,
+    }
+
     return await this.prismaService.account.findMany({
+      where,
       select: {
-        id: true,
-        email: true,
-        name: true,
-        accountType: true,
-        avatarId: true,
-        media: true,
-        donor: {
-          select: {
-            donations: true,
-          },
-        },
+        ...this.accountResponseFields,
+        passwordHash: false,
         institution: {
-          select: {
-            cnpj: true,
-            phone: true,
-            category: {
-              select: {
-                name: true,
+          include: {
+            category: true,
               },
             },
-            fields: true,
-          },
-        },
+        donor: true,
+        media: true,
       },
     })
   }
