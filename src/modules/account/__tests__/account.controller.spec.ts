@@ -1,12 +1,12 @@
+import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { AuthGuard } from '../../auth/auth.guard'
 import { AccountController } from '../account.controller'
 import { AccountService } from '../account.service'
 import {
   CreateAccountDto,
   CreateAccountGoogleDto,
 } from '../dto/create-account.dto'
-import { AuthGuard } from '../../auth/auth.guard'
-import { HttpException, HttpStatus } from '@nestjs/common'
 import { UpdateAccountDto } from '../dto/update-account.dto'
 
 describe('AccountController', () => {
@@ -106,7 +106,7 @@ describe('AccountController', () => {
       ]
       ;(accountService.findAll as jest.Mock).mockResolvedValue(accounts)
 
-      const result = await controller.findAll()
+      const result = await controller.findAll({})
       expect(accountService.findAll).toHaveBeenCalled()
       expect(result).toEqual(accounts)
     })
@@ -287,8 +287,9 @@ describe('AccountController', () => {
       }
       ;(accountService.update as jest.Mock).mockResolvedValue(updatedAccount)
 
-      const result = await controller.update(request, updateAccountDto, file)
+      const result = await controller.update(request, updateAccountDto, 1, file)
       expect(accountService.update).toHaveBeenCalledWith(
+        request.user,
         1,
         updateAccountDto,
         file,
@@ -308,7 +309,7 @@ describe('AccountController', () => {
       )
 
       await expect(
-        controller.update(request, updateAccountDto, undefined),
+        controller.update(request, updateAccountDto, 99, undefined),
       ).rejects.toThrow('Conta não encontrada')
     })
   })
