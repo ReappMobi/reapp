@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
-import { AccountType } from '@prisma/client'
+import { Account, AccountType, Institution, Prisma } from '@prisma/client'
 import * as bcrypt from 'bcrypt'
 import { OAuth2Client } from 'google-auth-library'
 import { PrismaService } from '../../database/prisma.service'
@@ -8,6 +8,7 @@ import {
   CreateAccountDto,
   CreateAccountGoogleDto,
 } from './dto/create-account.dto'
+import { GetAccountsQuery } from './dto/get-account-query.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
 import { UpdateAccountDto } from './dto/update-account.dto'
 
@@ -284,8 +285,8 @@ export class AccountService {
         institution: {
           include: {
             category: true,
-              },
-            },
+          },
+        },
         donor: true,
         media: true,
       },
@@ -569,24 +570,24 @@ export class AccountService {
         }
       }
 
-        data.institution = {
-          update: institutionData,
+      data.institution = {
+        update: institutionData,
       }
     }
 
     try {
-    const updatedAccount = await this.prismaService.account.update({
-      where: { id: accountId },
-      data,
-      select: {
+      const updatedAccount = await this.prismaService.account.update({
+        where: { id: accountId },
+        data,
+        select: {
           ...this.accountResponseFields,
           institution: true,
           donor: true,
-        media: true,
-      },
-    })
+          media: true,
+        },
+      })
 
-    return updatedAccount
+      return updatedAccount
     } catch {
       throw new HttpException(
         'erro ao atualizar conta',
