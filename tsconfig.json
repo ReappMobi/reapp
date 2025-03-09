@@ -10,7 +10,7 @@
     "sourceMap": true,
     "moduleResolution": "node",
     "outDir": "./dist",
-    "rootDir": "./",
+    "rootDir": "./",    
     "paths": {
       "@app/*": ["./src/*"]
     },
@@ -22,6 +22,7 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
   },
+  "include": ["src/**/*", "seeds/**/*", "test/**/*"],
   "exclude": ["node_modules", "dist"]
 
 }
