@@ -1,3 +1,4 @@
+import { AccountType } from '@prisma/client'
 import { Expose, Type } from 'class-transformer'
 import {
   IsEmail,
@@ -10,7 +11,6 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator'
-import { AccountType } from '@prisma/client'
 
 abstract class AccountField {
   @Expose()
