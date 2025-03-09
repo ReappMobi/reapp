@@ -480,15 +480,25 @@ export class AccountService {
   }
 
   async update(
+    currentAccount: Account,
     accountId: number,
     updateAccountDto: UpdateAccountDto,
     media?: Express.Multer.File,
   ) {
+    if (
+      currentAccount.id !== accountId &&
+      currentAccount.accountType !== AccountType.ADMIN
+    ) {
+      throw new HttpException(
+        'Você não pode atualizar essa conta',
+        HttpStatus.UNAUTHORIZED,
+      )
+    }
+
     const account = await this.prismaService.account.findUnique({
       where: { id: accountId },
       include: {
         institution: true,
-        donor: true,
       },
     })
 
@@ -496,19 +506,21 @@ export class AccountService {
       throw new HttpException('Conta não encontrada', HttpStatus.NOT_FOUND)
     }
 
-    const data: any = {}
-
-    if (updateAccountDto.name) {
-      data.name = updateAccountDto.name
+    const data: Prisma.AccountUpdateInput = {
+      name: updateAccountDto.name,
+      note: updateAccountDto.note,
     }
 
-    if (updateAccountDto.note) {
-      data.note = updateAccountDto.note
+    if (
+      updateAccountDto.status &&
+      currentAccount.accountType === AccountType.ADMIN
+    ) {
+      data.status = updateAccountDto.status
     }
 
     if (
       updateAccountDto.password &&
-      updateAccountDto.password == updateAccountDto.confirmPassword
+      updateAccountDto.password === updateAccountDto.confirmPassword
     ) {
       const hashedPassword = await bcrypt.hash(updateAccountDto.password, 10)
       data.passwordHash = hashedPassword
@@ -524,14 +536,17 @@ export class AccountService {
         accountId,
       })
 
-      data.avatarId = mediaAttachment.mediaAttachment.id
+      data.media = {
+        connect: {
+          id: mediaAttachment.mediaAttachment.id,
+        },
+      }
     }
 
     if (account.accountType === AccountType.INSTITUTION) {
-      const institutionData: any = {}
-
-      if (updateAccountDto.phone) {
-        institutionData.phone = updateAccountDto.phone
+      const institutionData: Prisma.InstitutionUpdateInput = {
+        phone: account.institution.phone,
+        cnpj: account.institution.cnpj,
       }
 
       if (updateAccountDto.category) {
@@ -554,40 +569,30 @@ export class AccountService {
         }
       }
 
-      if (Object.keys(institutionData).length > 0) {
         data.institution = {
           update: institutionData,
-        }
       }
     }
 
+    try {
     const updatedAccount = await this.prismaService.account.update({
       where: { id: accountId },
       data,
       select: {
-        id: true,
-        email: true,
-        name: true,
-        accountType: true,
-        avatarId: true,
+          ...this.accountResponseFields,
+          institution: true,
+          donor: true,
         media: true,
-        note: true,
-        institution: account.accountType === AccountType.INSTITUTION && {
-          select: {
-            cnpj: true,
-            phone: true,
-            category: {
-              select: {
-                name: true,
-              },
-            },
-            fields: true,
-          },
-        },
       },
     })
 
     return updatedAccount
+    } catch {
+      throw new HttpException(
+        'erro ao atualizar conta',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      )
+    }
   }
 
   async followAccount(followerId: number, followingId: number) {
