@@ -21,6 +21,7 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
     const roles = this.reflector.get<Role[]>(ROLES_KEY, context.getHandler())
+
     const token = this.extractTokenFromHeader(request)
     if (!token) {
       throw new UnauthorizedException('Nenhum token fornecido')
@@ -33,6 +34,10 @@ export class AuthGuard implements CanActivate {
       request['user'] = payload.user
     } catch {
       throw new UnauthorizedException('O token fornecido é inválido')
+    }
+
+    if (!roles) {
+      return true
     }
 
     const userRoles = request['user'].accountType as Role[]

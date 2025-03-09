@@ -1,5 +1,7 @@
+import { AccountStatus, AccountType } from '@prisma/client'
 import { Expose, Type } from 'class-transformer'
 import {
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -8,7 +10,6 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator'
-import { AccountType } from '@prisma/client'
 
 abstract class AccountField {
   @Expose()
@@ -65,4 +66,8 @@ export abstract class UpdateAccountDto {
   @IsOptional()
   @MinLength(8, { message: 'A senha deve ter no mínimo 8 caracteres.' })
   confirmPassword?: string
+
+  @IsOptional()
+  @IsEnum(AccountStatus, { message: 'O status deve ser um valor válido.' })
+  status?: AccountStatus
 }
