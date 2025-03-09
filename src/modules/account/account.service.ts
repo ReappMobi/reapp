@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
-import { AccountType } from '@prisma/client'
+import { Account, AccountType, Institution, Prisma } from '@prisma/client'
 import * as bcrypt from 'bcrypt'
 import { OAuth2Client } from 'google-auth-library'
 import { PrismaService } from '../../database/prisma.service'
@@ -8,6 +8,7 @@ import {
   CreateAccountDto,
   CreateAccountGoogleDto,
 } from './dto/create-account.dto'
+import { GetAccountsQuery } from './dto/get-account-query.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
 import { UpdateAccountDto } from './dto/update-account.dto'
 
@@ -213,6 +214,16 @@ export class AccountService {
     }
   }
 
+  private get accountResponseFields(): Prisma.AccountSelect {
+    return Object.keys(Prisma.AccountScalarFieldEnum).reduce(
+      (fields, field) => {
+        fields[field] = true
+        return fields
+      },
+      {} as Prisma.AccountSelect,
+    )
+  }
+
   async create(
     createAccountDto: CreateAccountDto,
     media?: Express.Multer.File,
@@ -260,32 +271,24 @@ export class AccountService {
     return await this.createDonor(createAccountDto)
   }
 
-  async findAll() {
+  async findAll({ status, type: accountType }: GetAccountsQuery) {
+    const where: Prisma.AccountWhereInput = {
+      accountType,
+      status,
+    }
+
     return await this.prismaService.account.findMany({
+      where,
       select: {
-        id: true,
-        email: true,
-        name: true,
-        accountType: true,
-        avatarId: true,
-        media: true,
-        donor: {
-          select: {
-            donations: true,
-          },
-        },
+        ...this.accountResponseFields,
+        passwordHash: false,
         institution: {
-          select: {
-            cnpj: true,
-            phone: true,
-            category: {
-              select: {
-                name: true,
-              },
-            },
-            fields: true,
+          include: {
+            category: true,
           },
         },
+        donor: true,
+        media: true,
       },
     })
   }
@@ -303,13 +306,11 @@ export class AccountService {
     const account = await this.prismaService.account.findUnique({
       where: { id },
       select: {
-        id: true,
-        email: true,
-        name: true,
-        accountType: true,
-        avatarId: true,
+        ...this.accountResponseFields,
+        passwordHash: false,
+        institution: true,
+        donor: true,
         media: true,
-        note: true,
       },
     })
 
@@ -480,15 +481,25 @@ export class AccountService {
   }
 
   async update(
+    currentAccount: Account,
     accountId: number,
     updateAccountDto: UpdateAccountDto,
     media?: Express.Multer.File,
   ) {
+    if (
+      currentAccount.id !== accountId &&
+      currentAccount.accountType !== AccountType.ADMIN
+    ) {
+      throw new HttpException(
+        'Você não pode atualizar essa conta',
+        HttpStatus.UNAUTHORIZED,
+      )
+    }
+
     const account = await this.prismaService.account.findUnique({
       where: { id: accountId },
       include: {
         institution: true,
-        donor: true,
       },
     })
 
@@ -496,19 +507,21 @@ export class AccountService {
       throw new HttpException('Conta não encontrada', HttpStatus.NOT_FOUND)
     }
 
-    const data: any = {}
-
-    if (updateAccountDto.name) {
-      data.name = updateAccountDto.name
+    const data: Prisma.AccountUpdateInput = {
+      name: updateAccountDto.name,
+      note: updateAccountDto.note,
     }
 
-    if (updateAccountDto.note) {
-      data.note = updateAccountDto.note
+    if (
+      updateAccountDto.status &&
+      currentAccount.accountType === AccountType.ADMIN
+    ) {
+      data.status = updateAccountDto.status
     }
 
     if (
       updateAccountDto.password &&
-      updateAccountDto.password == updateAccountDto.confirmPassword
+      updateAccountDto.password === updateAccountDto.confirmPassword
     ) {
       const hashedPassword = await bcrypt.hash(updateAccountDto.password, 10)
       data.passwordHash = hashedPassword
@@ -524,14 +537,17 @@ export class AccountService {
         accountId,
       })
 
-      data.avatarId = mediaAttachment.mediaAttachment.id
+      data.media = {
+        connect: {
+          id: mediaAttachment.mediaAttachment.id,
+        },
+      }
     }
 
     if (account.accountType === AccountType.INSTITUTION) {
-      const institutionData: any = {}
-
-      if (updateAccountDto.phone) {
-        institutionData.phone = updateAccountDto.phone
+      const institutionData: Prisma.InstitutionUpdateInput = {
+        phone: account.institution.phone,
+        cnpj: account.institution.cnpj,
       }
 
       if (updateAccountDto.category) {
@@ -554,40 +570,30 @@ export class AccountService {
         }
       }
 
-      if (Object.keys(institutionData).length > 0) {
-        data.institution = {
-          update: institutionData,
-        }
+      data.institution = {
+        update: institutionData,
       }
     }
 
-    const updatedAccount = await this.prismaService.account.update({
-      where: { id: accountId },
-      data,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        accountType: true,
-        avatarId: true,
-        media: true,
-        note: true,
-        institution: account.accountType === AccountType.INSTITUTION && {
-          select: {
-            cnpj: true,
-            phone: true,
-            category: {
-              select: {
-                name: true,
-              },
-            },
-            fields: true,
-          },
+    try {
+      const updatedAccount = await this.prismaService.account.update({
+        where: { id: accountId },
+        data,
+        select: {
+          ...this.accountResponseFields,
+          institution: true,
+          donor: true,
+          media: true,
         },
-      },
-    })
+      })
 
-    return updatedAccount
+      return updatedAccount
+    } catch {
+      throw new HttpException(
+        'erro ao atualizar conta',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      )
+    }
   }
 
   async followAccount(followerId: number, followingId: number) {

@@ -6,18 +6,23 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
+import { Account } from '@prisma/client'
 import { AuthGuard } from '../auth/auth.guard'
+import { Roles } from '../auth/docorators/roles.decorator'
+import { Role } from '../auth/enums/role.enum'
 import { AccountService } from './account.service'
 import {
   CreateAccountDto,
   CreateAccountGoogleDto,
 } from './dto/create-account.dto'
+import { GetAccountsQuery } from './dto/get-account-query.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
 import { UpdateAccountDto } from './dto/update-account.dto'
 
@@ -45,9 +50,10 @@ export class AccountController {
   }
 
   @UseGuards(AuthGuard)
+  @Roles(Role.Admin)
   @Get()
-  findAll() {
-    return this.accountService.findAll()
+  findAll(@Query() query: GetAccountsQuery) {
+    return this.accountService.findAll(query)
   }
 
   @UseGuards(AuthGuard)
@@ -98,15 +104,16 @@ export class AccountController {
   }
 
   @UseGuards(AuthGuard)
-  @Put()
+  @Put(':id')
   @UseInterceptors(FileInterceptor('media'))
   async update(
     @Req() request: any,
-    @Body() updateAccountDto: UpdateAccountDto,
+    @Body() body: UpdateAccountDto,
+    @Param('id') id: number,
     @UploadedFile() media: Express.Multer.File,
   ) {
-    const accountId = request.user.id
-    return this.accountService.update(accountId, updateAccountDto, media)
+    const user = request.user as Account
+    return this.accountService.update(user, +id, body, media)
   }
 
   @Post('reset-password')
