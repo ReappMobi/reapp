@@ -665,7 +665,7 @@ export class DonationService {
       }
 
       const whereClause = {
-        donorId: id,
+        donorId: userExist.donor.id,
         projectId: projectId ? projectId : undefined,
         institutionId: institutionId ? institutionId : undefined,
         status: {
@@ -710,6 +710,7 @@ export class DonationService {
         }),
       ])
 
+      console.log(donations)
       return {
         donations,
         totalAmount: totals._sum.amount || 0,
