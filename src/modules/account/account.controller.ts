@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -25,6 +26,7 @@ import {
 import { GetAccountsQuery } from './dto/get-account-query.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
 import { UpdateAccountDto } from './dto/update-account.dto'
+import { UpdateAccountStatusDto } from './dto/update-account-dto'
 
 @Controller('account')
 export class AccountController {
@@ -119,5 +121,12 @@ export class AccountController {
   @Post('reset-password')
   resetPassword(@Body() body: ResetPasswordDto) {
     return this.accountService.resetPassword(body)
+  }
+
+  @UseGuards(AuthGuard)
+  @Roles(Role.Admin)
+  @Patch(':id/status')
+  updateStatus(@Param('id') id: number, @Body() body: UpdateAccountStatusDto) {
+    return this.accountService.updateStatus(+id, body.status)
   }
 }

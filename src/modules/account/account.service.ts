@@ -1,5 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
-import { Account, AccountType, Institution, Prisma } from '@prisma/client'
+import {
+  Account,
+  AccountStatus,
+  AccountType,
+  Institution,
+  Prisma,
+} from '@prisma/client'
 import * as bcrypt from 'bcrypt'
 import { OAuth2Client } from 'google-auth-library'
 import { PrismaService } from '../../database/prisma.service'
@@ -744,5 +750,32 @@ export class AccountService {
     })
 
     return { message: 'Senha alterada com sucesso!' }
+  }
+
+  async updateStatus(id: number, status: AccountStatus) {
+    const account = await this.prismaService.account.findUnique({
+      where: { id },
+    })
+    if (!account) {
+      throw new HttpException('conta não encontrada', HttpStatus.NOT_FOUND)
+    }
+
+    try {
+      return await this.prismaService.account.update({
+        where: { id },
+        data: { status },
+        select: {
+          ...this.accountResponseFields,
+          institution: true,
+          donor: true,
+          media: true,
+        },
+      })
+    } catch {
+      throw new HttpException(
+        'erro ao atualizar status',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      )
+    }
   }
 }
