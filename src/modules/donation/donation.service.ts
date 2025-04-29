@@ -228,7 +228,17 @@ export class DonationService {
     const donations = await this.prismaService.donation.findMany({
       skip: (page - 1) * limit,
       take: Number(limit),
+      include: {
+        donor: {
+          select: {
+            account: {
+              select: { name: true },
+            },
+          },
+        },
+      },
     })
+
     return donations
   }
 

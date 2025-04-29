@@ -12,6 +12,8 @@ import { RequestDonationDto } from './dto/request-donation.dto'
 import { DonationService } from './donation.service'
 import { NotificationRequestDto } from './dto/notification.dto'
 import { AuthGuard } from '../auth/auth.guard'
+import { Role } from '../auth/enums/role.enum'
+import { Roles } from '../auth/docorators/roles.decorator'
 
 interface RequestWithUser extends Request {
   user?: { id: number }
@@ -35,8 +37,9 @@ export class DonationController {
   }
 
   @UseGuards(AuthGuard)
+  @Roles(Role.Admin)
   @Get('all')
-  findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
+  findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 30) {
     return this.donationService.getAllDonations(page, limit)
   }
 
