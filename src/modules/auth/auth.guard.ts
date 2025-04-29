@@ -35,7 +35,7 @@ export class AuthGuard implements CanActivate {
     } catch {
       throw new UnauthorizedException('O token fornecido é inválido')
     }
-    
+
     if (!roles) {
       return true
     }
