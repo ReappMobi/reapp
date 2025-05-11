@@ -1,12 +1,9 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common'
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 
+import { BackendErrorCodes } from '@app/types/errors'
+import { ReappException } from '@app/utils/error.utils'
 import { Request } from 'express'
 import { ROLES_KEY } from './docorators/roles.decorator'
 import { Role } from './enums/role.enum'
@@ -24,7 +21,7 @@ export class AuthGuard implements CanActivate {
 
     const token = this.extractTokenFromHeader(request)
     if (!token) {
-      throw new UnauthorizedException('Nenhum token fornecido')
+      throw new ReappException(BackendErrorCodes.INVALID_TOKEN_ERROR)
     }
 
     try {
@@ -33,7 +30,7 @@ export class AuthGuard implements CanActivate {
       })
       request['user'] = payload.user
     } catch {
-      throw new UnauthorizedException('O token fornecido é inválido')
+      throw new ReappException(BackendErrorCodes.INVALID_TOKEN_ERROR)
     }
 
     if (!roles) {
@@ -43,7 +40,7 @@ export class AuthGuard implements CanActivate {
     const userRoles = request['user'].accountType as Role[]
     const hasRole = () => roles.some((role) => userRoles.includes(role))
     if (!hasRole()) {
-      throw new UnauthorizedException('O usuário não tem permissão')
+      throw new ReappException(BackendErrorCodes.USER_NOT_AUTHORIZED_ERROR)
     }
 
     return true
