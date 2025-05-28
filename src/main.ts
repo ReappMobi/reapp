@@ -12,7 +12,7 @@ async function bootstrap() {
   // Enable CORS based on environment
   if (configService.isDevelopment) {
     app.enableCors({
-      origin: 'http://localhost:5174',
+      origin: configService.CLIENT_URL,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
       credentials: true,
     })
