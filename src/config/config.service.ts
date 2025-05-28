@@ -1,15 +1,19 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService as NestConfigService } from '@nestjs/config'
-import { ConfigType } from './config.schema'
+import { ConfigType, EnvEnumType } from './config.schema'
 
 @Injectable()
-export class ConfigService {
+export class ConfigService implements ConfigType {
   constructor(
     private readonly nestConfigService: NestConfigService<ConfigType, true>,
   ) {}
 
-  get NODE_ENV(): string {
+  get NODE_ENV(): EnvEnumType {
     return this.nestConfigService.get('NODE_ENV')
+  }
+
+  get CLIENT_URL(): string {
+    return this.nestConfigService.get('CLIENT_URL')
   }
 
   get PORT(): number {

@@ -1,14 +1,19 @@
 import { z } from 'zod'
 
+const envEnum = z
+  .enum(['development', 'production', 'test'])
+  .default('development')
+
 export const ConfigSchema = z.object({
   // Environment
-  NODE_ENV: z
-    .enum(['development', 'production', 'test'])
-    .default('development'),
+  NODE_ENV: envEnum,
 
   // Application
   APP_NAME: z.string().min(1).default('Reapp'),
   API_VERSION: z.string().min(1).default('v1'),
+
+  // Client url
+  CLIENT_URL: z.string().url().default('http://localhost:5173'),
 
   // Server
   PORT: z.coerce.number().default(3000),
@@ -36,4 +41,5 @@ export const ConfigSchema = z.object({
   MERCADOPAGO_NOTIFICATION_URL: z.string().min(1),
 })
 
+export type EnvEnumType = z.infer<typeof envEnum>
 export type ConfigType = z.infer<typeof ConfigSchema>
