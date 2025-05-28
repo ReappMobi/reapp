@@ -1,13 +1,16 @@
-import { NestFactory } from '@nestjs/core'
-import { AppModule } from './app.module'
-import { ValidationPipe } from '@nestjs/common'
-import * as express from 'express'
 import * as path from 'path'
+import { ValidationPipe } from '@nestjs/common'
+import { NestFactory } from '@nestjs/core'
+import * as express from 'express'
+import { AppModule } from './app.module'
+import { ConfigService } from './config/config.service'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
+  const configService = app.get(ConfigService)
 
-  if (process.env.NODE_ENV === 'development') {
+  // Enable CORS based on environment
+  if (configService.isDevelopment) {
     app.enableCors({
       origin: 'http://localhost:5174',
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
@@ -15,8 +18,12 @@ async function bootstrap() {
     })
   }
 
+  // Static files
   app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
   app.useGlobalPipes(new ValidationPipe())
-  await app.listen(3000)
+
+  // Listen on configured port
+  await app.listen(configService.PORT, configService.HOST)
 }
+
 bootstrap()
