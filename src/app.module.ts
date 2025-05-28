@@ -1,6 +1,8 @@
 import { BullModule } from '@nestjs/bull'
 import { Module } from '@nestjs/common'
 import { redisConfig } from './config'
+import { ConfigModule } from './config/config.module'
+import { ConfigService } from './config/config.service'
 import { AccountModule } from './modules/account/account.module'
 import { AuthenticationModule } from './modules/auth/auth.module'
 import { DonationModule } from './modules/donation/donation.module'
@@ -26,7 +28,8 @@ import { ProjectModule } from './modules/project/project.module'
     InstitutionMemberModule,
     PasswordRecoveryModule,
     MailModule,
+    ConfigModule,
   ],
-  providers: [MailService],
+  providers: [MailService, ConfigService],
 })
 export class AppModule {}
