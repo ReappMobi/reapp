@@ -29,6 +29,7 @@
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/bull": "^10.2.1",
     "@nestjs/common": "^10.0.0",
+    "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^10.0.0",
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/mapped-types": "*",
@@ -52,7 +53,8 @@
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "sharp": "^0.33.5",
-    "uuid": "^11.0.5"
+    "uuid": "^11.0.5",
+    "zod": "^3.25.32"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
