@@ -1,6 +1,6 @@
 import { BullModule } from '@nestjs/bull'
 import { Module } from '@nestjs/common'
-import { redisConfig } from './config'
+import { LoggerModule } from 'nestjs-pino'
 import { ConfigModule } from './config/config.module'
 import { ConfigService } from './config/config.service'
 import { AccountModule } from './modules/account/account.module'
@@ -17,18 +17,39 @@ import { ProjectModule } from './modules/project/project.module'
 
 @Module({
   imports: [
-    BullModule.forRoot({ redis: redisConfig }),
+    BullModule.forRoot({
+      redis: {
+        host: process.env.REDIS_HOST,
+        port: parseInt(process.env.REDIS_PORT),
+      },
+    }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+        base: {
+          pid: false,
+        },
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'HH:MM:ss Z',
+            ignore: 'pid,hostname',
+          },
+        },
+      },
+    }),
+    ConfigModule,
     AccountModule,
     AuthenticationModule,
     DonationModule,
+    InstitutionMemberModule,
+    MailModule,
     MediaAttachmentModule,
     MediaProcessingModule,
+    PasswordRecoveryModule,
     PostModule,
     ProjectModule,
-    InstitutionMemberModule,
-    PasswordRecoveryModule,
-    MailModule,
-    ConfigModule,
   ],
   providers: [MailService, ConfigService],
 })
