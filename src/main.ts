@@ -26,7 +26,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe())
   app.useLogger(app.get(Logger))
 
-  await app.listen(configService.PORT, configService.HOST)
+  await app.listen(configService.PORT)
 }
 
 bootstrap()
