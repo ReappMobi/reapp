@@ -1,3 +1,4 @@
+import * as fs from 'fs'
 import * as path from 'path'
 import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
@@ -10,8 +11,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
   })
-  const configService = app.get(ConfigService)
 
+  const appLogger = app.get(Logger)
+  app.useLogger(appLogger)
+
+  const configService = app.get(ConfigService)
   // Enable CORS based on environment
   if (configService.isDevelopment) {
     app.enableCors({
@@ -22,9 +26,62 @@ async function bootstrap() {
   }
 
   // Static files
-  app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
-  app.useGlobalPipes(new ValidationPipe())
-  app.useLogger(app.get(Logger))
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  )
+  appLogger.log('GlobalPipes (ValidationPipe) configured.', 'Bootstrap')
+
+  const uploadsDirectoryName = 'uploads'
+  const resolvedUploadsPath = path.join(
+    __dirname,
+    '..',
+    '..',
+    uploadsDirectoryName,
+  )
+
+  appLogger.log(
+    `Attempting to serve static files from virtual path '/${uploadsDirectoryName}'.`,
+    'Bootstrap',
+  )
+  appLogger.log(
+    `Physical path mapped to: '${resolvedUploadsPath}'`,
+    'Bootstrap',
+  )
+
+  // Check if the resolved path actually exists
+  if (fs.existsSync(resolvedUploadsPath)) {
+    const stats = fs.statSync(resolvedUploadsPath)
+    if (stats.isDirectory()) {
+      appLogger.log(
+        `Verified: Directory exists at '${resolvedUploadsPath}'.`,
+        'Bootstrap',
+      )
+      // Serve static files
+      app.use(`/${uploadsDirectoryName}`, express.static(resolvedUploadsPath))
+      appLogger.log(
+        `Successfully configured static serving for '/${uploadsDirectoryName}'. Access files at /${uploadsDirectoryName}/<filename>`,
+        'Bootstrap',
+      )
+    } else {
+      appLogger.error(
+        `Error: Path '${resolvedUploadsPath}' exists but is not a directory. Static serving NOT configured.`,
+        'Bootstrap',
+      )
+    }
+  } else {
+    appLogger.error(
+      `Error: Directory '${resolvedUploadsPath}' does NOT exist. Static serving NOT configured.`,
+      'Bootstrap',
+    )
+  }
+  // --- End Static files ---
 
   await app.listen(configService.PORT)
 }
