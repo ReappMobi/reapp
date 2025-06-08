@@ -31,12 +31,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
         with:
           node-version: "20.16.0"
+          cache: "pnpm"
       - run: sudo apt update && sudo apt install -y openssl
-      - run: npm ci
-      - run: npm run build
-      - run: npx prisma migrate deploy
-      - run: npm run test
-      # - run: npm run test:e2e
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm prisma migrate deploy
+      - run: pnpm test
+      # - run: pnpm test:e2e
