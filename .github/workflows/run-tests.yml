@@ -38,6 +38,7 @@ jobs:
       - run: sudo apt update && sudo apt install -y openssl
       - run: pnpm install
       - run: pnpm prisma migrate deploy
+      - run: pnpm prisma generate
       - run: pnpm build
       - run: pnpm test
       # - run: pnpm test:e2e
