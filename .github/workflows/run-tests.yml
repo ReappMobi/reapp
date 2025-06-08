@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-22.04
     services:
       postgres:
-        image: postgres:latest
+        image: postgres:17-alpine3.21
         env:
           POSTGRES_USER: reapp
           POSTGRES_PASSWORD: reapp
