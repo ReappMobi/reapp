@@ -1,20 +1,22 @@
 # .github/workflows/test.yamname: Run tests
 
-name: Run tests
+name: CI - Run Tests on Develop
 on:
   push:
     branches:
-      - main
       - develop
+  pull_request:
+    branches:
+      - main
 jobs:
   tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     services:
       postgres:
-        image: postgres:latest
+        image: postgres:17-alpine3.21
         env:
-          POSTGRES_USER: reapp
-          POSTGRES_PASSWORD: reapp
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -23,18 +25,20 @@ jobs:
         ports:
           - 5432:5432
     env:
-      DATABASE_URL: postgresql://reapp:reapp@localhost:5432/test
+      DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?connection_limit=1
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       MERCADOPAGO_NOTIFICATION_URL: http://test.reapp/donation/notify
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
         with:
-          node-version: '20.16.0'
+          node-version: "20.16.0"
+          cache: "pnpm"
       - run: sudo apt update && sudo apt install -y openssl
-      - run: npm ci
-      - run: npm run build
-      - run: npx prisma migrate deploy
-      - run: npm run test
-      # - run: npm run test:e2e
+      - run: pnpm install
+      - run: pnpm prisma migrate deploy
+      - run: pnpm prisma generate
+      - run: pnpm build
+      - run: pnpm test
+      # - run: pnpm test:e2e
