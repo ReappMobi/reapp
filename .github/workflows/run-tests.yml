@@ -37,7 +37,7 @@ jobs:
           cache: "pnpm"
       - run: sudo apt update && sudo apt install -y openssl
       - run: pnpm install
-      - run: pnpm build
       - run: pnpm prisma migrate deploy
+      - run: pnpm build
       - run: pnpm test
       # - run: pnpm test:e2e
