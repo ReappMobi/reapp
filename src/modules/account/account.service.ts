@@ -6,7 +6,7 @@ import {
   Institution,
   Prisma,
 } from '@prisma/client'
-import * as bcrypt from 'bcrypt'
+import * as bcrypt from 'bcryptjs'
 import { OAuth2Client } from 'google-auth-library'
 import { PrismaService } from '../../database/prisma.service'
 import { MediaService } from '../media-attachment/media-attachment.service'
