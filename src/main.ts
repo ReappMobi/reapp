@@ -3,7 +3,7 @@ import * as path from 'path'
 import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import * as express from 'express'
-import { Logger } from 'nestjs-pino'
+import { Logger, LoggerErrorInterceptor } from 'nestjs-pino'
 import { AppModule } from './app.module'
 import { ConfigService } from './config/config.service'
 
@@ -14,6 +14,7 @@ async function bootstrap() {
 
   const appLogger = app.get(Logger)
   app.useLogger(appLogger)
+  app.useGlobalInterceptors(new LoggerErrorInterceptor())
 
   const configService = app.get(ConfigService)
   // Enable CORS based on environment
