@@ -1,10 +1,6 @@
 import { BackendErrorCodes } from '@app/types/errors'
 import { ReappException } from '@app/utils/error.utils'
-import {
-  ArgumentMetadata,
-  BadRequestException,
-  PipeTransform,
-} from '@nestjs/common'
+import { ArgumentMetadata, PipeTransform } from '@nestjs/common'
 import { ZodError, ZodSchema } from 'zod'
 
 export class ZodValidationPipe implements PipeTransform {
