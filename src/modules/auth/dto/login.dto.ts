@@ -1,14 +1,14 @@
-import { Expose } from 'class-transformer'
+import { z } from 'zod'
 
-import { IsEmail, IsNotEmpty } from 'class-validator'
+export const LoginSchema = z.object({
+  email: z
+    .string({
+      required_error: 'O email é obrigatório',
+    })
+    .email({ message: 'Email inválido' }),
+  password: z
+    .string({ required_error: 'A senha é obrigatória' })
+    .min(8, { message: 'Senha deve ter no mínimo 8 caracteres' }),
+})
 
-export class LoginDto {
-  @Expose()
-  @IsEmail({}, { message: 'O formato de email é inválido.' })
-  @IsNotEmpty({ message: 'O email é obrigatório.' })
-  email: string
-
-  @Expose()
-  @IsNotEmpty({ message: 'A senha é obrigatória.' })
-  password: string
-}
+export type LoginDto = z.infer<typeof LoginSchema>

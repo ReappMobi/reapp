@@ -10,6 +10,8 @@ export enum BackendErrorCodes {
   USER_NOT_FOUND_ERROR = 'USER_NOT_FOUND_ERROR',
   INVALID_TOKEN_ERROR = 'INVALID_TOKEN_ERROR',
   USER_NOT_AUTHORIZED_ERROR = 'USER_NOT_AUTHORIZED_ERROR',
+
+  ZOD_VALIDATION_ERROR = 'ZOD_VALIDATION_ERROR',
 }
 
 const GenericErrors = {
@@ -38,4 +40,16 @@ const AuthErrors = {
   },
 }
 
-export const BackendErrors = { ...GenericErrors, ...AuthErrors }
+const ZodErrors = {
+  [BackendErrorCodes.ZOD_VALIDATION_ERROR]: {
+    status: 400,
+    description: 'Erro de validação de dados',
+    data: [],
+  },
+}
+
+export const BackendErrors = {
+  ...GenericErrors,
+  ...AuthErrors,
+  ...ZodErrors,
+} as const
