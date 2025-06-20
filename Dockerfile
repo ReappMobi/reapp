@@ -29,6 +29,8 @@ COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist/src ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
 
+RUN mkdir -p uploads
+
 USER node
 
 ENTRYPOINT [ "sh", "-c", "npx prisma migrate deploy && node dist/main.js" ]
