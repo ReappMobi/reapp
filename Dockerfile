@@ -14,7 +14,7 @@ RUN corepack enable && corepack prepare pnpm@10.12.1 --activate
 
 FROM base AS installer
 
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --ignore-scripts
 
 FROM base AS builder
 
@@ -27,7 +27,8 @@ FROM base AS runner
 
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist/src ./dist
+COPY --from=builder /usr/src/app/prisma ./prisma
 
 USER node
 
-ENTRYPOINT [ "node", "dist/main.js"]
+ENTRYPOINT [ "sh", "-c", "npx prisma migrate deploy && node dist/main.js" ]
