@@ -30,7 +30,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - app_uploads:/usr/src/reapp/uploads
+      - /var/www/reapp/uploads:/usr/src/app/uploads
     env_file:
       - .env
     depends_on:
@@ -70,6 +70,5 @@ services:
 
 volumes:
   postgres_data:
-  app_uploads:
   letsencrypt:
   traefik_logs:
