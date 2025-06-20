@@ -1,27 +1,32 @@
-FROM node:alpine3.20 AS builder
+FROM node:lts-alpine3.21 AS base
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 
 WORKDIR /usr/src/app
 
-COPY package*.json ./
+RUN apk add --no-cache openssl
 
-RUN npm install
+COPY package.json pnpm-lock.yaml ./
 
-COPY prisma ./prisma
+RUN corepack enable && corepack prepare pnpm@10.12.1 --activate
 
+FROM base AS installer
+
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+
+FROM base AS builder
+
+COPY --from=installer /usr/src/app/node_modules ./node_modules
 COPY . .
 
-RUN npx prisma generate && \
-    npm run build
+RUN pnpm prisma generate && pnpm build && pnpm prune --production --ignore-scripts
 
-FROM node:alpine3.20
+FROM base AS runner
 
-WORKDIR /usr/src/app
-
-COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/node_modules ./node_modules
-COPY --from=builder /usr/src/app/package*.json ./
-COPY --from=builder /usr/src/app/prisma ./prisma 
+COPY --from=builder /usr/src/app/dist/src ./dist
 
-EXPOSE 3000
+USER node
 
-CMD ["node", "dist/src/main.js"]
+ENTRYPOINT [ "node", "dist/main.js"]
