@@ -1,14 +1,36 @@
 services:
-  app:
+  traefik:
+    image: traefik:v3.4
+    command:
+      - "--api.dashboard=true"
+      - "--log.level=INFO"
+      - "--accesslog=true"
+      - "--providers.docker"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.websecure.address=:443"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--certificatesResolvers.myresolver.acme.tlsChallenge=true"
+      - "--certificatesResolvers.myresolver.acme.email=reapp@gmail.com"
+      - "--certificatesResolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock
+      - traefik_logs:/logs
+
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    command: ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
-    container_name: app
+    container_name: reapp
     ports:
       - "3000:3000"
     volumes:
-      - app_uploads:/usr/src/app/uploads
+      - app_uploads:/usr/src/reapp/uploads
     env_file:
       - .env
     depends_on:
@@ -16,13 +38,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`reapp.dev.br`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=myresolver"
+      - "traefik.http.services.backend.loadbalancer.server.port=3000"
 
   database:
     container_name: database
     image: postgres:17-alpine3.21
     restart: always
     healthcheck:
-      test: ['CMD', 'pg_isready', '-q', '-d', 'reapp', '-U', 'reapp']
+      test: ["CMD", "pg_isready", "-q", "-d", "reapp", "-U", "reapp"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -43,3 +71,5 @@ services:
 volumes:
   postgres_data:
   app_uploads:
+  letsencrypt:
+  traefik_logs:
