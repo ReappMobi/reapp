@@ -1,0 +1,22 @@
+[variables]
+NODE_ENV = "production"
+
+[phases.setup]
+nixPkgs = ["nodejs_22", "openssl"]
+
+[phases.install]
+cmds = [
+  "npm install -g corepack@0.24.1",
+  "corepack enable",
+  "pnpm install --ignore-scripts"
+]
+
+[phases.build]
+cmds = [
+  "pnpm prisma migrate deploy",
+  "pnpm build",
+  "pnpm prune --production --ignore-scripts"
+]
+
+[start]
+cmd="node dist/src/main.js"
