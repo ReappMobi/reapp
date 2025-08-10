@@ -13,10 +13,10 @@ cmds = [
 
 [phases.build]
 cmds = [
-  "pnpm prisma migrate deploy",
+  "pnpm prisma generate",
   "pnpm build",
   "pnpm prune --production --ignore-scripts"
 ]
 
 [start]
-cmd="node dist/src/main.js"
+cmd="pnpm dlx prisma migrate deploy && node dist/src/main.js"
