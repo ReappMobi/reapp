@@ -43,7 +43,7 @@ async function bootstrap() {
 
   const resolvedUploadsPath = path.resolve(
     process.cwd(),
-    'dist',
+    '..',
     uploadsDirectoryName,
   )
 
