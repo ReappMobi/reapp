@@ -40,12 +40,7 @@ async function bootstrap() {
   appLogger.log('GlobalPipes (ValidationPipe) configured.', 'Bootstrap')
 
   const uploadsDirectoryName = 'uploads'
-
-  const resolvedUploadsPath = path.resolve(
-    process.cwd(),
-    '..',
-    uploadsDirectoryName,
-  )
+  const resolvedUploadsPath = path.resolve(process.cwd(), uploadsDirectoryName)
 
   appLogger.log(
     `Attempting to serve static files from virtual path '/${uploadsDirectoryName}'.`,
