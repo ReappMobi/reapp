@@ -29,6 +29,7 @@ export const ConfigSchema = z.object({
   // Redis
   REDIS_HOST: z.string().min(1).default('redis'),
   REDIS_PORT: z.coerce.number().default(6379),
+  REDIS_PASSWORD: z.string(),
 
   // Email
   EMAIL_HOST: z.string().min(1),
