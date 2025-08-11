@@ -1,6 +1,8 @@
 FROM node:lts-alpine3.21 AS base
 
 ENV NODE_ENV=production
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 
 WORKDIR /usr/src/app
 
@@ -27,8 +29,8 @@ COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist/src ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
 
-RUN mkdir dir/uploads
+RUN mkdir uploads
 
 USER node
 
-ENTRYPOINT [ "sh", "-c", "npx prisma migrate deploy && node dist/main.js" ]
+ENTRYPOINT [ "sh", "-c", "node dist/main.js" ]

@@ -5,4 +5,6 @@ Dockerfile
 uploads/
 .env
 docker-compose.yml
-
+.git
+.gitignore
+*.md
