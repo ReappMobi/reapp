@@ -329,6 +329,11 @@ export class AccountService {
 
   async findAllInstitutions(followerId: number) {
     const allInstitutions = await this.prismaService.institution.findMany({
+      where: {
+        account: {
+          status: 'ACTIVE',
+        },
+      },
       select: {
         id: true,
         cnpj: true,
