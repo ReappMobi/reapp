@@ -18,6 +18,8 @@ import { GetAccountsQuery } from './dto/get-account-query.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
 import { UpdateAccountDto } from './dto/update-account.dto'
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
+import { ReappException } from '@app/utils/error.utils'
+import { BackendErrorCodes } from '@app/types/errors'
 
 const donorResponseFields = {
   id: true,
@@ -59,6 +61,8 @@ const institutionResponseFields = {
   note: true,
 }
 
+const PASSWORD_HASH_SALT = 10
+
 @Injectable()
 export class AccountService {
   private client: OAuth2Client
@@ -85,20 +89,16 @@ export class AccountService {
 
         if (emailExists) {
           this.logger.warn({ email }, 'createInstitution: email já cadastrado')
-          throw new HttpException(
-            'este email já está cadastrado',
-            HttpStatus.BAD_REQUEST,
-          )
+          throw new ReappException(BackendErrorCodes.EMAIL_ALREADY_REGISTERED)
         }
         if (cnpjExists) {
           this.logger.warn(
             { cnpj: createAccountDto.cnpj },
             'createInstitution: cnpj já cadastrado',
           )
-          throw new HttpException(
-            'este cnpj já está cadastrado',
-            HttpStatus.BAD_REQUEST,
-          )
+          throw new ReappException(BackendErrorCodes.CNPJ_ALREADY_REGISTERED, {
+            cnpj: createAccountDto.cnpj,
+          })
         }
 
         let category = await tx.category.findFirst({
@@ -110,11 +110,14 @@ export class AccountService {
           })
         }
 
-        const hashedPassword = await bcrypt.hash(createAccountDto.password, 10)
+        const hashedPassword = await bcrypt.hash(
+          createAccountDto.password,
+          PASSWORD_HASH_SALT,
+        )
 
         const account = await tx.account.create({
           data: {
-            accountType: 'INSTITUTION',
+            accountType: AccountType.INSTITUTION,
             email,
             passwordHash: hashedPassword,
             name: createAccountDto.name,
@@ -127,7 +130,7 @@ export class AccountService {
                 phone: createAccountDto.phone,
               },
             },
-            status: 'PENDING',
+            status: AccountStatus.PENDING,
           },
           select: { id: true },
         })
@@ -138,10 +141,7 @@ export class AccountService {
               { email, mimetype: media.mimetype },
               'createInstitution: avatar não é imagem',
             )
-            throw new HttpException(
-              'Avatar deve ser uma imagem',
-              HttpStatus.UNPROCESSABLE_ENTITY,
-            )
+            throw new ReappException(BackendErrorCodes.AVATAR_MUST_BE_IMAGE)
           }
 
           try {
@@ -176,10 +176,7 @@ export class AccountService {
         { err, email, cnpj: createAccountDto.cnpj },
         'createInstitution: erro inesperado',
       )
-      throw new HttpException(
-        'erro ao criar conta',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
+      throw new ReappException(BackendErrorCodes.INTERNAL_SERVER_ERROR)
     }
   }
 
@@ -194,20 +191,23 @@ export class AccountService {
         const emailExists = await tx.account.findFirst({ where: { email } })
         if (emailExists) {
           this.logger.warn({ email }, 'createDonor: email já cadastrado')
-          throw new HttpException(
-            'este email já está cadastrado',
-            HttpStatus.BAD_REQUEST,
-          )
+          throw new ReappException(BackendErrorCodes.EMAIL_ALREADY_REGISTERED, {
+            email,
+          })
         }
 
-        const hashedPassword = await bcrypt.hash(createAccountDto.password, 10)
+        const hashedPassword = await bcrypt.hash(
+          createAccountDto.password,
+          PASSWORD_HASH_SALT,
+        )
         const { id: accountId } = await tx.account.create({
           data: {
+            accountType: AccountType.DONOR,
             email,
             passwordHash: hashedPassword,
             name: createAccountDto.name,
             note: createAccountDto.note,
-            status: 'ACTIVE',
+            status: AccountStatus.ACTIVE,
             donor: { create: {} },
           },
           select: { id: true },
@@ -219,10 +219,7 @@ export class AccountService {
               { email, mimetype: media.mimetype },
               'createDonor: avatar não é imagem',
             )
-            throw new HttpException(
-              'Avatar deve ser uma imagem',
-              HttpStatus.UNPROCESSABLE_ENTITY,
-            )
+            throw new ReappException(BackendErrorCodes.AVATAR_MUST_BE_IMAGE)
           }
 
           try {
@@ -254,10 +251,7 @@ export class AccountService {
     } catch (err) {
       if (err instanceof HttpException) throw err
       this.logger.error({ err, email }, 'createDonor: erro inesperado')
-      throw new HttpException(
-        'erro ao criar conta',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
+      throw new ReappException(BackendErrorCodes.INTERNAL_SERVER_ERROR)
     }
   }
 
@@ -312,7 +306,9 @@ export class AccountService {
     })
     if (emailExists) {
       this.logger.warn({ email }, 'createWithGoogle: email já cadastrado')
-      throw new HttpException('email já cadastrado', HttpStatus.BAD_REQUEST)
+      throw new ReappException(BackendErrorCodes.EMAIL_ALREADY_REGISTERED, {
+        email,
+      })
     }
 
     const createAccountDto: CreateAccountDto = {
@@ -382,7 +378,9 @@ export class AccountService {
 
     if (!account) {
       this.logger.warn({ id }, 'findOne: conta não encontrada')
-      throw new HttpException('conta não encontrada', HttpStatus.NOT_FOUND)
+      throw new ReappException(BackendErrorCodes.ACCOUNT_NOT_FOUND_ERROR, {
+        id,
+      })
     }
 
     return account
@@ -392,7 +390,7 @@ export class AccountService {
     const allInstitutions = await this.prismaService.institution.findMany({
       where: {
         account: {
-          status: 'ACTIVE',
+          status: AccountStatus.ACTIVE,
         },
       },
       select: {
@@ -445,7 +443,6 @@ export class AccountService {
       where: { accountId: id },
       select: {
         id: true,
-        cnpj: true,
         phone: true,
         category: {
           select: {
@@ -471,9 +468,9 @@ export class AccountService {
         { accountId: id },
         'findOneInstitution: conta não encontrada',
       )
-      throw new HttpException(
-        'conta da instituição não encontrada',
-        HttpStatus.NOT_FOUND,
+      throw new ReappException(
+        BackendErrorCodes.INSTITUTION_ACCOUNT_NOT_FOUND_ERROR,
+        { accountId: id },
       )
     }
 
@@ -528,14 +525,16 @@ export class AccountService {
 
     if (!account) {
       this.logger.warn({ accountId }, 'remove: conta não encontrada (auth)')
-      throw new HttpException('Conta não encontrada', HttpStatus.NOT_FOUND)
+      throw new ReappException(BackendErrorCodes.ACCOUNT_NOT_FOUND_ERROR, {
+        id: accountId,
+      })
     }
     if (account.id !== id) {
       this.logger.warn(
         { requesterId: accountId, targetId: id },
         'remove: acesso não autorizado',
       )
-      throw new HttpException('Acesso não autorizado', HttpStatus.UNAUTHORIZED)
+      throw new ReappException(BackendErrorCodes.USER_NOT_AUTHORIZED_ERROR)
     }
 
     if (account.avatarId) {
@@ -553,7 +552,9 @@ export class AccountService {
     } catch (error: any) {
       if (error?.code === 'P2025') {
         this.logger.warn({ id }, 'remove: conta não encontrada (P2025)')
-        throw new HttpException('conta não encontrada', HttpStatus.NOT_FOUND)
+        throw new ReappException(BackendErrorCodes.ACCOUNT_NOT_FOUND_ERROR, {
+          id,
+        })
       }
       this.logger.error(
         { err: error, id },
@@ -580,10 +581,7 @@ export class AccountService {
         { requesterId: currentAccount.id, targetId: accountId },
         'update: acesso não autorizado',
       )
-      throw new HttpException(
-        'Você não pode atualizar essa conta',
-        HttpStatus.UNAUTHORIZED,
-      )
+      throw new ReappException(BackendErrorCodes.USER_NOT_AUTHORIZED_ERROR)
     }
 
     const account = await this.prismaService.account.findUnique({
@@ -592,7 +590,9 @@ export class AccountService {
     })
     if (!account) {
       this.logger.warn({ accountId }, 'update: conta não encontrada')
-      throw new HttpException('Conta não encontrada', HttpStatus.NOT_FOUND)
+      throw new ReappException(BackendErrorCodes.ACCOUNT_NOT_FOUND_ERROR, {
+        id: accountId,
+      })
     }
 
     const data: Prisma.AccountUpdateInput = {
@@ -609,7 +609,10 @@ export class AccountService {
       updateAccountDto.password &&
       updateAccountDto.password === updateAccountDto.confirmPassword
     ) {
-      const hashedPassword = await bcrypt.hash(updateAccountDto.password, 10)
+      const hashedPassword = await bcrypt.hash(
+        updateAccountDto.password,
+        PASSWORD_HASH_SALT,
+      )
       data.passwordHash = hashedPassword
     }
 
@@ -682,10 +685,10 @@ export class AccountService {
     })
 
     if (existRegister) {
-      throw new HttpException(
-        `O usuário já segue essa conta`,
-        HttpStatus.BAD_REQUEST,
-      )
+      throw new ReappException(BackendErrorCodes.ALREADY_FOLLOWING, {
+        followerId,
+        followingId,
+      })
     }
 
     const existingFollowingAccount = await this.prismaService.account.findFirst(
@@ -695,10 +698,9 @@ export class AccountService {
     )
 
     if (!existingFollowingAccount) {
-      throw new HttpException(
-        `Conta com ID ${followerId} não encontrada`,
-        HttpStatus.NOT_FOUND,
-      )
+      throw new ReappException(BackendErrorCodes.ACCOUNT_NOT_FOUND_ERROR, {
+        id: followingId,
+      })
     }
 
     const existingFollowerAccount = await this.prismaService.account.findFirst({
@@ -706,10 +708,9 @@ export class AccountService {
     })
 
     if (!existingFollowerAccount) {
-      throw new HttpException(
-        `Conta com ID ${followerId} não encontrada`,
-        HttpStatus.NOT_FOUND,
-      )
+      throw new ReappException(BackendErrorCodes.ACCOUNT_NOT_FOUND_ERROR, {
+        id: followerId,
+      })
     }
 
     await this.prismaService.account.update({
@@ -736,10 +737,10 @@ export class AccountService {
     })
 
     if (!existRegister) {
-      throw new HttpException(
-        `O usuário já segue essa conta`,
-        HttpStatus.BAD_REQUEST,
-      )
+      throw new ReappException(BackendErrorCodes.NOT_FOLLOWING, {
+        followerId,
+        followingId,
+      })
     }
 
     const existingFollowingAccount = await this.prismaService.account.findFirst(
@@ -749,10 +750,9 @@ export class AccountService {
     )
 
     if (!existingFollowingAccount) {
-      throw new HttpException(
-        `Conta com ID ${followerId} não encontrada`,
-        HttpStatus.NOT_FOUND,
-      )
+      throw new ReappException(BackendErrorCodes.ACCOUNT_NOT_FOUND_ERROR, {
+        id: followingId,
+      })
     }
 
     const existingFollowerAccount = await this.prismaService.account.findFirst({
@@ -760,10 +760,9 @@ export class AccountService {
     })
 
     if (!existingFollowerAccount) {
-      throw new HttpException(
-        `Conta com ID ${followerId} não encontrada`,
-        HttpStatus.NOT_FOUND,
-      )
+      throw new ReappException(BackendErrorCodes.ACCOUNT_NOT_FOUND_ERROR, {
+        id: followerId,
+      })
     }
 
     await this.prismaService.account.update({
@@ -784,11 +783,11 @@ export class AccountService {
   async resetPassword(data: ResetPasswordDto) {
     const { token: tokenId, password, passwordConfirmation } = data
     if (!tokenId) {
-      throw new HttpException('Token inválido', HttpStatus.BAD_REQUEST)
+      throw new ReappException(BackendErrorCodes.INVALID_TOKEN_ERROR)
     }
 
     if (password !== passwordConfirmation) {
-      throw new HttpException('Senhas não conferem', HttpStatus.BAD_REQUEST)
+      throw new ReappException(BackendErrorCodes.PASSWORD_MISMATCH)
     }
 
     const token = await this.prismaService.token.findFirst({
@@ -808,10 +807,12 @@ export class AccountService {
     })
 
     if (!token) {
-      throw new HttpException('Token inválido', HttpStatus.BAD_REQUEST)
+      throw new ReappException(BackendErrorCodes.INVALID_TOKEN_ERROR, {
+        token: tokenId,
+      })
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(password, PASSWORD_HASH_SALT)
 
     await this.prismaService.account.update({
       where: { id: token.account.id },
@@ -832,7 +833,9 @@ export class AccountService {
     })
     if (!account) {
       this.logger.warn({ id }, 'updateStatus: conta não encontrada')
-      throw new HttpException('conta não encontrada', HttpStatus.NOT_FOUND)
+      throw new ReappException(BackendErrorCodes.ACCOUNT_NOT_FOUND_ERROR, {
+        id,
+      })
     }
 
     try {
