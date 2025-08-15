@@ -28,6 +28,7 @@ import {
   SUPPORTED_MIME_TYPES,
   VIDEO_MIME_TYPES,
 } from './media-attachment.constants'
+import { Prisma, PrismaClient } from '@prisma/client'
 
 interface VideoMetadata {
   length: string
@@ -54,6 +55,10 @@ type UploadOptions = {
   accountId: number
   description?: string
   focus?: string
+}
+
+function prismaOf(service: PrismaService | Prisma.TransactionClient) {
+  return service as unknown as PrismaClient
 }
 
 @Injectable()
@@ -197,6 +202,7 @@ export class MediaService {
   private async processSynchronously(
     file: Express.Multer.File,
     options: UploadOptions,
+    prisma?: Prisma.TransactionClient,
   ) {
     const fileType = this.getFileType(file.mimetype)
 
@@ -268,7 +274,8 @@ export class MediaService {
       }
     }
 
-    const mediaAttachment = await this.prismaService.mediaAttachment.create({
+    const db = prisma ?? this.prismaService
+    const mediaAttachment = await prismaOf(db).mediaAttachment.create({
       data: {
         id: mediaId,
         fileFileName: file.originalname,
@@ -297,11 +304,14 @@ export class MediaService {
         thumbnailContentType: true,
       },
     })
-
     return mediaAttachment
   }
 
-  async processMedia(file: Express.Multer.File, options: UploadOptions) {
+  async processMedia(
+    file: Express.Multer.File,
+    options: UploadOptions,
+    prisma?: Prisma.TransactionClient,
+  ) {
     const { thumbnail, accountId, description, focus } = options
 
     if (!file) {
@@ -324,21 +334,29 @@ export class MediaService {
     const isSynchronous = this.isSynchronous(file)
 
     if (isSynchronous) {
-      const mediaAttachment = await this.processSynchronously(file, {
+      const mediaAttachment = await this.processSynchronously(
+        file,
+        {
+          thumbnail,
+          accountId,
+          description,
+          focus,
+        },
+        prisma,
+      ) // <-- passe o prisma/tx
+      return { isSynchronous, mediaAttachment }
+    }
+
+    const mediaAttachment = await this.enqueueMediaProcessing(
+      file,
+      {
         thumbnail,
         accountId,
         description,
         focus,
-      })
-      return { isSynchronous, mediaAttachment }
-    }
-
-    const mediaAttachment = await this.enqueueMediaProcessing(file, {
-      thumbnail,
-      accountId,
-      description,
-      focus,
-    })
+      },
+      prisma,
+    ) // <-- passe o prisma/tx
     return { isSynchronous, mediaAttachment }
   }
 
@@ -383,6 +401,7 @@ export class MediaService {
       description: string
       focus: string
     },
+    prisma?: Prisma.TransactionClient,
   ) {
     const { thumbnail, accountId, description, focus } = options
     this.validateMediaFile(file)
@@ -423,7 +442,9 @@ export class MediaService {
 
     const type = this.getMediaTypeFromMime(file.mimetype)
 
-    const mediaAttachment = await this.prismaService.mediaAttachment.create({
+    const db = prisma ?? this.prismaService
+
+    const mediaAttachment = await prismaOf(db).mediaAttachment.create({
       data: {
         id: mediaId,
         fileFileName: file.originalname,

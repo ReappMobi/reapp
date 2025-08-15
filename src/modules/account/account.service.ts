@@ -17,6 +17,7 @@ import {
 import { GetAccountsQuery } from './dto/get-account-query.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
 import { UpdateAccountDto } from './dto/update-account.dto'
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 
 const donorResponseFields = {
   id: true,
@@ -64,6 +65,7 @@ export class AccountService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly mediaService: MediaService,
+    @InjectPinoLogger(AccountService.name) private readonly logger: PinoLogger,
   ) {
     this.client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
   }
@@ -73,88 +75,107 @@ export class AccountService {
     media?: Express.Multer.File,
   ) {
     const email = createAccountDto.email.toLowerCase()
-    const emailExists = await this.prismaService.account.findFirst({
-      where: { email },
-    })
-
-    const cnpjExists = await this.prismaService.institution.findFirst({
-      where: { cnpj: createAccountDto.cnpj },
-    })
-
-    if (emailExists) {
-      throw new HttpException(
-        'este email já está cadastrado',
-        HttpStatus.BAD_REQUEST,
-      )
-    }
-
-    if (cnpjExists) {
-      throw new HttpException(
-        'este cnpj já está cadastrado',
-        HttpStatus.BAD_REQUEST,
-      )
-    }
 
     try {
-      let category = await this.prismaService.category.findFirst({
-        where: { name: createAccountDto.category },
-      })
+      return await this.prismaService.$transaction(async (tx) => {
+        const [emailExists, cnpjExists] = await Promise.all([
+          tx.account.findFirst({ where: { email } }),
+          tx.institution.findFirst({ where: { cnpj: createAccountDto.cnpj } }),
+        ])
 
-      if (!category) {
-        category = await this.prismaService.category.create({
-          data: {
-            name: createAccountDto.category,
-          },
+        if (emailExists) {
+          this.logger.warn({ email }, 'createInstitution: email já cadastrado')
+          throw new HttpException(
+            'este email já está cadastrado',
+            HttpStatus.BAD_REQUEST,
+          )
+        }
+        if (cnpjExists) {
+          this.logger.warn(
+            { cnpj: createAccountDto.cnpj },
+            'createInstitution: cnpj já cadastrado',
+          )
+          throw new HttpException(
+            'este cnpj já está cadastrado',
+            HttpStatus.BAD_REQUEST,
+          )
+        }
+
+        let category = await tx.category.findFirst({
+          where: { name: createAccountDto.category },
         })
-      }
+        if (!category) {
+          category = await tx.category.create({
+            data: { name: createAccountDto.category },
+          })
+        }
 
-      const hashedPassword = await bcrypt.hash(createAccountDto.password, 10)
-      const account = await this.prismaService.account.create({
-        data: {
-          accountType: 'INSTITUTION',
-          email: email,
-          passwordHash: hashedPassword,
-          name: createAccountDto.name,
-          note: createAccountDto.note,
-          institution: {
-            create: {
-              fields: {
-                createMany: {
-                  data: [],
-                },
+        const hashedPassword = await bcrypt.hash(createAccountDto.password, 10)
+
+        const account = await tx.account.create({
+          data: {
+            accountType: 'INSTITUTION',
+            email,
+            passwordHash: hashedPassword,
+            name: createAccountDto.name,
+            note: createAccountDto.note,
+            institution: {
+              create: {
+                fields: { createMany: { data: [] } },
+                category: { connect: { id: category.id } },
+                cnpj: createAccountDto.cnpj,
+                phone: createAccountDto.phone,
               },
-              category: {
-                connect: {
-                  id: category.id,
-                },
-              },
-              cnpj: createAccountDto.cnpj,
-              phone: createAccountDto.phone,
             },
+            status: 'PENDING',
           },
-          status: 'PENDING',
-        },
-        select: institutionResponseFields,
-      })
-
-      if (media) {
-        const mediaAttachment = await this.mediaService.processMedia(media, {
-          accountId: account.id,
+          select: { id: true },
         })
 
-        const accountWithMedia = await this.prismaService.account.update({
+        if (media) {
+          if (!media.mimetype.startsWith('image/')) {
+            this.logger.warn(
+              { email, mimetype: media.mimetype },
+              'createInstitution: avatar não é imagem',
+            )
+            throw new HttpException(
+              'Avatar deve ser uma imagem',
+              HttpStatus.UNPROCESSABLE_ENTITY,
+            )
+          }
+
+          try {
+            const { mediaAttachment } = await this.mediaService.processMedia(
+              media,
+              { accountId: account.id },
+              tx,
+            )
+
+            await tx.account.update({
+              where: { id: account.id },
+              data: { avatarId: mediaAttachment.id },
+              select: { id: true },
+            })
+          } catch (err) {
+            this.logger.error(
+              { err, email },
+              'createInstitution: falha ao processar avatar',
+            )
+            throw err
+          }
+        }
+
+        return tx.account.findUnique({
           where: { id: account.id },
-          data: {
-            avatarId: mediaAttachment.mediaAttachment.id,
-          },
-          select: donorResponseFields,
+          select: institutionResponseFields,
         })
-
-        return accountWithMedia
-      }
-
-      return account
-    } catch (_error) {
+      })
+    } catch (err) {
+      if (err instanceof HttpException) throw err
+      this.logger.error(
+        { err, email, cnpj: createAccountDto.cnpj },
+        'createInstitution: erro inesperado',
+      )
       throw new HttpException(
         'erro ao criar conta',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -167,52 +188,72 @@ export class AccountService {
     media?: Express.Multer.File,
   ) {
     const email = createAccountDto.email.toLowerCase()
-    const emailExists = await this.prismaService.account.findFirst({
-      where: { email },
-    })
-
-    if (emailExists) {
-      throw new HttpException(
-        'este email já está cadastrado',
-        HttpStatus.BAD_REQUEST,
-      )
-    }
 
     try {
-      const hashedPassword = await bcrypt.hash(createAccountDto.password, 10)
-      const account = await this.prismaService.account.create({
-        data: {
-          email: email,
-          passwordHash: hashedPassword,
-          name: createAccountDto.name,
-          note: createAccountDto.note,
-          status: 'ACTIVE',
-          donor: {
-            create: {},
-          },
-        },
-        select: donorResponseFields,
-      })
+      return await this.prismaService.$transaction(async (tx) => {
+        const emailExists = await tx.account.findFirst({ where: { email } })
+        if (emailExists) {
+          this.logger.warn({ email }, 'createDonor: email já cadastrado')
+          throw new HttpException(
+            'este email já está cadastrado',
+            HttpStatus.BAD_REQUEST,
+          )
+        }
 
-      if (media) {
-        const mediaAttachment = await this.mediaService.processMedia(media, {
-          accountId: account.id,
+        const hashedPassword = await bcrypt.hash(createAccountDto.password, 10)
+        const { id: accountId } = await tx.account.create({
+          data: {
+            email,
+            passwordHash: hashedPassword,
+            name: createAccountDto.name,
+            note: createAccountDto.note,
+            status: 'ACTIVE',
+            donor: { create: {} },
+          },
+          select: { id: true },
         })
 
-        const accountWithMedia = await this.prismaService.account.update({
-          where: { id: account.id },
-          data: {
-            avatarId: mediaAttachment.mediaAttachment.id,
-          },
+        if (media) {
+          if (!media.mimetype.startsWith('image/')) {
+            this.logger.warn(
+              { email, mimetype: media.mimetype },
+              'createDonor: avatar não é imagem',
+            )
+            throw new HttpException(
+              'Avatar deve ser uma imagem',
+              HttpStatus.UNPROCESSABLE_ENTITY,
+            )
+          }
+
+          try {
+            const { mediaAttachment } = await this.mediaService.processMedia(
+              media,
+              { accountId },
+              tx,
+            )
+
+            await tx.account.update({
+              where: { id: accountId },
+              data: { avatarId: mediaAttachment.id },
+              select: { id: true },
+            })
+          } catch (err) {
+            this.logger.error(
+              { err, email },
+              'createDonor: falha ao processar avatar',
+            )
+            throw err
+          }
+        }
+
+        return tx.account.findUnique({
+          where: { id: accountId },
           select: donorResponseFields,
         })
-
-        return accountWithMedia
-      }
-
-      return account
-    } catch (error) {
-      console.log(error)
+      })
+    } catch (err) {
+      if (err instanceof HttpException) throw err
+      this.logger.error({ err, email }, 'createDonor: erro inesperado')
       throw new HttpException(
         'erro ao criar conta',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -243,38 +284,57 @@ export class AccountService {
   async createWithGoogle(createAccountGoogleDto: CreateAccountGoogleDto) {
     const { idToken } = createAccountGoogleDto
 
-    const ticket = await this.client.verifyIdToken({
-      idToken,
-    })
-
-    const payload = ticket.getPayload()
-    if (!payload) {
+    let payload: Record<string, any> | undefined
+    try {
+      const ticket = await this.client.verifyIdToken({ idToken })
+      payload = ticket.getPayload() ?? undefined
+    } catch (err) {
+      this.logger.error({ err }, 'createWithGoogle: verifyIdToken falhou')
       throw new HttpException(
         'Não foi possível autenticar. Tente novamente mais tarde.',
         HttpStatus.INTERNAL_SERVER_ERROR,
       )
     }
 
-    const email = payload['email']
-    const name = payload['name']
-    //const avatar = payload['picture'];
+    if (!payload) {
+      this.logger.error({}, 'createWithGoogle: payload do Google ausente')
+      throw new HttpException(
+        'Não foi possível autenticar. Tente novamente mais tarde.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      )
+    }
+
+    const email = payload['email'] as string
+    const name = payload['name'] as string
 
     const emailExists = await this.prismaService.account.findFirst({
-      where: { email: email },
+      where: { email },
     })
-
     if (emailExists) {
+      this.logger.warn({ email }, 'createWithGoogle: email já cadastrado')
       throw new HttpException('email já cadastrado', HttpStatus.BAD_REQUEST)
     }
 
     const createAccountDto: CreateAccountDto = {
       accountType: AccountType.DONOR,
-      email: email,
-      name: name,
+      email,
+      name,
       password: idToken,
     }
 
-    return await this.createDonor(createAccountDto)
+    try {
+      return await this.createDonor(createAccountDto)
+    } catch (err) {
+      if (err instanceof HttpException) throw err
+      this.logger.error(
+        { err, email },
+        'createWithGoogle: erro ao criar doador',
+      )
+      throw new HttpException(
+        'Não foi possível autenticar. Tente novamente mais tarde.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      )
+    }
   }
 
   async findAll({ status, type: accountType }: GetAccountsQuery) {
@@ -321,6 +381,7 @@ export class AccountService {
     })
 
     if (!account) {
+      this.logger.warn({ id }, 'findOne: conta não encontrada')
       throw new HttpException('conta não encontrada', HttpStatus.NOT_FOUND)
     }
 
@@ -406,6 +467,10 @@ export class AccountService {
     })
 
     if (!institutionAccount) {
+      this.logger.warn(
+        { accountId: id },
+        'findOneInstitution: conta não encontrada',
+      )
       throw new HttpException(
         'conta da instituição não encontrada',
         HttpStatus.NOT_FOUND,
@@ -462,28 +527,38 @@ export class AccountService {
     })
 
     if (!account) {
+      this.logger.warn({ accountId }, 'remove: conta não encontrada (auth)')
       throw new HttpException('Conta não encontrada', HttpStatus.NOT_FOUND)
     }
-
     if (account.id !== id) {
+      this.logger.warn(
+        { requesterId: accountId, targetId: id },
+        'remove: acesso não autorizado',
+      )
       throw new HttpException('Acesso não autorizado', HttpStatus.UNAUTHORIZED)
     }
 
     if (account.avatarId) {
-      await this.mediaService.deleteMediaAttachment(account.avatarId)
+      try {
+        await this.mediaService.deleteMediaAttachment(account.avatarId)
+      } catch (err) {
+        this.logger.error(
+          { err, avatarId: account.avatarId, accountId: id },
+          'remove: falha ao deletar arquivos de mídia',
+        )
+      }
     }
-
     try {
-      return await this.prismaService.account.delete({
-        where: {
-          id: id,
-        },
-      })
-    } catch (error) {
-      if (error.code === 'P2025') {
+      return await this.prismaService.account.delete({ where: { id } })
+    } catch (error: any) {
+      if (error?.code === 'P2025') {
+        this.logger.warn({ id }, 'remove: conta não encontrada (P2025)')
         throw new HttpException('conta não encontrada', HttpStatus.NOT_FOUND)
       }
-
+      this.logger.error(
+        { err: error, id },
+        'remove: erro inesperado ao deletar conta',
+      )
       throw new HttpException(
         'erro ao deletar conta',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -501,6 +576,10 @@ export class AccountService {
       currentAccount.id !== accountId &&
       currentAccount.accountType !== AccountType.ADMIN
     ) {
+      this.logger.warn(
+        { requesterId: currentAccount.id, targetId: accountId },
+        'update: acesso não autorizado',
+      )
       throw new HttpException(
         'Você não pode atualizar essa conta',
         HttpStatus.UNAUTHORIZED,
@@ -509,12 +588,10 @@ export class AccountService {
 
     const account = await this.prismaService.account.findUnique({
       where: { id: accountId },
-      include: {
-        institution: true,
-      },
+      include: { institution: true },
     })
-
     if (!account) {
+      this.logger.warn({ accountId }, 'update: conta não encontrada')
       throw new HttpException('Conta não encontrada', HttpStatus.NOT_FOUND)
     }
 
@@ -522,14 +599,12 @@ export class AccountService {
       name: updateAccountDto.name,
       note: updateAccountDto.note,
     }
-
     if (
       updateAccountDto.status &&
       currentAccount.accountType === AccountType.ADMIN
     ) {
       data.status = updateAccountDto.status
     }
-
     if (
       updateAccountDto.password &&
       updateAccountDto.password === updateAccountDto.confirmPassword
@@ -538,20 +613,23 @@ export class AccountService {
       data.passwordHash = hashedPassword
     }
 
-    const mediaId = account.avatarId
     if (media) {
-      if (mediaId) {
-        await this.mediaService.deleteMediaAttachment(mediaId)
-      }
-
-      const mediaAttachment = await this.mediaService.processMedia(media, {
-        accountId,
-      })
-
-      data.media = {
-        connect: {
-          id: mediaAttachment.mediaAttachment.id,
-        },
+      try {
+        if (account.avatarId)
+          await this.mediaService.deleteMediaAttachment(account.avatarId)
+        const mediaAttachment = await this.mediaService.processMedia(media, {
+          accountId,
+        })
+        data.media = { connect: { id: mediaAttachment.mediaAttachment.id } }
+      } catch (err) {
+        this.logger.error(
+          { err, accountId },
+          'update: falha ao processar novo avatar',
+        )
+        throw new HttpException(
+          'erro ao atualizar conta',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        )
       }
     }
 
@@ -560,30 +638,18 @@ export class AccountService {
         phone: account.institution.phone,
         cnpj: account.institution.cnpj,
       }
-
       if (updateAccountDto.category) {
         let category = await this.prismaService.category.findFirst({
           where: { name: updateAccountDto.category },
         })
-
         if (!category) {
           category = await this.prismaService.category.create({
-            data: {
-              name: updateAccountDto.category,
-            },
+            data: { name: updateAccountDto.category },
           })
         }
-
-        institutionData.category = {
-          connect: {
-            id: category.id,
-          },
-        }
+        institutionData.category = { connect: { id: category.id } }
       }
-
-      data.institution = {
-        update: institutionData,
-      }
+      data.institution = { update: institutionData }
     }
 
     try {
@@ -597,9 +663,12 @@ export class AccountService {
           media: true,
         },
       })
-
       return updatedAccount
-    } catch {
+    } catch (err) {
+      this.logger.error(
+        { err, accountId },
+        'update: erro inesperado ao atualizar conta',
+      )
       throw new HttpException(
         'erro ao atualizar conta',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -762,6 +831,7 @@ export class AccountService {
       where: { id },
     })
     if (!account) {
+      this.logger.warn({ id }, 'updateStatus: conta não encontrada')
       throw new HttpException('conta não encontrada', HttpStatus.NOT_FOUND)
     }
 
@@ -776,7 +846,8 @@ export class AccountService {
           media: true,
         },
       })
-    } catch {
+    } catch (err) {
+      this.logger.error({ err, id, status }, 'updateStatus: erro inesperado')
       throw new HttpException(
         'erro ao atualizar status',
         HttpStatus.INTERNAL_SERVER_ERROR,
