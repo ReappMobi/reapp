@@ -190,7 +190,11 @@ describe('MediaService', () => {
       const result = await service.processMedia(file, options)
 
       expect(service.isSynchronous).toHaveBeenCalledWith(file)
-      expect(service.processSynchronously).toHaveBeenCalledWith(file, options)
+      expect(service.processSynchronously).toHaveBeenCalledWith(
+        file,
+        options,
+        undefined,
+      )
       expect(result).toEqual({
         isSynchronous: true,
         mediaAttachment: {
@@ -238,7 +242,11 @@ describe('MediaService', () => {
       const result = await service.processMedia(file, options)
 
       expect(service.isSynchronous).toHaveBeenCalledWith(file)
-      expect(service.enqueueMediaProcessing).toHaveBeenCalledWith(file, options)
+      expect(service.enqueueMediaProcessing).toHaveBeenCalledWith(
+        file,
+        options,
+        undefined,
+      )
       expect(result).toEqual({
         isSynchronous: false,
         mediaAttachment: {

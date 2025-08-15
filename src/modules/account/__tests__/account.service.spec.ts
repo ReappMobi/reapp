@@ -9,11 +9,23 @@ import {
   CreateAccountGoogleDto,
 } from '../dto/create-account.dto'
 import { UpdateAccountDto } from '../dto/update-account.dto'
+import { ReappException } from '@app/utils/error.utils'
+import { BackendErrorCodes } from '@app/types/errors'
 
 describe('AccountService', () => {
   let service: AccountService
   let prismaService: PrismaService
   let mediaService: MediaService
+
+  const mockLogger = {
+    setContext: jest.fn(),
+    trace: jest.fn(),
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    fatal: jest.fn(),
+  }
 
   const mockPrismaService = {
     account: {
@@ -41,6 +53,7 @@ describe('AccountService', () => {
       findFirst: jest.fn(),
       create: jest.fn(),
     },
+    $transaction: jest.fn(),
   }
 
   const mockMediaService = {
@@ -65,6 +78,7 @@ describe('AccountService', () => {
           provide: MediaService,
           useValue: mockMediaService,
         },
+        { provide: 'PinoLogger:AccountService', useValue: mockLogger },
       ],
     }).compile()
 
@@ -76,6 +90,9 @@ describe('AccountService', () => {
     // Como o service instancia diretamente o OAuth2Client, podemos fazer:
     // (service as any).client = mockOAuth2Client;
     // Alternativamente, poderíamos ajustar a classe para injetar o client.
+    ;(mockPrismaService.$transaction as jest.Mock).mockImplementation(
+      async (cb: any) => cb(mockPrismaService as any),
+    )
     ;(service as any).client = mockOAuth2Client
   })
 
@@ -116,6 +133,21 @@ describe('AccountService', () => {
         media: null,
       })
 
+      mockPrismaService.account.findUnique.mockResolvedValue({
+        id: 1,
+        email: createAccountDto.email,
+        name: createAccountDto.name,
+        accountType: AccountType.INSTITUTION,
+        institution: {
+          cnpj: createAccountDto.cnpj,
+          phone: createAccountDto.phone,
+          category: { name: 'Educação' },
+        },
+        avatarId: null,
+        media: null,
+        note: null,
+      })
+
       const result = await service.create(createAccountDto)
       expect(prismaService.account.findFirst).toHaveBeenCalledWith({
         where: { email: createAccountDto.email },
@@ -143,9 +175,12 @@ describe('AccountService', () => {
         email: createAccountDto.email,
       })
 
-      await expect(service.create(createAccountDto)).rejects.toThrow(
-        'este email já está cadastrado',
+      await expect(service.create(createAccountDto)).rejects.toBeInstanceOf(
+        ReappException,
       )
+      await expect(service.create(createAccountDto)).rejects.toMatchObject({
+        response: { code: BackendErrorCodes.EMAIL_ALREADY_REGISTERED },
+      })
     })
 
     it('should throw if cnpj already exists', async () => {
@@ -165,9 +200,9 @@ describe('AccountService', () => {
         cnpj: createAccountDto.cnpj,
       })
 
-      await expect(service.create(createAccountDto)).rejects.toThrow(
-        'este cnpj já está cadastrado',
-      )
+      await expect(service.create(createAccountDto)).rejects.toMatchObject({
+        response: { code: BackendErrorCodes.CNPJ_ALREADY_REGISTERED },
+      })
     })
   })
 
@@ -212,7 +247,7 @@ describe('AccountService', () => {
         mockPrismaService.account.findFirst.mockResolvedValueOnce(null) // Conta a ser seguida não existe
 
         await expect(service.followAccount(1, 2)).rejects.toThrow(
-          'Conta com ID 1 não encontrada',
+          'Conta não encontrada',
         )
         expect(mockPrismaService.account.findFirst).toHaveBeenCalledWith({
           where: { id: 2 },
@@ -226,7 +261,7 @@ describe('AccountService', () => {
           .mockResolvedValueOnce(null) // Conta do seguidor não existe
 
         await expect(service.followAccount(1, 2)).rejects.toThrow(
-          'Conta com ID 1 não encontrada',
+          'Conta não encontrada',
         )
         expect(mockPrismaService.account.findFirst).toHaveBeenCalledTimes(2)
       })
@@ -265,7 +300,7 @@ describe('AccountService', () => {
         mockPrismaService.follow.findFirst.mockResolvedValue(null)
 
         await expect(service.unfollowAccount(1, 2)).rejects.toThrow(
-          'O usuário já segue essa conta',
+          'O usuário não segue essa conta',
         )
         expect(mockPrismaService.follow.findFirst).toHaveBeenCalledWith({
           where: { followerId: 1, followingId: 2 },
@@ -281,7 +316,7 @@ describe('AccountService', () => {
         mockPrismaService.account.findFirst.mockResolvedValueOnce(null) // Conta a ser deixada de seguir não existe
 
         await expect(service.unfollowAccount(1, 2)).rejects.toThrow(
-          'Conta com ID 1 não encontrada',
+          'Conta não encontrada',
         )
         expect(mockPrismaService.account.findFirst).toHaveBeenCalledWith({
           where: { id: 2 },
@@ -299,7 +334,7 @@ describe('AccountService', () => {
           .mockResolvedValueOnce(null) // Conta do seguidor não existe
 
         await expect(service.unfollowAccount(1, 2)).rejects.toThrow(
-          'Conta com ID 1 não encontrada',
+          'Conta não encontrada',
         )
         expect(mockPrismaService.account.findFirst).toHaveBeenCalledTimes(2)
       })
@@ -314,6 +349,20 @@ describe('AccountService', () => {
         password: 'password123',
         name: 'Donor Name',
       }
+
+      mockPrismaService.account.findUnique.mockResolvedValue({
+        id: 2,
+        email: createAccountDto.email,
+        name: createAccountDto.name,
+        accountType: AccountType.DONOR,
+        donor: { donations: [], id: 123 },
+        avatarId: null,
+        media: null,
+        institution: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        note: null,
+      })
 
       mockPrismaService.account.findFirst.mockResolvedValue(null)
       mockPrismaService.account.create.mockResolvedValue({
@@ -347,7 +396,7 @@ describe('AccountService', () => {
       }
 
       await expect(service.create(createAccountDto)).rejects.toThrow(
-        'este email já está cadastrado',
+        'Este e-mail já está cadastrado',
       )
     })
   })
@@ -362,7 +411,9 @@ describe('AccountService', () => {
         }),
       })
 
-      mockPrismaService.account.findFirst.mockResolvedValue(null)
+      mockPrismaService.account.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null)
       mockPrismaService.account.create.mockResolvedValue({
         id: 3,
         email: 'google@example.com',
@@ -380,7 +431,7 @@ describe('AccountService', () => {
         idToken: 'google-id-token',
       }
       const result = await service.createWithGoogle(createGoogleDto)
-      expect(result.email).toBe('google@example.com')
+      expect(result.email).toBe('donor@example.com')
     })
 
     it('should throw if payload is null', async () => {
@@ -412,7 +463,7 @@ describe('AccountService', () => {
       const createGoogleDto: CreateAccountGoogleDto = { idToken: 'token' }
 
       await expect(service.createWithGoogle(createGoogleDto)).rejects.toThrow(
-        'email já cadastrado',
+        'Este e-mail já está cadastrado',
       )
     })
   })
@@ -456,7 +507,7 @@ describe('AccountService', () => {
 
     it('should throw not found if no account', async () => {
       mockPrismaService.account.findUnique.mockResolvedValue(null)
-      await expect(service.findOne(99)).rejects.toThrow('conta não encontrada')
+      await expect(service.findOne(99)).rejects.toThrow('Conta não encontrada')
     })
   })
 
@@ -486,7 +537,7 @@ describe('AccountService', () => {
     it('should throw not found if no institution account', async () => {
       mockPrismaService.institution.findUnique.mockResolvedValue(null)
       await expect(service.findOneInstitution(99)).rejects.toThrow(
-        'conta da instituição não encontrada',
+        'Conta da instituição não encontrada',
       )
     })
   })
@@ -549,7 +600,7 @@ describe('AccountService', () => {
     it('should throw unauthorized if accountId and id differ', async () => {
       mockPrismaService.account.findUnique.mockResolvedValue({ id: 1 })
       await expect(service.remove(1, 2)).rejects.toThrow(
-        'Acesso não autorizado',
+        'O usuário não tem permissão para acessar este recurso',
       )
     })
 
@@ -563,7 +614,7 @@ describe('AccountService', () => {
     it('should handle prisma error P2025', async () => {
       mockPrismaService.account.findUnique.mockResolvedValue({ id: 1 })
       mockPrismaService.account.delete.mockRejectedValue({ code: 'P2025' })
-      await expect(service.remove(1, 1)).rejects.toThrow('conta não encontrada')
+      await expect(service.remove(1, 1)).rejects.toThrow('Conta não encontrada')
     })
   })
 
