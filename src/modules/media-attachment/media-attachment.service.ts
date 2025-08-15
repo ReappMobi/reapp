@@ -57,10 +57,6 @@ type UploadOptions = {
   focus?: string
 }
 
-function prismaOf(service: PrismaService | Prisma.TransactionClient) {
-  return service as unknown as PrismaClient
-}
-
 @Injectable()
 export class MediaService {
   constructor(
@@ -95,6 +91,10 @@ export class MediaService {
         HttpStatus.UNPROCESSABLE_ENTITY,
       )
     }
+  }
+
+  private db(tx?: Prisma.TransactionClient) {
+    return tx ?? (this.prismaService as unknown as Prisma.TransactionClient)
   }
 
   private validateThumbnailFile(thumbnailFile?: Express.Multer.File) {
@@ -202,7 +202,7 @@ export class MediaService {
   private async processSynchronously(
     file: Express.Multer.File,
     options: UploadOptions,
-    prisma?: Prisma.TransactionClient,
+    trx?: Prisma.TransactionClient,
   ) {
     const fileType = this.getFileType(file.mimetype)
 
@@ -274,8 +274,7 @@ export class MediaService {
       }
     }
 
-    const db = prisma ?? this.prismaService
-    const mediaAttachment = await prismaOf(db).mediaAttachment.create({
+    const mediaAttachment = await this.db(trx).mediaAttachment.create({
       data: {
         id: mediaId,
         fileFileName: file.originalname,
@@ -310,7 +309,7 @@ export class MediaService {
   async processMedia(
     file: Express.Multer.File,
     options: UploadOptions,
-    prisma?: Prisma.TransactionClient,
+    trx?: Prisma.TransactionClient,
   ) {
     const { thumbnail, accountId, description, focus } = options
 
@@ -342,8 +341,8 @@ export class MediaService {
           description,
           focus,
         },
-        prisma,
-      ) // <-- passe o prisma/tx
+        trx,
+      )
       return { isSynchronous, mediaAttachment }
     }
 
@@ -355,8 +354,8 @@ export class MediaService {
         description,
         focus,
       },
-      prisma,
-    ) // <-- passe o prisma/tx
+      trx,
+    )
     return { isSynchronous, mediaAttachment }
   }
 
@@ -401,7 +400,7 @@ export class MediaService {
       description: string
       focus: string
     },
-    prisma?: Prisma.TransactionClient,
+    tx?: Prisma.TransactionClient,
   ) {
     const { thumbnail, accountId, description, focus } = options
     this.validateMediaFile(file)
@@ -415,82 +414,75 @@ export class MediaService {
       'temp_uploads',
       mediaId,
     )
-
     fs.mkdirSync(tempDir, { recursive: true })
+
     const originalExtension = mime.extension(file.mimetype)
-    const originalExtensionWithDot = originalExtension
-      ? `.${originalExtension}`
-      : ''
-
-    const originalFileName = `original${originalExtensionWithDot}`
-
+    const originalFileName = `original${originalExtension ? `.${originalExtension}` : ''}`
     const originalFilePath = path.join(tempDir, originalFileName)
-
     fs.writeFileSync(originalFilePath, file.buffer)
 
     let thumbnailFilePath: string | undefined
     if (thumbnail) {
-      let thumbnailExtension = '.png'
-      const thumbExtension = mime.extension(thumbnail.mimetype)
-      if (thumbExtension) {
-        thumbnailExtension = `.${thumbExtension}`
-      }
-      const thumbnailFileName = `thumbnail${thumbnailExtension}`
+      const thumbExt = mime.extension(thumbnail.mimetype) || 'png'
+      const thumbnailFileName = `thumbnail.${thumbExt}`
       thumbnailFilePath = path.join(tempDir, thumbnailFileName)
       fs.writeFileSync(thumbnailFilePath, thumbnail.buffer)
     }
 
     const type = this.getMediaTypeFromMime(file.mimetype)
 
-    const db = prisma ?? this.prismaService
+    try {
+      const mediaAttachment = await this.db(tx).mediaAttachment.create({
+        data: {
+          id: mediaId,
+          fileFileName: file.originalname,
+          fileContentType: file.mimetype,
+          fileFileSize: file.size,
+          fileUpdatedAt: new Date(),
+          remoteUrl: '',
+          accountId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          shortcode: uuidv4(),
+          type: this.getTypeEnum(type),
+          fileMeta: null,
+          description: description || null,
+          blurhash: null,
+          processing: 0,
+          fileStorageSchemaVersion: 1,
+          thumbnailFileName: thumbnail ? thumbnail.originalname : 'thumbnail',
+          thumbnailContentType: thumbnail ? thumbnail.mimetype : null,
+          thumbnailFileSize: thumbnail ? thumbnail.size : null,
+          thumbnailUpdatedAt: new Date(),
+          thumbnailRemoteUrl: '',
+        },
+      })
 
-    const mediaAttachment = await prismaOf(db).mediaAttachment.create({
-      data: {
-        id: mediaId,
-        fileFileName: file.originalname,
-        fileContentType: file.mimetype,
-        fileFileSize: file.size,
-        fileUpdatedAt: new Date(),
-        remoteUrl: '',
-        accountId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        shortcode: uuidv4(),
-        type: this.getTypeEnum(type),
-        fileMeta: null, // Will be filled after processing
-        description: description || null,
-        blurhash: null, // Will be filled after processing
-        processing: 0, // 0 indicates processing not started
-        fileStorageSchemaVersion: 1,
-        thumbnailFileName: thumbnail ? thumbnail.originalname : 'thumbnail',
-        thumbnailContentType: thumbnail ? thumbnail.mimetype : null,
-        thumbnailFileSize: thumbnail ? thumbnail.size : null,
-        thumbnailUpdatedAt: new Date(),
-        thumbnailRemoteUrl: '',
-      },
-    })
+      await this.mediaQueue.add('process-media', {
+        mediaId: mediaAttachment.id,
+        filePath: originalFilePath,
+        thumbnailFilePath,
+        description,
+        focus,
+      })
 
-    await this.mediaQueue.add('process-media', {
-      mediaId: mediaAttachment.id,
-      filePath: originalFilePath,
-      thumbnailFilePath,
-      description,
-      focus,
-    })
-
-    const response = {
-      id: mediaAttachment.id.toString(),
-      type: type,
-      url: null, // Will be available after processing
-      preview_url: null, // Will be available after processing
-      remote_url: null,
-      text_url: null,
-      meta: null,
-      description: mediaAttachment.description,
-      blurhash: null,
+      return {
+        id: mediaAttachment.id,
+        type,
+        url: null,
+        preview_url: null,
+        remote_url: null,
+        text_url: null,
+        meta: null,
+        description: mediaAttachment.description,
+        blurhash: null,
+      }
+    } catch (e) {
+      try {
+        fs.rmSync(tempDir, { recursive: true, force: true })
+      } catch {}
+      throw e
     }
-
-    return response
   }
 
   async getMediaAttachmentsByIds(mediaIds: string[]) {
