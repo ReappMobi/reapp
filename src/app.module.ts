@@ -8,6 +8,7 @@ import { ConfigService } from './config/config.service'
 import { AccountModule } from './modules/account/account.module'
 import { AuthenticationModule } from './modules/auth/auth.module'
 import { DonationModule } from './modules/donation/donation.module'
+import { HealthModule } from './modules/health/health.module'
 import { InstitutionMemberModule } from './modules/institutionMember/institutionMember.module'
 import { MailModule } from './modules/mail/mail.module'
 import { MailService } from './modules/mail/mail.service'
@@ -61,6 +62,7 @@ import { ProjectModule } from './modules/project/project.module'
     PasswordRecoveryModule,
     PostModule,
     ProjectModule,
+    HealthModule,
   ],
   providers: [
     MailService,
