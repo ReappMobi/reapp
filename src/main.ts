@@ -3,6 +3,8 @@ import * as path from 'path'
 import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import * as express from 'express'
+import helmet from 'helmet'
+
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino'
 import { AppModule } from './app.module'
 import { ConfigService } from './config/config.service'
@@ -79,6 +81,9 @@ async function bootstrap() {
     )
   }
   // --- End Static files ---
+
+  // -- Helmet config ---
+  app.use(helmet())
 
   await app.listen(configService.PORT)
 }
