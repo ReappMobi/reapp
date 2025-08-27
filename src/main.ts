@@ -19,14 +19,11 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggerErrorInterceptor())
 
   const configService = app.get(ConfigService)
-  // Enable CORS based on environment
-  if (configService.isDevelopment) {
-    app.enableCors({
-      origin: configService.CLIENT_URL,
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-      credentials: true,
-    })
-  }
+  app.enableCors({
+    origin: configService.CLIENT_URL,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    credentials: true,
+  })
 
   // Static files
   app.useGlobalPipes(
