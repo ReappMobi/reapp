@@ -13,7 +13,7 @@ export const ConfigSchema = z.object({
   API_VERSION: z.string().min(1).default('v1'),
 
   // Client url
-  CLIENT_URL: z.string().url().default('http://localhost:5173'),
+  CLIENT_URL: z.string().url().default(''),
 
   // Server
   PORT: z.coerce.number().default(3000),
@@ -40,6 +40,8 @@ export const ConfigSchema = z.object({
 
   // MercadoPago
   MERCADOPAGO_NOTIFICATION_URL: z.string().min(1),
+
+  IS_TESTING_ENV: z.boolean().default(false),
 })
 
 export type EnvEnumType = z.infer<typeof envEnum>
