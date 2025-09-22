@@ -41,7 +41,7 @@ export const ConfigSchema = z.object({
   // MercadoPago
   MERCADOPAGO_NOTIFICATION_URL: z.string().min(1),
 
-  IS_TESTING_ENV: z.boolean().default(false),
+  IS_TESTING_ENV: z.coerce.boolean().default(false),
 })
 
 export type EnvEnumType = z.infer<typeof envEnum>
