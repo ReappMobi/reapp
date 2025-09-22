@@ -19,8 +19,19 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggerErrorInterceptor())
 
   const configService = app.get(ConfigService)
+
+  const defaultCors = [configService.CLIENT_URL]
+  const additionalTestingCors = configService.IS_TESTING_ENV
+    ? [
+        'http://localhost:5173',
+        'http://localhost',
+        'https://localhost',
+        'localhost',
+      ]
+    : []
+
   app.enableCors({
-    origin: configService.CLIENT_URL,
+    origin: [...defaultCors, ...additionalTestingCors],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   })
