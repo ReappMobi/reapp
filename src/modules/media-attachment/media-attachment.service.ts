@@ -1,3 +1,7 @@
+import * as fs from 'node:fs'
+import * as os from 'node:os'
+import * as path from 'node:path'
+import { promisify } from 'node:util'
 import { InjectQueue } from '@nestjs/bull'
 import {
   HttpException,
@@ -9,14 +13,11 @@ import { encode } from 'blurhash'
 import { Queue } from 'bull'
 import * as ffmpeg from 'fluent-ffmpeg'
 import * as mime from 'mime-types'
-import * as fs from 'node:fs'
-import * as os from 'node:os'
-import * as path from 'node:path'
-import { promisify } from 'node:util'
 import * as sharp from 'sharp'
 import { v4 as uuidv4 } from 'uuid'
 import { PrismaService } from '../../database/prisma.service'
 
+import { Prisma, PrismaClient } from '@prisma/client'
 import {
   AUDIO_MIME_TYPES,
   MAX_IMAGE_SIZE,
@@ -28,7 +29,6 @@ import {
   SUPPORTED_MIME_TYPES,
   VIDEO_MIME_TYPES,
 } from './media-attachment.constants'
-import { Prisma, PrismaClient } from '@prisma/client'
 
 interface VideoMetadata {
   length: string
@@ -59,6 +59,10 @@ type UploadOptions = {
 
 @Injectable()
 export class MediaService {
+  private readonly uploadsDir =
+    process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads')
+  private readonly tempUploadsDir = path.join(process.cwd(), 'temp_uploads')
+
   constructor(
     private readonly prismaService: PrismaService,
     @InjectQueue('media-processing') private mediaQueue: Queue,
@@ -216,8 +220,7 @@ export class MediaService {
     const { thumbnail, accountId, description, focus } = options
 
     const mediaId = uuidv4()
-    const uploadDir =
-      process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads')
+    const uploadDir = this.uploadsDir
 
     const mediaDir = path.join(uploadDir, mediaId)
 
@@ -370,8 +373,7 @@ export class MediaService {
       throw new NotFoundException('Media attachment não encontrado')
     }
 
-    const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads')
-    const mediaDir = path.join(uploadsDir, mediaAttachment.id)
+    const mediaDir = path.join(this.uploadsDir, mediaAttachment.id)
 
     try {
       await promisify(fs.access)(mediaDir, fs.constants.F_OK)
@@ -406,14 +408,7 @@ export class MediaService {
     this.validateMediaFile(file)
 
     const mediaId = uuidv4()
-    const tempDir = path.join(
-      __dirname,
-      '..',
-      '..',
-      '..',
-      'temp_uploads',
-      mediaId,
-    )
+    const tempDir = path.join(this.tempUploadsDir, mediaId)
     fs.mkdirSync(tempDir, { recursive: true })
 
     const originalExtension = mime.extension(file.mimetype)
@@ -625,8 +620,7 @@ export class MediaService {
     originalFileType: string,
     thumbnailFileType: string | undefined,
   ) {
-    const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads')
-    const mediaDir = path.join(uploadDir, mediaId.toString())
+    const mediaDir = path.join(this.uploadsDir, mediaId.toString())
     fs.mkdirSync(mediaDir, { recursive: true })
 
     const originalFileName = `original${originalFileType}`
