@@ -26,11 +26,11 @@ RUN pnpm prisma generate && pnpm build && pnpm prune --production --ignore-scrip
 FROM base AS runner
 
 COPY --from=builder /usr/src/app/node_modules ./node_modules
-COPY --from=builder /usr/src/app/dist/src ./dist
+COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
 
-RUN mkdir uploads
+RUN mkdir -p uploads temp_uploads
 
 USER node
 
-ENTRYPOINT [ "sh", "-c", "node dist/main.js" ]
+ENTRYPOINT [ "sh", "-c", "node dist/src/main.js" ]
