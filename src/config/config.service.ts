@@ -52,6 +52,10 @@ export class ConfigService implements ConfigType {
     return this.nestConfigService.get('EMAIL_PASSWORD')
   }
 
+  get EMAIL_FROM(): string {
+    return this.nestConfigService.get('EMAIL_FROM')
+  }
+
   get IS_TESTING_ENV(): boolean {
     return this.nestConfigService.get('IS_TESTING_ENV')
   }

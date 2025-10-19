@@ -8,16 +8,16 @@ import { MailService } from './mail.service'
   imports: [
     MailerModule.forRoot({
       transport: {
-        host: process.env.MAIL_HOST,
-        port: parseInt(process.env.MAIL_PORT),
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT),
         secure: false,
         auth: {
-          user: process.env.MAIL_USER,
-          pass: process.env.MAIL_PASS,
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD,
         },
       },
       defaults: {
-        from: process.env.MAIL_FROM,
+        from: process.env.EMAIL_FROM,
       },
       template: {
         dir: path.join(process.cwd(), 'dist', 'modules', 'mail', 'templates'),
