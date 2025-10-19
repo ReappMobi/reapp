@@ -13,7 +13,7 @@ import { MailService } from './mail.service'
         secure: false,
         auth: {
           user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
+          pass: process.env.EMAIL_PASSWORD,
         },
       },
       defaults: {
