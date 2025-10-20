@@ -1,10 +1,11 @@
-import { IsEmail, IsNotEmpty, IsNumberString, IsUUID } from 'class-validator'
+import z from 'zod'
 
-export abstract class PasswordRecoveryDto {
-  @IsUUID('4', { message: 'Token inválido' })
-  token: string
+export const passwordRecoverySchema = z.object({
+  token: z.string().uuid({ message: 'Token inválido' }),
+  code: z
+    .string()
+    .regex(/^\d{6}$/, { message: 'Código inválido' })
+    .length(6),
+})
 
-  @IsNotEmpty({ message: 'Código não informado' })
-  @IsNumberString({ no_symbols: true }, { message: 'Código inválido' })
-  code: string
-}
+export type PasswordRecoveryDto = z.infer<typeof passwordRecoverySchema>
