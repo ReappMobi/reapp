@@ -1,6 +1,6 @@
-import { IsEmail } from 'class-validator'
+import z from 'zod'
 
-export class SendRecoveryEmailDto {
-  @IsEmail({}, { message: 'Email inválido' })
-  email: string
-}
+export const sendRecoveryEmailSchema = z.object({
+  email: z.string().email(),
+})
+export type SendRecoveryEmailDto = z.infer<typeof sendRecoveryEmailSchema>
