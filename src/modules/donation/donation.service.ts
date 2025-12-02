@@ -736,7 +736,6 @@ export class DonationService {
   }
 
   async notifyDonation(data: NotificationRequestDto) {
-    console.log(data)
     if (data.type !== 'payment') return
 
     const payment = await this.mercadopagoService.getPayment(data.data.id)
