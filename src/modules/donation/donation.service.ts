@@ -1,7 +1,7 @@
 import { MercadopagoService } from '../..//services/mercadopago/mercadopago.service'
 import { PrismaService } from '../..//database/prisma.service'
 import { RequestDonationDto } from './dto/request-donation.dto'
-import { Injectable, HttpStatus, HttpException } from '@nestjs/common'
+import { Injectable, HttpStatus, HttpException, Logger } from '@nestjs/common'
 import {
   PreferenceRequest,
   PreferenceResponse,
@@ -17,6 +17,8 @@ type ExtendedDonationRequest = RequestDonationDto & {
 // TODO: Simplify this class and fix error handling
 @Injectable()
 export class DonationService {
+  private readonly logger = new Logger(DonationService.name)
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly mercadopagoService: MercadopagoService,
@@ -720,14 +722,14 @@ export class DonationService {
         }),
       ])
 
-      console.log(donations)
+      this.logger.log({ donations })
+
       return {
         donations,
         totalAmount: totals._sum.amount || 0,
         totalDonations: totals._count,
       }
-    } catch (error) {
-      console.error(error)
+    } catch {
       throw new HttpException(
         'Erro ao buscar doações',
         HttpStatus.INTERNAL_SERVER_ERROR,

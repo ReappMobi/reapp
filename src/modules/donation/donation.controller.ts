@@ -11,7 +11,6 @@ import {
 import { Post } from '@nestjs/common'
 import { RequestDonationDto } from './dto/request-donation.dto'
 import { DonationService } from './donation.service'
-import { NotificationRequestDto } from './dto/notification.dto'
 import { AuthGuard } from '../auth/auth.guard'
 import { Role } from '../auth/enums/role.enum'
 import { Roles } from '../auth/docorators/roles.decorator'
@@ -31,6 +30,10 @@ export class DonationController {
     @Body() requestDonationDto: RequestDonationDto,
     @Req() req: RequestWithUser,
   ) {
+    this.logger.log(
+      { donation_info: requestDonationDto, requester: req.user.id },
+      'Reciving donation notify',
+    )
     const accountId = req.user.id
     return this.donationService.requestDonation(
       requestDonationDto,
@@ -154,7 +157,7 @@ export class DonationController {
 
   @Post('notify')
   notifyDonation(@Body() body: any) {
-    this.logger.debug({ notify_body: body }, 'Reciving donation notify')
+    this.logger.log({ notify_body: body }, 'Reciving donation notify')
     return this.donationService.notifyDonation(body)
   }
 }
