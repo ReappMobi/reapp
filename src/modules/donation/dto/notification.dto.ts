@@ -19,4 +19,6 @@ export abstract class NotificationRequestDto {
   data: {
     id: string
   }
+  topic: string
+  resource: string
 }
