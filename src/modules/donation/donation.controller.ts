@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Param,
   Query,
   Req,
@@ -21,6 +22,7 @@ interface RequestWithUser extends Request {
 
 @Controller('donation')
 export class DonationController {
+  private readonly logger = new Logger(DonationController.name)
   constructor(private readonly donationService: DonationService) {}
 
   @Post('request')
@@ -151,7 +153,8 @@ export class DonationController {
   }
 
   @Post('notify')
-  notifyDonation(@Body() requestBody: NotificationRequestDto) {
-    return this.donationService.notifyDonation(requestBody)
+  notifyDonation(@Body() body: any) {
+    this.logger.debug({ notify_body: body }, 'Reciving donation notify')
+    return this.donationService.notifyDonation(body)
   }
 }
