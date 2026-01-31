@@ -1,3 +1,5 @@
+import { paginationSchema } from '@app/common/schemas/pagination.schema'
+import { ZodValidationPipe } from '@app/common/zod.validation.pipe'
 import {
   Body,
   Controller,
@@ -9,11 +11,14 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { Post } from '@nestjs/common'
-import { RequestDonationDto } from './dto/request-donation.dto'
-import { DonationService } from './donation.service'
 import { AuthGuard } from '../auth/auth.guard'
-import { Role } from '../auth/enums/role.enum'
 import { Roles } from '../auth/docorators/roles.decorator'
+import { Role } from '../auth/enums/role.enum'
+import { DonationService } from './donation.service'
+import {
+  DonationRequestBody,
+  requestDonationSchema,
+} from './dto/request-donation.dto'
 
 interface RequestWithUser extends Request {
   user?: { id: number }
@@ -27,7 +32,8 @@ export class DonationController {
   @Post('request')
   @UseGuards(AuthGuard)
   requestDonation(
-    @Body() requestDonationDto: RequestDonationDto,
+    @Body(new ZodValidationPipe(requestDonationSchema))
+    requestDonationDto: DonationRequestBody,
     @Req() req: RequestWithUser,
   ) {
     this.logger.log(
@@ -44,8 +50,8 @@ export class DonationController {
   @UseGuards(AuthGuard)
   @Roles(Role.Admin)
   @Get('all')
-  findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 30) {
-    return this.donationService.getAllDonations(page, limit)
+  findAll(@Query(new ZodValidationPipe(paginationSchema)) { offset, limit }) {
+    return this.donationService.getAllDonations(offset, limit)
   }
 
   @UseGuards(AuthGuard)

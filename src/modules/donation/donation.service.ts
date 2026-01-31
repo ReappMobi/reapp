@@ -1,16 +1,20 @@
-import { MercadopagoService } from '../..//services/mercadopago/mercadopago.service'
-import { PrismaService } from '../..//database/prisma.service'
-import { RequestDonationDto } from './dto/request-donation.dto'
-import { Injectable, HttpStatus, HttpException, Logger } from '@nestjs/common'
+import { PaginatedResponse } from '@app/types/paginated.response'
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
+import { DonationStatus } from '@prisma/client'
 import {
   PreferenceRequest,
   PreferenceResponse,
 } from 'mercadopago/dist/clients/preference/commonTypes'
-import { NotificationRequestDto } from './dto/notification.dto'
 import { v4 as uuidv4 } from 'uuid'
-import { DonationStatus } from '@prisma/client'
+import { PrismaService } from '../..//database/prisma.service'
+import { MercadopagoService } from '../..//services/mercadopago/mercadopago.service'
+import { NotificationRequestDto } from './dto/notification.dto'
+import {
+  DonationRequestBody,
+  DonationResponse,
+} from './dto/request-donation.dto'
 
-type ExtendedDonationRequest = RequestDonationDto & {
+type ExtendedDonationRequest = DonationRequestBody & {
   name: string
   email: string
 }
@@ -140,7 +144,7 @@ export class DonationService {
   }
 
   async requestDonation(
-    requestDonationDto: RequestDonationDto,
+    requestDonationDto: DonationRequestBody,
     accountId: number,
   ) {
     if (requestDonationDto.amount <= 0) {
@@ -226,22 +230,43 @@ export class DonationService {
     }
   }
 
-  async getAllDonations(page: number, limit: number) {
-    const donations = await this.prismaService.donation.findMany({
-      skip: (page - 1) * limit,
-      take: Number(limit),
-      include: {
-        donor: {
-          select: {
-            account: {
-              select: { name: true },
+  async getAllDonations(
+    offset: number,
+    limit: number,
+  ): Promise<PaginatedResponse<DonationResponse>> {
+    const [donations, total] = await Promise.all([
+      this.prismaService.donation.findMany({
+        skip: offset,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          donor: {
+            select: {
+              account: {
+                select: { name: true },
+              },
             },
           },
         },
-      },
-    })
+      }),
+      this.prismaService.donation.count(),
+    ])
 
-    return donations
+    return {
+      data: donations,
+      meta: {
+        offset,
+        limit,
+        total,
+      },
+      links: {
+        self: `/donations?offset=${offset}&limit=${limit}`,
+        next: `/donations?offset=${offset + limit}&limit=${limit}`,
+        prev: `/donations?offset=${Math.max(0, offset - limit)}&limit=${limit}`,
+      },
+    }
   }
 
   async getDonationsByInstitution(
