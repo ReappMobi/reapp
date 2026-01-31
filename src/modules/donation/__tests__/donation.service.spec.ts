@@ -279,6 +279,8 @@ describe('DonationService tests', () => {
       data: {
         id: '123',
       },
+      topic: '',
+      resource: '',
     }
 
     it('should throw an error if payment is not found', async () => {
