@@ -13,19 +13,6 @@ concurrency:
 jobs:
   tests:
     runs-on: ubuntu-22.04
-    services:
-      postgres:
-        image: postgres:17-alpine3.21
-        env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
     env:
       DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?connection_limit=1
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -37,10 +24,5 @@ jobs:
         with:
           node-version: "20.16.0"
           cache: "pnpm"
-      - run: sudo apt update && sudo apt install -y openssl
       - run: pnpm install
-      - run: pnpm prisma migrate deploy
-      - run: pnpm prisma generate
-      - run: pnpm build
       - run: pnpm test
-      # - run: pnpm test:e2e
