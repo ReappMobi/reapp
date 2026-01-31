@@ -1,42 +1,40 @@
 import { PrismaClient } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient()
-const defaultPassword = 'pass1234'
+const defaultPassword = '123456789'
 
-async function main() {
+export async function seedAccounts(prisma: PrismaClient) {
   const passwordHash = await bcrypt.hash(defaultPassword, 10)
-
-  await prisma.account.create({
-    data: {
-      email: 'admin@reapp.com',
-      passwordHash,
-      name: 'Admin',
-      note: 'Admin account',
-      status: 'ACTIVE',
-      accountType: 'ADMIN',
-    },
-  })
-
-  await prisma.account.create({
-    data: {
-      email: 'donor@reapp.com',
-      passwordHash,
-      name: 'Donor',
-      note: 'Donor account',
-      status: 'ACTIVE',
-      donor: {
-        create: {},
+  const [category] = await Promise.all([
+    await prisma.category.create({
+      data: {
+        name: 'Test',
       },
-    },
-  })
+    }),
+    await prisma.account.create({
+      data: {
+        email: 'admin@reapp.com',
+        passwordHash,
+        name: 'Admin',
+        note: 'Admin account',
+        status: 'ACTIVE',
+        accountType: 'ADMIN',
+      },
+    }),
 
-  const category = await prisma.category.create({
-    data: {
-      name: 'Test',
-    },
-  })
-
+    await prisma.account.create({
+      data: {
+        email: 'donor@reapp.com',
+        passwordHash,
+        name: 'Donor',
+        note: 'Donor account',
+        status: 'ACTIVE',
+        donor: {
+          create: {},
+        },
+      },
+    }),
+  ])
   await prisma.account.create({
     data: {
       email: 'institution@reapp.com',
@@ -58,13 +56,3 @@ async function main() {
     },
   })
 }
-
-main()
-  .then(async () => {
-    await prisma.$disconnect()
-  })
-  .catch(async (e) => {
-    console.error(e)
-    await prisma.$disconnect()
-    process.exit(1)
-  })

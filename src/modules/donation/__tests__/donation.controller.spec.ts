@@ -3,7 +3,7 @@ import { AuthGuard } from '../../auth/auth.guard'
 import { DonationController } from '../donation.controller'
 import { DonationService } from '../donation.service'
 import { NotificationRequestDto } from '../dto/notification.dto'
-import { RequestDonationDto } from '../dto/request-donation.dto'
+import { DonationRequestBody } from '../dto/request-donation.dto'
 
 describe('DonationController', () => {
   let controller: DonationController
@@ -42,7 +42,7 @@ describe('DonationController', () => {
 
   describe('requestDonation', () => {
     it('should call donationService.requestDonation with correct data', async () => {
-      const requestDonationDto: RequestDonationDto = {
+      const requestDonationDto: DonationRequestBody = {
         amount: 10,
         institutionId: 1,
         projectId: 1,
