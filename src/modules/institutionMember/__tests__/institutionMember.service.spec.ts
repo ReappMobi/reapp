@@ -5,6 +5,7 @@ import { PrismaService } from '../../../database/prisma.service'
 import { MediaService } from '../../media-attachment/media-attachment.service'
 import { InstitutionMemberType } from '@prisma/client'
 import { NotFoundException } from '@nestjs/common'
+import { Mock, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('InstitutionMemberService', () => {
   let service: InstitutionMemberService
@@ -19,20 +20,20 @@ describe('InstitutionMemberService', () => {
           provide: PrismaService,
           useValue: {
             institutionMember: {
-              create: jest.fn(),
-              findMany: jest.fn(),
-              findUnique: jest.fn(),
-              update: jest.fn(),
-              delete: jest.fn(),
+              create: vi.fn(),
+              findMany: vi.fn(),
+              findUnique: vi.fn(),
+              update: vi.fn(),
+              delete: vi.fn(),
             },
           },
         },
         {
           provide: MediaService,
           useValue: {
-            processMedia: jest.fn(),
-            getMediaAttachmentById: jest.fn(),
-            deleteMediaAttachment: jest.fn(),
+            processMedia: vi.fn(),
+            getMediaAttachmentById: vi.fn(),
+            deleteMediaAttachment: vi.fn(),
           },
         },
       ],
@@ -90,11 +91,11 @@ describe('InstitutionMemberService', () => {
         avatarId: 'media-id',
       }
 
-      jest.spyOn(mediaService, 'processMedia').mockResolvedValue(mediaResult)
-      jest
+      vi.spyOn(mediaService, 'processMedia').mockResolvedValue(mediaResult)
+      vi
         .spyOn(mediaService, 'getMediaAttachmentById')
         .mockResolvedValue(mediaResponse)
-      jest
+      vi
         .spyOn(prismaService.institutionMember, 'create')
         .mockResolvedValue(createdMember)
 
@@ -139,7 +140,7 @@ describe('InstitutionMemberService', () => {
         avatarId: null,
       }
 
-      jest
+      vi
         .spyOn(prismaService.institutionMember, 'create')
         .mockResolvedValue(createdMember)
 
@@ -190,7 +191,7 @@ describe('InstitutionMemberService', () => {
         },
       ]
 
-      jest
+      vi
         .spyOn(prismaService.institutionMember, 'findMany')
         .mockResolvedValue(members)
 
@@ -242,10 +243,10 @@ describe('InstitutionMemberService', () => {
         processing: 2,
       }
 
-      jest
+      vi
         .spyOn(prismaService.institutionMember, 'findUnique')
         .mockResolvedValue(member)
-      jest
+      vi
         .spyOn(mediaService, 'getMediaAttachmentById')
         .mockResolvedValue(mediaResponse)
 
@@ -277,7 +278,7 @@ describe('InstitutionMemberService', () => {
         avatarId: null,
       }
 
-      jest
+      vi
         .spyOn(prismaService.institutionMember, 'findUnique')
         .mockResolvedValue(member)
 
@@ -390,17 +391,17 @@ describe('InstitutionMemberService', () => {
         avatarId: 'new-media-id',
       }
 
-      jest
+      vi
         .spyOn(service, 'findInstitutionMemberById')
         .mockResolvedValue(existingMember)
-      jest
+      vi
         .spyOn(mediaService, 'deleteMediaAttachment')
         .mockResolvedValue(undefined)
-      jest.spyOn(mediaService, 'processMedia').mockResolvedValue(mediaResult)
-      jest
+      vi.spyOn(mediaService, 'processMedia').mockResolvedValue(mediaResult)
+      vi
         .spyOn(mediaService, 'getMediaAttachmentById')
         .mockResolvedValue(mediaResponse)
-      jest
+      vi
         .spyOn(prismaService.institutionMember, 'update')
         .mockResolvedValue(updatedMember)
 
@@ -520,13 +521,13 @@ describe('InstitutionMemberService', () => {
         processing: 2,
       }
 
-      jest
+      vi
         .spyOn(service, 'findInstitutionMemberById')
         .mockResolvedValue(existingMember)
-      jest
+      vi
         .spyOn(prismaService.institutionMember, 'update')
         .mockResolvedValue(updatedMember)
-      jest
+      vi
         .spyOn(mediaService, 'getMediaAttachmentById')
         .mockResolvedValue(mediaResponse)
 
@@ -561,7 +562,7 @@ describe('InstitutionMemberService', () => {
         name: 'Updated Name',
       }
 
-      jest.spyOn(service, 'findInstitutionMemberById').mockResolvedValue(null)
+      vi.spyOn(service, 'findInstitutionMemberById').mockResolvedValue(null)
 
       await expect(
         service.updateInstitutionMember(memberId, data),
@@ -618,13 +619,13 @@ describe('InstitutionMemberService', () => {
         },
       }
 
-      jest
+      vi
         .spyOn(service, 'findInstitutionMemberById')
         .mockResolvedValue(existingMember)
-      jest
+      vi
         .spyOn(mediaService, 'deleteMediaAttachment')
         .mockResolvedValue(undefined)
-      jest
+      vi
         .spyOn(prismaService.institutionMember, 'delete')
         .mockResolvedValue(existingMember)
 
@@ -651,10 +652,10 @@ describe('InstitutionMemberService', () => {
         media: null,
       }
 
-      jest
+      vi
         .spyOn(service, 'findInstitutionMemberById')
         .mockResolvedValue(existingMember)
-      jest
+      vi
         .spyOn(prismaService.institutionMember, 'delete')
         .mockResolvedValue(existingMember)
 
@@ -671,7 +672,7 @@ describe('InstitutionMemberService', () => {
     it('should throw NotFoundException if member not found', async () => {
       const memberId = 1
 
-      jest.spyOn(service, 'findInstitutionMemberById').mockResolvedValue(null)
+      vi.spyOn(service, 'findInstitutionMemberById').mockResolvedValue(null)
 
       await expect(service.deleteInstitutionMember(memberId)).rejects.toThrow(
         new NotFoundException('Membro não encontrado'),

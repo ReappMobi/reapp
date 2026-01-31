@@ -7,12 +7,17 @@ const getMock = vi.fn()
 
 vi.mock('mercadopago', () => {
   return {
-    Preference: vi.fn().mockImplementation(() => ({
-      create: createMock,
-    })),
-    Payment: vi.fn().mockImplementation(() => ({
-      get: getMock,
-    })),
+    Preference: vi.fn(
+      class {
+        create = createMock
+      },
+    ),
+    Payment: vi.fn(
+      class {
+        get = getMock
+      },
+    ),
+    MercadoPagoConfig: vi.fn(class {}),
   }
 })
 
@@ -30,6 +35,7 @@ describe('MercadopagoService', () => {
   })
 
   it('should be defined', () => {
+    console.log(service)
     expect(service).toBeDefined()
   })
 
