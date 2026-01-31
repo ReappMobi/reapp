@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { Mock, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthGuard } from '../../auth/auth.guard'
 import { AccountController } from '../account.controller'
 import { AccountService } from '../account.service'
@@ -20,23 +21,23 @@ describe('AccountController', () => {
         {
           provide: AccountService,
           useValue: {
-            create: jest.fn(),
-            createWithGoogle: jest.fn(),
-            findAll: jest.fn(),
-            findOne: jest.fn(),
-            findOneInstitution: jest.fn(),
-            findOneDonor: jest.fn(),
-            remove: jest.fn(),
-            update: jest.fn(),
-            followAccount: jest.fn(),
-            unfollowAccount: jest.fn(),
+            create: vi.fn(),
+            createWithGoogle: vi.fn(),
+            findAll: vi.fn(),
+            findOne: vi.fn(),
+            findOneInstitution: vi.fn(),
+            findOneDonor: vi.fn(),
+            remove: vi.fn(),
+            update: vi.fn(),
+            followAccount: vi.fn(),
+            unfollowAccount: vi.fn(),
           },
         },
       ],
     })
       .overrideGuard(AuthGuard)
       .useValue({
-        canActivate: jest.fn().mockReturnValue(true),
+        canActivate: vi.fn().mockReturnValue(true),
       })
       .compile()
 
@@ -54,7 +55,7 @@ describe('AccountController', () => {
       }
 
       const file = {} as Express.Multer.File
-      ;(accountService.create as jest.Mock).mockResolvedValue({
+      ;(accountService.create as Mock).mockResolvedValue({
         id: 1,
         ...createAccountDto,
       })
@@ -70,7 +71,7 @@ describe('AccountController', () => {
       const createAccountGoogleDto: CreateAccountGoogleDto = {
         idToken: 'test-id-token',
       }
-      ;(accountService.createWithGoogle as jest.Mock).mockResolvedValue({
+      ;(accountService.createWithGoogle as Mock).mockResolvedValue({
         id: 2,
         email: 'google@example.com',
         name: 'Google User',
@@ -104,7 +105,7 @@ describe('AccountController', () => {
           accountType: 'institution',
         },
       ]
-      ;(accountService.findAll as jest.Mock).mockResolvedValue(accounts)
+      ;(accountService.findAll as Mock).mockResolvedValue(accounts)
 
       const result = await controller.findAll({})
       expect(accountService.findAll).toHaveBeenCalled()
@@ -120,7 +121,7 @@ describe('AccountController', () => {
         name: 'Test',
         accountType: 'donor',
       }
-      ;(accountService.findOne as jest.Mock).mockResolvedValue(account)
+      ;(accountService.findOne as Mock).mockResolvedValue(account)
 
       const result = await controller.findOne('1')
       expect(accountService.findOne).toHaveBeenCalledWith(1)
@@ -128,7 +129,7 @@ describe('AccountController', () => {
     })
 
     it('should throw not found exception if account not exists', async () => {
-      ;(accountService.findOne as jest.Mock).mockRejectedValue(
+      ;(accountService.findOne as Mock).mockRejectedValue(
         new HttpException('conta não encontrada', HttpStatus.NOT_FOUND),
       )
 
@@ -146,7 +147,7 @@ describe('AccountController', () => {
         phone: '1234-5678',
         account: { id: 1, name: 'Inst' },
       }
-      ;(accountService.findOneInstitution as jest.Mock).mockResolvedValue(
+      ;(accountService.findOneInstitution as Mock).mockResolvedValue(
         institutionData,
       )
 
@@ -164,7 +165,7 @@ describe('AccountController', () => {
     it('should follow an account', async () => {
       const request = { user: { id: 1 } }
       const targetAccountId = 2
-      ;(accountService.followAccount as jest.Mock).mockResolvedValue({
+      ;(accountService.followAccount as Mock).mockResolvedValue({
         message: `You are now following account ${targetAccountId}`,
       })
 
@@ -181,7 +182,7 @@ describe('AccountController', () => {
     it('should handle error when trying to follow an invalid account', async () => {
       const request = { user: { id: 1 } }
       const targetAccountId = 999
-      ;(accountService.followAccount as jest.Mock).mockRejectedValue(
+      ;(accountService.followAccount as Mock).mockRejectedValue(
         new HttpException('Account not found', HttpStatus.NOT_FOUND),
       )
 
@@ -199,7 +200,7 @@ describe('AccountController', () => {
     it('should unfollow an account', async () => {
       const request = { user: { id: 1 } }
       const targetAccountId = 2
-      ;(accountService.unfollowAccount as jest.Mock).mockResolvedValue({
+      ;(accountService.unfollowAccount as Mock).mockResolvedValue({
         message: `You have unfollowed account ${targetAccountId}`,
       })
 
@@ -216,7 +217,7 @@ describe('AccountController', () => {
     it('should handle error when trying to unfollow an invalid account', async () => {
       const request = { user: { id: 1 } }
       const targetAccountId = 999
-      ;(accountService.unfollowAccount as jest.Mock).mockRejectedValue(
+      ;(accountService.unfollowAccount as Mock).mockRejectedValue(
         new HttpException('Account not found', HttpStatus.NOT_FOUND),
       )
 
@@ -237,7 +238,7 @@ describe('AccountController', () => {
         account: { id: 1, name: 'Donor', email: 'donor@example.com' },
         donations: [],
       }
-      ;(accountService.findOneDonor as jest.Mock).mockResolvedValue(donorData)
+      ;(accountService.findOneDonor as Mock).mockResolvedValue(donorData)
 
       const result = await controller.findOneDonor('1')
       expect(accountService.findOneDonor).toHaveBeenCalledWith(1)
@@ -248,7 +249,7 @@ describe('AccountController', () => {
   describe('remove', () => {
     it('should remove the account if authorized', async () => {
       const request = { user: { id: 1 } }
-      ;(accountService.remove as jest.Mock).mockResolvedValue({
+      ;(accountService.remove as Mock).mockResolvedValue({
         message: 'Account removed',
       })
 
@@ -259,7 +260,7 @@ describe('AccountController', () => {
 
     it('should throw unauthorized if user tries to remove another account', async () => {
       const request = { user: { id: 2 } }
-      ;(accountService.remove as jest.Mock).mockRejectedValue(
+      ;(accountService.remove as Mock).mockRejectedValue(
         new HttpException('Acesso não autorizado', HttpStatus.UNAUTHORIZED),
       )
 
@@ -285,7 +286,7 @@ describe('AccountController', () => {
         email: 'test@example.com',
         media: { id: 'media-id', url: 'http://example.com/media.jpg' },
       }
-      ;(accountService.update as jest.Mock).mockResolvedValue(updatedAccount)
+      ;(accountService.update as Mock).mockResolvedValue(updatedAccount)
 
       const result = await controller.update(request, updateAccountDto, 1, file)
       expect(accountService.update).toHaveBeenCalledWith(
@@ -304,7 +305,7 @@ describe('AccountController', () => {
         password: 'senha1234',
         confirmPassword: 'senha1234',
       }
-      ;(accountService.update as jest.Mock).mockRejectedValue(
+      ;(accountService.update as Mock).mockRejectedValue(
         new HttpException('Conta não encontrada', HttpStatus.NOT_FOUND),
       )
 
