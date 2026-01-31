@@ -4,7 +4,7 @@ import { PrismaService } from '../../../database/prisma.service'
 import { MercadopagoService } from '../../../services/mercadopago/mercadopago.service'
 import { DonationService } from '../donation.service'
 import { NotificationRequestDto } from '../dto/notification.dto'
-import { RequestDonationDto } from '../dto/request-donation.dto'
+import { DonationRequestBody } from '../dto/request-donation.dto'
 
 describe('DonationService tests', () => {
   let service: DonationService
@@ -54,7 +54,7 @@ describe('DonationService tests', () => {
   })
 
   describe('error case', () => {
-    const requestDonationDto: RequestDonationDto = {
+    const requestDonationDto: DonationRequestBody = {
       amount: 10,
       institutionId: 1,
       projectId: 1,
@@ -137,7 +137,7 @@ describe('DonationService tests', () => {
   })
 
   describe('success case', () => {
-    const requestDonationDto: RequestDonationDto = {
+    const requestDonationDto: DonationRequestBody = {
       amount: 10,
       institutionId: 1,
       projectId: 1,
