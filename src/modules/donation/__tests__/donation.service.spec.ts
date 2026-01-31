@@ -62,9 +62,7 @@ describe('DonationService tests', () => {
       description: 'test',
     }
     it('should throw an error if the institution does not exist', async () => {
-      ;(prismaService.institution.findUnique as Mock).mockResolvedValue(
-        null,
-      )
+      ;(prismaService.institution.findUnique as Mock).mockResolvedValue(null)
       ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         email: 'test@test.com',
         name: 'test',
@@ -394,9 +392,7 @@ describe('DonationService tests', () => {
       ;(prismaService.donation.findMany as Mock).mockResolvedValue(
         mockDonations,
       )
-      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(
-        mockTotals,
-      )
+      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(mockTotals)
 
       const result = await service.getDonationsByInstitution(
         user,
@@ -443,9 +439,7 @@ describe('DonationService tests', () => {
       ;(prismaService.donation.findMany as Mock).mockResolvedValue(
         mockDonations,
       )
-      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(
-        mockTotals,
-      )
+      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(mockTotals)
 
       const result = await service.getGeneralDonations(user, 1, 10, 'all')
       expect(result).toEqual({
@@ -484,9 +478,7 @@ describe('DonationService tests', () => {
       ;(prismaService.donation.findMany as Mock).mockResolvedValue(
         mockDonations,
       )
-      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(
-        mockTotals,
-      )
+      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(mockTotals)
 
       const result = await service.getProjectsDonationsByInstitution(
         user,
@@ -528,9 +520,7 @@ describe('DonationService tests', () => {
       ;(prismaService.donation.findMany as Mock).mockResolvedValue(
         mockDonations,
       )
-      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(
-        mockTotals,
-      )
+      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(mockTotals)
 
       const result = await service.getDonationsByDonor(
         1,
@@ -560,9 +550,7 @@ describe('DonationService tests', () => {
       ;(prismaService.donation.findMany as Mock).mockResolvedValue(
         mockDonations,
       )
-      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(
-        mockTotals,
-      )
+      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(mockTotals)
 
       const result = await service.getDonationsByDonor(
         1,

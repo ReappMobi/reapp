@@ -124,12 +124,13 @@ describe('InstitutionMemberController', () => {
         },
       }
 
-      vi
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      vi
-        .spyOn(institutionMemberService, 'createInstitutionMember')
-        .mockResolvedValue(createdMember)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'createInstitutionMember',
+      ).mockResolvedValue(createdMember)
 
       const result = await controller.createInstitutionMember(
         request,
@@ -218,9 +219,10 @@ describe('InstitutionMemberController', () => {
         },
       ]
 
-      vi
-        .spyOn(institutionMemberService, 'getInstitutionMembersByType')
-        .mockResolvedValue(collaborators)
+      vi.spyOn(
+        institutionMemberService,
+        'getInstitutionMembersByType',
+      ).mockResolvedValue(collaborators)
 
       const result =
         await controller.getCollaboratorsByInstitutionId(institutionId)
@@ -281,9 +283,10 @@ describe('InstitutionMemberController', () => {
         },
       ]
 
-      vi
-        .spyOn(institutionMemberService, 'getInstitutionMembersByType')
-        .mockResolvedValue(volunteers)
+      vi.spyOn(
+        institutionMemberService,
+        'getInstitutionMembersByType',
+      ).mockResolvedValue(volunteers)
 
       const result =
         await controller.getVolunteersByInstitutionId(institutionId)
@@ -344,9 +347,10 @@ describe('InstitutionMemberController', () => {
         },
       ]
 
-      vi
-        .spyOn(institutionMemberService, 'getInstitutionMembersByType')
-        .mockResolvedValue(partners)
+      vi.spyOn(
+        institutionMemberService,
+        'getInstitutionMembersByType',
+      ).mockResolvedValue(partners)
 
       const result = await controller.getPartnersByInstitutionId(institutionId)
 
@@ -424,12 +428,13 @@ describe('InstitutionMemberController', () => {
         },
       }
 
-      vi
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      vi
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(member)
 
       const result = await controller.getInstitutionMemberById(
         memberId,
@@ -482,12 +487,13 @@ describe('InstitutionMemberController', () => {
         fields: [],
       }
 
-      vi
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      vi
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(null)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(null)
 
       await expect(
         controller.getInstitutionMemberById(memberId, request),
@@ -565,12 +571,13 @@ describe('InstitutionMemberController', () => {
         },
       }
 
-      vi
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      vi
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(member)
 
       await expect(
         controller.getInstitutionMemberById(memberId, request),
@@ -698,15 +705,17 @@ describe('InstitutionMemberController', () => {
         },
       }
 
-      vi
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      vi
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member)
-      vi
-        .spyOn(institutionMemberService, 'updateInstitutionMember')
-        .mockResolvedValue(updatedMember)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(member)
+      vi.spyOn(
+        institutionMemberService,
+        'updateInstitutionMember',
+      ).mockResolvedValue(updatedMember)
 
       const result = await controller.updateInstitutionMember(
         memberId,
@@ -780,12 +789,13 @@ describe('InstitutionMemberController', () => {
         fields: [],
       }
 
-      vi
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      vi
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(null)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(null)
 
       await expect(
         controller.updateInstitutionMember(
@@ -875,12 +885,13 @@ describe('InstitutionMemberController', () => {
         },
       }
 
-      vi
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      vi
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(member)
 
       await expect(
         controller.updateInstitutionMember(
@@ -968,15 +979,17 @@ describe('InstitutionMemberController', () => {
         },
       }
 
-      vi
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      vi
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member)
-      vi
-        .spyOn(institutionMemberService, 'deleteInstitutionMember')
-        .mockResolvedValue({ message: 'Membro deletado com sucesso' })
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(member)
+      vi.spyOn(
+        institutionMemberService,
+        'deleteInstitutionMember',
+      ).mockResolvedValue({ message: 'Membro deletado com sucesso' })
 
       const result = await controller.deleteInstitutionMember(memberId, request)
 
@@ -1029,12 +1042,13 @@ describe('InstitutionMemberController', () => {
         fields: [],
       }
 
-      vi
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      vi
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(null)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(null)
 
       await expect(
         controller.deleteInstitutionMember(memberId, request),
@@ -1115,12 +1129,13 @@ describe('InstitutionMemberController', () => {
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
       }
-      vi
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      vi
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(member)
 
       await expect(
         controller.deleteInstitutionMember(memberId, request),

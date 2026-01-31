@@ -92,12 +92,12 @@ describe('InstitutionMemberService', () => {
       }
 
       vi.spyOn(mediaService, 'processMedia').mockResolvedValue(mediaResult)
-      vi
-        .spyOn(mediaService, 'getMediaAttachmentById')
-        .mockResolvedValue(mediaResponse)
-      vi
-        .spyOn(prismaService.institutionMember, 'create')
-        .mockResolvedValue(createdMember)
+      vi.spyOn(mediaService, 'getMediaAttachmentById').mockResolvedValue(
+        mediaResponse,
+      )
+      vi.spyOn(prismaService.institutionMember, 'create').mockResolvedValue(
+        createdMember,
+      )
 
       const result = await service.createInstitutionMember(data)
 
@@ -140,9 +140,9 @@ describe('InstitutionMemberService', () => {
         avatarId: null,
       }
 
-      vi
-        .spyOn(prismaService.institutionMember, 'create')
-        .mockResolvedValue(createdMember)
+      vi.spyOn(prismaService.institutionMember, 'create').mockResolvedValue(
+        createdMember,
+      )
 
       const result = await service.createInstitutionMember(data)
 
@@ -191,9 +191,9 @@ describe('InstitutionMemberService', () => {
         },
       ]
 
-      vi
-        .spyOn(prismaService.institutionMember, 'findMany')
-        .mockResolvedValue(members)
+      vi.spyOn(prismaService.institutionMember, 'findMany').mockResolvedValue(
+        members,
+      )
 
       const result = await service.getInstitutionMembersByType(
         institutionId,
@@ -243,12 +243,12 @@ describe('InstitutionMemberService', () => {
         processing: 2,
       }
 
-      vi
-        .spyOn(prismaService.institutionMember, 'findUnique')
-        .mockResolvedValue(member)
-      vi
-        .spyOn(mediaService, 'getMediaAttachmentById')
-        .mockResolvedValue(mediaResponse)
+      vi.spyOn(prismaService.institutionMember, 'findUnique').mockResolvedValue(
+        member,
+      )
+      vi.spyOn(mediaService, 'getMediaAttachmentById').mockResolvedValue(
+        mediaResponse,
+      )
 
       const result = await service.findInstitutionMemberById(memberId)
 
@@ -278,9 +278,9 @@ describe('InstitutionMemberService', () => {
         avatarId: null,
       }
 
-      vi
-        .spyOn(prismaService.institutionMember, 'findUnique')
-        .mockResolvedValue(member)
+      vi.spyOn(prismaService.institutionMember, 'findUnique').mockResolvedValue(
+        member,
+      )
 
       const result = await service.findInstitutionMemberById(memberId)
 
@@ -391,19 +391,19 @@ describe('InstitutionMemberService', () => {
         avatarId: 'new-media-id',
       }
 
-      vi
-        .spyOn(service, 'findInstitutionMemberById')
-        .mockResolvedValue(existingMember)
-      vi
-        .spyOn(mediaService, 'deleteMediaAttachment')
-        .mockResolvedValue(undefined)
+      vi.spyOn(service, 'findInstitutionMemberById').mockResolvedValue(
+        existingMember,
+      )
+      vi.spyOn(mediaService, 'deleteMediaAttachment').mockResolvedValue(
+        undefined,
+      )
       vi.spyOn(mediaService, 'processMedia').mockResolvedValue(mediaResult)
-      vi
-        .spyOn(mediaService, 'getMediaAttachmentById')
-        .mockResolvedValue(mediaResponse)
-      vi
-        .spyOn(prismaService.institutionMember, 'update')
-        .mockResolvedValue(updatedMember)
+      vi.spyOn(mediaService, 'getMediaAttachmentById').mockResolvedValue(
+        mediaResponse,
+      )
+      vi.spyOn(prismaService.institutionMember, 'update').mockResolvedValue(
+        updatedMember,
+      )
 
       const result = await service.updateInstitutionMember(memberId, data)
 
@@ -521,15 +521,15 @@ describe('InstitutionMemberService', () => {
         processing: 2,
       }
 
-      vi
-        .spyOn(service, 'findInstitutionMemberById')
-        .mockResolvedValue(existingMember)
-      vi
-        .spyOn(prismaService.institutionMember, 'update')
-        .mockResolvedValue(updatedMember)
-      vi
-        .spyOn(mediaService, 'getMediaAttachmentById')
-        .mockResolvedValue(mediaResponse)
+      vi.spyOn(service, 'findInstitutionMemberById').mockResolvedValue(
+        existingMember,
+      )
+      vi.spyOn(prismaService.institutionMember, 'update').mockResolvedValue(
+        updatedMember,
+      )
+      vi.spyOn(mediaService, 'getMediaAttachmentById').mockResolvedValue(
+        mediaResponse,
+      )
 
       const result = await service.updateInstitutionMember(memberId, data)
 
@@ -619,15 +619,15 @@ describe('InstitutionMemberService', () => {
         },
       }
 
-      vi
-        .spyOn(service, 'findInstitutionMemberById')
-        .mockResolvedValue(existingMember)
-      vi
-        .spyOn(mediaService, 'deleteMediaAttachment')
-        .mockResolvedValue(undefined)
-      vi
-        .spyOn(prismaService.institutionMember, 'delete')
-        .mockResolvedValue(existingMember)
+      vi.spyOn(service, 'findInstitutionMemberById').mockResolvedValue(
+        existingMember,
+      )
+      vi.spyOn(mediaService, 'deleteMediaAttachment').mockResolvedValue(
+        undefined,
+      )
+      vi.spyOn(prismaService.institutionMember, 'delete').mockResolvedValue(
+        existingMember,
+      )
 
       const result = await service.deleteInstitutionMember(memberId)
 
@@ -652,12 +652,12 @@ describe('InstitutionMemberService', () => {
         media: null,
       }
 
-      vi
-        .spyOn(service, 'findInstitutionMemberById')
-        .mockResolvedValue(existingMember)
-      vi
-        .spyOn(prismaService.institutionMember, 'delete')
-        .mockResolvedValue(existingMember)
+      vi.spyOn(service, 'findInstitutionMemberById').mockResolvedValue(
+        existingMember,
+      )
+      vi.spyOn(prismaService.institutionMember, 'delete').mockResolvedValue(
+        existingMember,
+      )
 
       const result = await service.deleteInstitutionMember(memberId)
 
