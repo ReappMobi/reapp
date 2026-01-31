@@ -1,19 +1,20 @@
-import { Test, TestingModule } from '@nestjs/testing'
-import {
-  ProjectService,
-  PostProjectData,
-  FavoriteProjectData,
-} from '../project.service'
-import { PrismaService } from '../../../database/prisma.service'
-import { MediaService } from '../../media-attachment/media-attachment.service'
 import {
   ForbiddenException,
   HttpException,
   NotFoundException,
 } from '@nestjs/common'
+import { Test, TestingModule } from '@nestjs/testing'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { PrismaService } from '../../../database/prisma.service'
+import { MediaService } from '../../media-attachment/media-attachment.service'
 import { UpdateProjectDto } from '../dto/updateProject.dto'
+import {
+  FavoriteProjectData,
+  PostProjectData,
+  ProjectService,
+} from '../project.service'
 
-jest.mock('../../media-attachment/media-attachment.service')
+vi.mock('../../media-attachment/media-attachment.service')
 
 describe('ProjectService', () => {
   let service: ProjectService
@@ -28,32 +29,32 @@ describe('ProjectService', () => {
           provide: PrismaService,
           useValue: {
             project: {
-              create: jest.fn(),
-              findUnique: jest.fn(),
-              findMany: jest.fn(),
-              update: jest.fn(),
-              delete: jest.fn(),
+              create: vi.fn(),
+              findUnique: vi.fn(),
+              findMany: vi.fn(),
+              update: vi.fn(),
+              delete: vi.fn(),
             },
             category: {
-              findFirst: jest.fn(),
-              create: jest.fn(),
-              findMany: jest.fn(),
+              findFirst: vi.fn(),
+              create: vi.fn(),
+              findMany: vi.fn(),
             },
             favoriteProject: {
-              findUnique: jest.fn(),
-              findMany: jest.fn(),
-              create: jest.fn(),
-              delete: jest.fn(),
+              findUnique: vi.fn(),
+              findMany: vi.fn(),
+              create: vi.fn(),
+              delete: vi.fn(),
             },
           },
         },
         {
           provide: MediaService,
           useValue: {
-            processMedia: jest.fn(),
-            getMediaAttachmentById: jest.fn(),
-            getMediaAttachmentsByIds: jest.fn(),
-            deleteMediaAttachment: jest.fn(),
+            processMedia: vi.fn(),
+            getMediaAttachmentById: vi.fn(),
+            getMediaAttachmentsByIds: vi.fn(),
+            deleteMediaAttachment: vi.fn(),
           },
         },
       ],
@@ -65,7 +66,7 @@ describe('ProjectService', () => {
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   // Tests for postProjectService
@@ -159,11 +160,11 @@ describe('ProjectService', () => {
         updatedAt: new Date(),
       }
 
-      prismaService.category.findFirst = jest
+      prismaService.category.findFirst = vi
         .fn()
         .mockResolvedValue(existingCategory)
-      mediaService.processMedia = jest.fn().mockResolvedValue(mediaAttachment)
-      prismaService.project.create = jest.fn().mockResolvedValue(createdProject)
+      mediaService.processMedia = vi.fn().mockResolvedValue(mediaAttachment)
+      prismaService.project.create = vi.fn().mockResolvedValue(createdProject)
 
       const result = await service.postProjectService(data)
 
@@ -231,10 +232,10 @@ describe('ProjectService', () => {
         updatedAt: new Date(),
       }
 
-      prismaService.category.findFirst = jest.fn().mockResolvedValue(null)
-      prismaService.category.create = jest.fn().mockResolvedValue(newCategory)
-      mediaService.processMedia = jest.fn().mockResolvedValue(mediaAttachment)
-      prismaService.project.create = jest.fn().mockResolvedValue(createdProject)
+      prismaService.category.findFirst = vi.fn().mockResolvedValue(null)
+      prismaService.category.create = vi.fn().mockResolvedValue(newCategory)
+      mediaService.processMedia = vi.fn().mockResolvedValue(mediaAttachment)
+      prismaService.project.create = vi.fn().mockResolvedValue(createdProject)
 
       const result = await service.postProjectService(data)
 
@@ -291,10 +292,10 @@ describe('ProjectService', () => {
         accountId: 1,
       }
 
-      prismaService.category.findFirst = jest
+      prismaService.category.findFirst = vi
         .fn()
         .mockRejectedValue(new Error('Database error'))
-      mediaService.processMedia = jest.fn().mockResolvedValue({
+      mediaService.processMedia = vi.fn().mockResolvedValue({
         mediaAttachment: { id: 'media-id' },
       })
 
@@ -319,13 +320,13 @@ describe('ProjectService', () => {
         },
       }
 
-      prismaService.project.findUnique = jest
+      prismaService.project.findUnique = vi
         .fn()
         .mockResolvedValue(existingProject)
 
-      prismaService.project.delete = jest.fn().mockResolvedValue(null)
+      prismaService.project.delete = vi.fn().mockResolvedValue(null)
 
-      mediaService.deleteMediaAttachment = jest.fn().mockResolvedValue(null)
+      mediaService.deleteMediaAttachment = vi.fn().mockResolvedValue(null)
 
       await expect(
         service.deleteProjectService(projectId, accountId),
@@ -349,7 +350,7 @@ describe('ProjectService', () => {
       const projectId = 1
       const accountId = 1
 
-      prismaService.project.findUnique = jest.fn().mockResolvedValue(null)
+      prismaService.project.findUnique = vi.fn().mockResolvedValue(null)
 
       await expect(
         service.deleteProjectService(projectId, accountId),
@@ -377,7 +378,7 @@ describe('ProjectService', () => {
         },
       }
 
-      prismaService.project.findUnique = jest
+      prismaService.project.findUnique = vi
         .fn()
         .mockResolvedValue(existingProject)
 
@@ -419,16 +420,16 @@ describe('ProjectService', () => {
         accountId: accountId,
       }
 
-      prismaService.project.findUnique = jest
+      prismaService.project.findUnique = vi
         .fn()
         .mockResolvedValue(existingProject)
 
-      prismaService.project.update = jest.fn().mockResolvedValue({
+      prismaService.project.update = vi.fn().mockResolvedValue({
         ...existingProject,
         ...updateData,
       })
 
-      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue({
+      mediaService.getMediaAttachmentById = vi.fn().mockResolvedValue({
         mediaResponse: { id: 'media-id', url: 'http://example.com/media.jpg' },
       })
 
@@ -527,23 +528,23 @@ describe('ProjectService', () => {
         accountId: accountId,
       }
 
-      prismaService.project.findUnique = jest
+      prismaService.project.findUnique = vi
         .fn()
         .mockResolvedValue(existingProject)
 
-      mediaService.deleteMediaAttachment = jest.fn().mockResolvedValue(null)
+      mediaService.deleteMediaAttachment = vi.fn().mockResolvedValue(null)
 
-      mediaService.processMedia = jest
+      mediaService.processMedia = vi
         .fn()
         .mockResolvedValue({ mediaAttachment: { id: 'new-media-id' } })
 
-      prismaService.project.update = jest.fn().mockResolvedValue({
+      prismaService.project.update = vi.fn().mockResolvedValue({
         ...existingProject,
         ...updateData,
         mediaId: 'new-media-id',
       })
 
-      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue({
+      mediaService.getMediaAttachmentById = vi.fn().mockResolvedValue({
         mediaResponse: {
           id: 'new-media-id',
           url: 'http://example.com/new-media.jpg',
@@ -641,20 +642,20 @@ describe('ProjectService', () => {
 
       const newCategory = { id: 2, name: 'New Category' }
 
-      prismaService.project.findUnique = jest
+      prismaService.project.findUnique = vi
         .fn()
         .mockResolvedValue(existingProject)
 
-      prismaService.category.findFirst = jest.fn().mockResolvedValue(null)
+      prismaService.category.findFirst = vi.fn().mockResolvedValue(null)
 
-      prismaService.category.create = jest.fn().mockResolvedValue(newCategory)
+      prismaService.category.create = vi.fn().mockResolvedValue(newCategory)
 
-      prismaService.project.update = jest.fn().mockResolvedValue({
+      prismaService.project.update = vi.fn().mockResolvedValue({
         ...existingProject,
         categoryId: newCategory.id,
       })
 
-      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue({
+      mediaService.getMediaAttachmentById = vi.fn().mockResolvedValue({
         mediaResponse: { id: 'media-id', url: 'http://example.com/media.jpg' },
       })
 
@@ -734,7 +735,7 @@ describe('ProjectService', () => {
         accountId: accountId,
       }
 
-      prismaService.project.findUnique = jest.fn().mockResolvedValue(null)
+      prismaService.project.findUnique = vi.fn().mockResolvedValue(null)
 
       await expect(
         service.updateProjectService(projectId, updateData),
@@ -771,7 +772,7 @@ describe('ProjectService', () => {
         accountId: accountId,
       }
 
-      prismaService.project.findUnique = jest
+      prismaService.project.findUnique = vi
         .fn()
         .mockResolvedValue(existingProject)
 
@@ -797,10 +798,8 @@ describe('ProjectService', () => {
         donorId: 1,
       }
 
-      prismaService.favoriteProject.findUnique = jest
-        .fn()
-        .mockResolvedValue(null)
-      prismaService.favoriteProject.create = jest.fn().mockResolvedValue({})
+      prismaService.favoriteProject.findUnique = vi.fn().mockResolvedValue(null)
+      prismaService.favoriteProject.create = vi.fn().mockResolvedValue({})
 
       const result = await service.toggleFavoriteService(data)
 
@@ -829,11 +828,11 @@ describe('ProjectService', () => {
         donorId: 1,
       }
 
-      prismaService.favoriteProject.findUnique = jest.fn().mockResolvedValue({
+      prismaService.favoriteProject.findUnique = vi.fn().mockResolvedValue({
         donorId: data.donorId,
         projectId: data.projectId,
       })
-      prismaService.favoriteProject.delete = jest.fn().mockResolvedValue({})
+      prismaService.favoriteProject.delete = vi.fn().mockResolvedValue({})
 
       const result = await service.toggleFavoriteService(data)
 
@@ -864,7 +863,7 @@ describe('ProjectService', () => {
         donorId: 1,
       }
 
-      prismaService.favoriteProject.findUnique = jest
+      prismaService.favoriteProject.findUnique = vi
         .fn()
         .mockRejectedValue(new Error('Database error'))
 
@@ -903,8 +902,8 @@ describe('ProjectService', () => {
       ]
       const favoriteProjects = [{ projectId: 1 }]
 
-      prismaService.project.findMany = jest.fn().mockResolvedValue(allProjects)
-      prismaService.favoriteProject.findMany = jest
+      prismaService.project.findMany = vi.fn().mockResolvedValue(allProjects)
+      prismaService.favoriteProject.findMany = vi
         .fn()
         .mockResolvedValue(favoriteProjects)
 
@@ -950,7 +949,7 @@ describe('ProjectService', () => {
         },
       ]
 
-      prismaService.project.findMany = jest.fn().mockResolvedValue(allProjects)
+      prismaService.project.findMany = vi.fn().mockResolvedValue(allProjects)
 
       const result = await service.getAllProjectsService()
 
@@ -983,7 +982,7 @@ describe('ProjectService', () => {
         subtitle: 'Subtitle 1',
       }
 
-      prismaService.project.findUnique = jest.fn().mockResolvedValue(project)
+      prismaService.project.findUnique = vi.fn().mockResolvedValue(project)
 
       const result = await service.getProjectByIdService(projectId)
 
@@ -1034,7 +1033,7 @@ describe('ProjectService', () => {
     it('should throw NotFoundException when project does not exist', async () => {
       const projectId = 1
 
-      prismaService.project.findUnique = jest.fn().mockResolvedValue(null)
+      prismaService.project.findUnique = vi.fn().mockResolvedValue(null)
 
       await expect(service.getProjectByIdService(projectId)).rejects.toThrow(
         NotFoundException,
@@ -1072,10 +1071,10 @@ describe('ProjectService', () => {
         },
       ]
 
-      prismaService.favoriteProject.findMany = jest
+      prismaService.favoriteProject.findMany = vi
         .fn()
         .mockResolvedValue(favoriteProjects)
-      mediaService.getMediaAttachmentsByIds = jest
+      mediaService.getMediaAttachmentsByIds = vi
         .fn()
         .mockResolvedValue(mediaResponses)
 
@@ -1157,8 +1156,8 @@ describe('ProjectService', () => {
         },
       ]
 
-      prismaService.project.findMany = jest.fn().mockResolvedValue(projects)
-      mediaService.getMediaAttachmentsByIds = jest
+      prismaService.project.findMany = vi.fn().mockResolvedValue(projects)
+      mediaService.getMediaAttachmentsByIds = vi
         .fn()
         .mockResolvedValue(mediaResponses)
 
@@ -1214,7 +1213,7 @@ describe('ProjectService', () => {
     it('should return an empty array if there are no projects', async () => {
       const institutionId = 1
 
-      prismaService.project.findMany = jest.fn().mockResolvedValue([])
+      prismaService.project.findMany = vi.fn().mockResolvedValue([])
 
       const result =
         await service.getProjectsByInstitutionService(institutionId)
@@ -1270,8 +1269,8 @@ describe('ProjectService', () => {
         { id: 2, name: 'Category 2' },
       ]
 
-      prismaService.$queryRaw = jest.fn().mockResolvedValue(categoriesIds)
-      prismaService.category.findMany = jest.fn().mockResolvedValue(expected)
+      prismaService.$queryRaw = vi.fn().mockResolvedValue(categoriesIds)
+      prismaService.category.findMany = vi.fn().mockResolvedValue(expected)
 
       const actual = await service.getProjectCategoriesService('')
 
