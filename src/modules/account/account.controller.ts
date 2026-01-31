@@ -25,8 +25,8 @@ import {
 } from './dto/create-account.dto'
 import { GetAccountsQuery } from './dto/get-account-query.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
-import { UpdateAccountDto } from './dto/update-account.dto'
 import { UpdateAccountStatusDto } from './dto/update-account-dto'
+import { UpdateAccountDto } from './dto/update-account.dto'
 
 @Controller('account')
 export class AccountController {

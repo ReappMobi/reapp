@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing'
+import { AuthGuard } from '../../auth/auth.guard'
 import { DonationController } from '../donation.controller'
 import { DonationService } from '../donation.service'
-import { RequestDonationDto } from '../dto/request-donation.dto'
 import { NotificationRequestDto } from '../dto/notification.dto'
-import { AuthGuard } from '../../auth/auth.guard'
+import { RequestDonationDto } from '../dto/request-donation.dto'
 
 describe('DonationController', () => {
   let controller: DonationController
@@ -69,6 +69,8 @@ describe('DonationController', () => {
       data: {
         id: '123',
       },
+      topic: '',
+      resource: '',
     }
 
     it('should call donationService.notifyDonation', async () => {
