@@ -34,7 +34,6 @@ export async function seedDonations(prisma: PrismaClient) {
     ...donation,
     donorId: donorAccount.donor.id,
   }))
-  console.log(`Seeding ${donations.length} donations...`)
 
   await prisma.donation.createMany({
     data: donations,
