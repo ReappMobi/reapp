@@ -5,6 +5,7 @@ import { MercadopagoService } from '../../../services/mercadopago/mercadopago.se
 import { DonationService } from '../donation.service'
 import { NotificationRequestDto } from '../dto/notification.dto'
 import { DonationRequestBody } from '../dto/request-donation.dto'
+import { Mock, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('DonationService tests', () => {
   let service: DonationService
@@ -17,27 +18,27 @@ describe('DonationService tests', () => {
         {
           provide: MercadopagoService,
           useValue: {
-            processPayment: jest.fn(),
-            getPayment: jest.fn(),
+            processPayment: vi.fn(),
+            getPayment: vi.fn(),
           },
         },
         {
           provide: PrismaService,
           useValue: {
             project: {
-              findUnique: jest.fn(),
+              findUnique: vi.fn(),
             },
             institution: {
-              findUnique: jest.fn(),
+              findUnique: vi.fn(),
             },
             account: {
-              findUnique: jest.fn(),
+              findUnique: vi.fn(),
             },
             donation: {
-              create: jest.fn(),
-              update: jest.fn(),
-              findMany: jest.fn(),
-              aggregate: jest.fn(),
+              create: vi.fn(),
+              update: vi.fn(),
+              findMany: vi.fn(),
+              aggregate: vi.fn(),
             },
           },
         },
@@ -61,10 +62,8 @@ describe('DonationService tests', () => {
       description: 'test',
     }
     it('should throw an error if the institution does not exist', async () => {
-      ;(prismaService.institution.findUnique as jest.Mock).mockResolvedValue(
-        null,
-      )
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.institution.findUnique as Mock).mockResolvedValue(null)
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         email: 'test@test.com',
         name: 'test',
       })
@@ -76,11 +75,11 @@ describe('DonationService tests', () => {
     })
 
     it('should throw an error if the project does not exist', async () => {
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         email: 'test@test.com',
         name: 'test',
       })
-      ;(prismaService.project.findUnique as jest.Mock).mockResolvedValue(null)
+      ;(prismaService.project.findUnique as Mock).mockResolvedValue(null)
       requestDonationDto.institutionId = null
       requestDonationDto.projectId = 1
       const accountId = 1
@@ -91,7 +90,7 @@ describe('DonationService tests', () => {
 
     it('should throw an error if the amount is less than or equal to 0', async () => {
       requestDonationDto.amount = 0
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         email: 'test@test.com',
         name: 'test',
       })
@@ -103,7 +102,7 @@ describe('DonationService tests', () => {
 
     it('should throw an error if the amount is less than 0.01', async () => {
       requestDonationDto.amount = 0.001
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         email: 'test@test.com',
         name: 'test',
       })
@@ -114,7 +113,7 @@ describe('DonationService tests', () => {
     })
 
     it('should throw an error if account is not exists', async () => {
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue(null)
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue(null)
       const accountId = 1
       await expect(
         service.requestDonation(requestDonationDto, accountId),
@@ -122,7 +121,7 @@ describe('DonationService tests', () => {
     })
 
     it('should throw an error if account is an institution', async () => {
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         email: 'test@test.com',
         name: 'test',
         institution: {
@@ -145,17 +144,17 @@ describe('DonationService tests', () => {
     }
 
     it('should call mercadopagoService.processPayment with correct data when donate to a project', async () => {
-      ;(prismaService.project.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.project.findUnique as Mock).mockResolvedValue({
         name: 'test',
       })
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         email: 'test@test.com',
         name: 'test',
         donor: {
           id: 1,
         },
       })
-      ;(mercadopagoService.processPayment as jest.Mock).mockResolvedValue({
+      ;(mercadopagoService.processPayment as Mock).mockResolvedValue({
         id: 'test_id',
         init_point: 'https://test_url',
       })
@@ -185,19 +184,19 @@ describe('DonationService tests', () => {
     })
 
     it('should call mercadopagoService.processPayment with correct data when donate to a institution', async () => {
-      ;(prismaService.institution.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.institution.findUnique as Mock).mockResolvedValue({
         account: {
           name: 'test',
         },
       })
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         email: 'test@test.com',
         name: 'test',
         donor: {
           id: 1,
         },
       })
-      ;(mercadopagoService.processPayment as jest.Mock).mockResolvedValue({
+      ;(mercadopagoService.processPayment as Mock).mockResolvedValue({
         id: 'test_id',
         init_point: 'https://test_url',
       })
@@ -228,14 +227,14 @@ describe('DonationService tests', () => {
     })
 
     it('should call mercadopagoService.processPayment with correct data with a general donation', async () => {
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         email: 'test@test.com',
         name: 'test',
         donor: {
           id: 1,
         },
       })
-      ;(mercadopagoService.processPayment as jest.Mock).mockResolvedValue({
+      ;(mercadopagoService.processPayment as Mock).mockResolvedValue({
         id: 'test_id',
         init_point: 'https://test_url',
       })
@@ -284,14 +283,14 @@ describe('DonationService tests', () => {
     }
 
     it('should throw an error if payment is not found', async () => {
-      ;(mercadopagoService.getPayment as jest.Mock).mockResolvedValue(null)
+      ;(mercadopagoService.getPayment as Mock).mockResolvedValue(null)
       await expect(service.notifyDonation(data)).rejects.toThrow(
         'Pagamento não encontrado',
       )
     })
 
     it('should call mercadopagoService.getPayment with correct data', async () => {
-      ;(mercadopagoService.getPayment as jest.Mock).mockResolvedValue({
+      ;(mercadopagoService.getPayment as Mock).mockResolvedValue({
         id: '123',
         status: 'approved',
         transaction_amount: 10,
@@ -301,7 +300,7 @@ describe('DonationService tests', () => {
     })
 
     it('should call prismaService.donation.update with correct data to approved', async () => {
-      ;(mercadopagoService.getPayment as jest.Mock).mockResolvedValue({
+      ;(mercadopagoService.getPayment as Mock).mockResolvedValue({
         id: '123',
         status: 'approved',
         transaction_amount: 10,
@@ -319,7 +318,7 @@ describe('DonationService tests', () => {
     })
 
     it('should call prismaService.donation.update with correct data to cancelled', async () => {
-      ;(mercadopagoService.getPayment as jest.Mock).mockResolvedValue({
+      ;(mercadopagoService.getPayment as Mock).mockResolvedValue({
         id: '123',
         status: 'cancelled',
         transaction_amount: 10,
@@ -337,7 +336,7 @@ describe('DonationService tests', () => {
     })
 
     it('should call prismaService.donation.update with correct data to rejected', async () => {
-      ;(mercadopagoService.getPayment as jest.Mock).mockResolvedValue({
+      ;(mercadopagoService.getPayment as Mock).mockResolvedValue({
         id: '123',
         status: 'rejected',
         transaction_amount: 10,
@@ -355,7 +354,7 @@ describe('DonationService tests', () => {
     })
 
     it('should not call prismaService.donation.update if status is not approved, cancelled or rejected', async () => {
-      ;(mercadopagoService.getPayment as jest.Mock).mockResolvedValue({
+      ;(mercadopagoService.getPayment as Mock).mockResolvedValue({
         id: '123',
         status: 'in_process',
         transaction_amount: 10,
@@ -372,7 +371,7 @@ describe('DonationService tests', () => {
     })
 
     it('should throw error if the user is not associated to an institution', async () => {
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         institution: null,
       })
       const user = { id: 1 }
@@ -384,18 +383,16 @@ describe('DonationService tests', () => {
     it('should return donations data for institution', async () => {
       const user = { id: 1 }
       const institutionId = 100
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         institution: { id: institutionId },
       })
 
       const mockDonations = [{ id: 1, createdAt: new Date() }]
       const mockTotals = { _sum: { amount: 200 }, _count: 3 }
-      ;(prismaService.donation.findMany as jest.Mock).mockResolvedValue(
+      ;(prismaService.donation.findMany as Mock).mockResolvedValue(
         mockDonations,
       )
-      ;(prismaService.donation.aggregate as jest.Mock).mockResolvedValue(
-        mockTotals,
-      )
+      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(mockTotals)
 
       const result = await service.getDonationsByInstitution(
         user,
@@ -423,7 +420,7 @@ describe('DonationService tests', () => {
     })
 
     it('should throw error if the user is not associated to an institution', async () => {
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         institution: null,
       })
       const user = { id: 1 }
@@ -434,17 +431,15 @@ describe('DonationService tests', () => {
 
     it('should return general donations data (with period "all")', async () => {
       const user = { id: 1 }
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         institution: { id: 200 },
       })
       const mockDonations = [{ id: 2, createdAt: new Date() }]
       const mockTotals = { _sum: { amount: 50 }, _count: 1 }
-      ;(prismaService.donation.findMany as jest.Mock).mockResolvedValue(
+      ;(prismaService.donation.findMany as Mock).mockResolvedValue(
         mockDonations,
       )
-      ;(prismaService.donation.aggregate as jest.Mock).mockResolvedValue(
-        mockTotals,
-      )
+      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(mockTotals)
 
       const result = await service.getGeneralDonations(user, 1, 10, 'all')
       expect(result).toEqual({
@@ -463,7 +458,7 @@ describe('DonationService tests', () => {
     })
 
     it('should throw error if the user is not associated to an institution', async () => {
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         institution: null,
       })
       const user = { id: 1 }
@@ -475,17 +470,15 @@ describe('DonationService tests', () => {
     it('should return projects donations data for institution', async () => {
       const user = { id: 1 }
       const institutionId = 300
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         institution: { id: institutionId },
       })
       const mockDonations = [{ id: 3, createdAt: new Date() }]
       const mockTotals = { _sum: { amount: 350 }, _count: 4 }
-      ;(prismaService.donation.findMany as jest.Mock).mockResolvedValue(
+      ;(prismaService.donation.findMany as Mock).mockResolvedValue(
         mockDonations,
       )
-      ;(prismaService.donation.aggregate as jest.Mock).mockResolvedValue(
-        mockTotals,
-      )
+      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(mockTotals)
 
       const result = await service.getProjectsDonationsByInstitution(
         user,
@@ -506,7 +499,7 @@ describe('DonationService tests', () => {
     it('should throw error if the logged user is different from the donor', async () => {
       const user = { id: 1 }
       // Simula que a conta possui um doador com id diferente
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         id: 1,
         donor: { id: 2 },
       })
@@ -518,18 +511,16 @@ describe('DonationService tests', () => {
     it('should return donations by donor with institutionId and projectId filters', async () => {
       const user = { id: 1, donor: { id: 1 } }
       // Conta com doador correspondente
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         id: 1,
         donor: { id: 1 },
       })
       const mockDonations = [{ id: 4, createdAt: new Date() }]
       const mockTotals = { _sum: { amount: 150 }, _count: 3 }
-      ;(prismaService.donation.findMany as jest.Mock).mockResolvedValue(
+      ;(prismaService.donation.findMany as Mock).mockResolvedValue(
         mockDonations,
       )
-      ;(prismaService.donation.aggregate as jest.Mock).mockResolvedValue(
-        mockTotals,
-      )
+      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(mockTotals)
 
       const result = await service.getDonationsByDonor(
         1,
@@ -550,18 +541,16 @@ describe('DonationService tests', () => {
 
     it('should return donations by donor without institutionId and projectId filters', async () => {
       const user = { id: 1, donor: { id: 1 } }
-      ;(prismaService.account.findUnique as jest.Mock).mockResolvedValue({
+      ;(prismaService.account.findUnique as Mock).mockResolvedValue({
         id: 1,
         donor: { id: 1 },
       })
       const mockDonations = [{ id: 5, createdAt: new Date() }]
       const mockTotals = { _sum: { amount: 75 }, _count: 1 }
-      ;(prismaService.donation.findMany as jest.Mock).mockResolvedValue(
+      ;(prismaService.donation.findMany as Mock).mockResolvedValue(
         mockDonations,
       )
-      ;(prismaService.donation.aggregate as jest.Mock).mockResolvedValue(
-        mockTotals,
-      )
+      ;(prismaService.donation.aggregate as Mock).mockResolvedValue(mockTotals)
 
       const result = await service.getDonationsByDonor(
         1,

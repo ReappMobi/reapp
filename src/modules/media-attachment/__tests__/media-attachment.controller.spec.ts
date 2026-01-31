@@ -3,6 +3,7 @@ import { MediaAttachmentController } from '../media-attachment.controller'
 import { MediaService } from '../media-attachment.service'
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { AuthGuard } from '../../auth/auth.guard'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('MediaAttachmentController', () => {
   let controller: MediaAttachmentController
@@ -15,15 +16,15 @@ describe('MediaAttachmentController', () => {
         {
           provide: MediaService,
           useValue: {
-            processMedia: jest.fn(),
-            getMediaAttachmentById: jest.fn(),
+            processMedia: vi.fn(),
+            getMediaAttachmentById: vi.fn(),
           },
         },
       ],
     })
       .overrideGuard(AuthGuard)
       .useValue({
-        canActivate: jest.fn().mockReturnValue(true),
+        canActivate: vi.fn().mockReturnValue(true),
       })
       .compile()
 
@@ -66,11 +67,11 @@ describe('MediaAttachmentController', () => {
       const description = 'Test description'
       const focus = '0.5,0.5'
       const res = {
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
-      }
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+      } as any
 
-      mediaService.processMedia = jest.fn().mockResolvedValue({
+      mediaService.processMedia = vi.fn().mockResolvedValue({
         isSynchronous: true,
         mediaAttachment: { id: '123' },
       })
@@ -107,11 +108,11 @@ describe('MediaAttachmentController', () => {
       const description = 'Test video upload'
       const focus = '0.5,0.5'
       const res = {
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
-      }
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+      } as any
 
-      mediaService.processMedia = jest.fn().mockResolvedValue({
+      mediaService.processMedia = vi.fn().mockResolvedValue({
         isSynchronous: false,
         mediaAttachment: { id: '123' },
       })
@@ -148,12 +149,12 @@ describe('MediaAttachmentController', () => {
       const description = 'Test description'
       const focus = '0.5,0.5'
       const res = {
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
-      }
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+      } as any
 
       const error = new HttpException('Some error', HttpStatus.BAD_REQUEST)
-      mediaService.processMedia = jest.fn().mockRejectedValue(error)
+      mediaService.processMedia = vi.fn().mockRejectedValue(error)
 
       await expect(
         controller.uploadMedia(files, accountId, description, focus, res),
@@ -171,13 +172,13 @@ describe('MediaAttachmentController', () => {
   describe('getMediaAttachment', () => {
     it('should return 404 if media attachment not found', async () => {
       const id = '123'
-      const req = {}
+      const req = {} as any
       const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      }
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+      } as any
 
-      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue({
+      mediaService.getMediaAttachmentById = vi.fn().mockResolvedValue({
         mediaResponse: null,
         processing: null,
       })
@@ -190,18 +191,18 @@ describe('MediaAttachmentController', () => {
 
     it('should return 200 with media response when processing is complete', async () => {
       const id = '123'
-      const req = {}
+      const req = {} as any
       const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      }
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+      } as any
 
       const mockMediaResponse = {
         id: '123',
         url: 'http://example.com/media/123',
       }
 
-      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue({
+      mediaService.getMediaAttachmentById = vi.fn().mockResolvedValue({
         mediaResponse: mockMediaResponse,
         processing: 2, // Processing complete
       })
@@ -214,15 +215,15 @@ describe('MediaAttachmentController', () => {
 
     it('should return 206 with media response when processing is in progress', async () => {
       const id = '123'
-      const req = {}
+      const req = {} as any
       const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      }
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+      } as any
 
       const mockMediaResponse = { id: '123', url: null }
 
-      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue({
+      mediaService.getMediaAttachmentById = vi.fn().mockResolvedValue({
         mediaResponse: mockMediaResponse,
         processing: 1, // Processing in progress
       })
@@ -235,13 +236,13 @@ describe('MediaAttachmentController', () => {
 
     it('should return 422 if processing failed', async () => {
       const id = '123'
-      const req = {}
+      const req = {} as any
       const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      }
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+      } as any
 
-      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue({
+      mediaService.getMediaAttachmentById = vi.fn().mockResolvedValue({
         mediaResponse: {},
         processing: -1, // Processing failed
       })
@@ -256,13 +257,13 @@ describe('MediaAttachmentController', () => {
 
     it('should return 500 for unknown processing status', async () => {
       const id = '123'
-      const req = {}
+      const req = {} as any
       const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      }
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+      } as any
 
-      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue({
+      mediaService.getMediaAttachmentById = vi.fn().mockResolvedValue({
         mediaResponse: {},
         processing: 99, // Unknown status
       })

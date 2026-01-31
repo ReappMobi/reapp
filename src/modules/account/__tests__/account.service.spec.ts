@@ -11,6 +11,7 @@ import {
 import { UpdateAccountDto } from '../dto/update-account.dto'
 import { ReappException } from '@app/utils/error.utils'
 import { BackendErrorCodes } from '@app/types/errors'
+import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('AccountService', () => {
   let service: AccountService
@@ -18,52 +19,52 @@ describe('AccountService', () => {
   let mediaService: MediaService
 
   const mockLogger = {
-    setContext: jest.fn(),
-    trace: jest.fn(),
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    fatal: jest.fn(),
+    setContext: vi.fn(),
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
   }
 
   const mockPrismaService = {
     account: {
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     },
     follow: {
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      delete: jest.fn(),
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      delete: vi.fn(),
     },
     institution: {
-      findFirst: jest.fn(),
-      findUnique: jest.fn(),
-      create: jest.fn(),
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
     },
     donor: {
-      findUnique: jest.fn(),
+      findUnique: vi.fn(),
     },
     category: {
-      findFirst: jest.fn(),
-      create: jest.fn(),
+      findFirst: vi.fn(),
+      create: vi.fn(),
     },
-    $transaction: jest.fn(),
+    $transaction: vi.fn(),
   }
 
   const mockMediaService = {
-    processMedia: jest.fn(),
-    deleteMediaAttachment: jest.fn(),
-    getMediaAttachmentById: jest.fn(),
+    processMedia: vi.fn(),
+    deleteMediaAttachment: vi.fn(),
+    getMediaAttachmentById: vi.fn(),
   }
 
   const mockOAuth2Client = {
-    verifyIdToken: jest.fn(),
+    verifyIdToken: vi.fn(),
   }
 
   beforeEach(async () => {
@@ -90,14 +91,14 @@ describe('AccountService', () => {
     // Como o service instancia diretamente o OAuth2Client, podemos fazer:
     // (service as any).client = mockOAuth2Client;
     // Alternativamente, poderíamos ajustar a classe para injetar o client.
-    ;(mockPrismaService.$transaction as jest.Mock).mockImplementation(
+    ;(mockPrismaService.$transaction as Mock).mockImplementation(
       async (cb: any) => cb(mockPrismaService as any),
     )
     ;(service as any).client = mockOAuth2Client
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('create (INSTITUTION)', () => {

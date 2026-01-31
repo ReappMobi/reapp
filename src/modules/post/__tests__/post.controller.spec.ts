@@ -1,12 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing'
-import { PostController } from '../post.controller'
-import { PostService } from '../post.service'
-import { AuthGuard } from '../../auth/auth.guard'
 import {
   HttpException,
   HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common'
+import { Test, TestingModule } from '@nestjs/testing'
+import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { AuthGuard } from '../../auth/auth.guard'
+import { PostController } from '../post.controller'
+import { PostService } from '../post.service'
 
 describe('PostController', () => {
   let controller: PostController
@@ -19,22 +20,22 @@ describe('PostController', () => {
         {
           provide: PostService,
           useValue: {
-            findInstitutionByAccountId: jest.fn(),
-            postPublication: jest.fn(),
-            getAllPosts: jest.fn(),
-            getPostsByInstitution: jest.fn(),
-            deletePost: jest.fn(),
-            updatePost: jest.fn(),
-            addComment: jest.fn(),
-            likePost: jest.fn(),
-            unlikePost: jest.fn(),
+            findInstitutionByAccountId: vi.fn(),
+            postPublication: vi.fn(),
+            getAllPosts: vi.fn(),
+            getPostsByInstitution: vi.fn(),
+            deletePost: vi.fn(),
+            updatePost: vi.fn(),
+            addComment: vi.fn(),
+            likePost: vi.fn(),
+            unlikePost: vi.fn(),
           },
         },
       ],
     })
       .overrideGuard(AuthGuard)
       .useValue({
-        canActivate: jest.fn().mockReturnValue(true),
+        canActivate: vi.fn().mockReturnValue(true),
       })
       .compile()
 
@@ -43,7 +44,7 @@ describe('PostController', () => {
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('postPublication', () => {
@@ -67,10 +68,10 @@ describe('PostController', () => {
       const userId = 1
       const req = { user: { id: userId } }
 
-      postService.findInstitutionByAccountId = jest
+      postService.findInstitutionByAccountId = vi
         .fn()
         .mockResolvedValue(institution)
-      postService.postPublication = jest
+      postService.postPublication = vi
         .fn()
         .mockResolvedValue({ id: 1, body: caption })
 
@@ -110,7 +111,7 @@ describe('PostController', () => {
       const caption = 'Test caption'
       const req = { user: { id: 2 } } // Different userId
 
-      postService.findInstitutionByAccountId = jest.fn().mockResolvedValue(null)
+      postService.findInstitutionByAccountId = vi.fn().mockResolvedValue(null)
 
       await expect(
         controller.postPublication(mockFile, caption, req as any),
@@ -124,7 +125,7 @@ describe('PostController', () => {
         { id: 1, body: 'Post 1' },
         { id: 2, body: 'Post 2' },
       ]
-      postService.getAllPosts = jest.fn().mockResolvedValue(mockPosts)
+      postService.getAllPosts = vi.fn().mockResolvedValue(mockPosts)
 
       const result = await controller.getAllPosts()
 
@@ -141,7 +142,7 @@ describe('PostController', () => {
         { id: 1, body: 'Post 1', institutionId },
         { id: 2, body: 'Post 2', institutionId },
       ]
-      postService.getPostsByInstitution = jest.fn().mockResolvedValue(mockPosts)
+      postService.getPostsByInstitution = vi.fn().mockResolvedValue(mockPosts)
 
       const result = await controller.getPostsByInstitution(institutionId)
 
@@ -158,7 +159,7 @@ describe('PostController', () => {
       const postId = 1
       const req = { user: { id: 1 } }
 
-      postService.deletePost = jest.fn().mockResolvedValue(undefined)
+      postService.deletePost = vi.fn().mockResolvedValue(undefined)
 
       const result = await controller.deletePost(postId, req as any)
 
@@ -191,7 +192,7 @@ describe('PostController', () => {
         body: caption,
         media: { id: 'media-id', url: 'http://example.com/image.jpg' },
       }
-      postService.updatePost = jest.fn().mockResolvedValue(updatedPost)
+      postService.updatePost = vi.fn().mockResolvedValue(updatedPost)
 
       const result = await controller.updatePost(
         postId,
@@ -217,7 +218,7 @@ describe('PostController', () => {
       const body = 'My comment'
       const req = { user: { id: 1 } }
       const mockComment = { id: 10, body: 'My comment', postId: 1 }
-      ;(postService.addComment as jest.Mock).mockResolvedValue(mockComment)
+      ;(postService.addComment as Mock).mockResolvedValue(mockComment)
 
       const result = await controller.addComment(postId, body, req as any)
 
@@ -229,7 +230,7 @@ describe('PostController', () => {
       const postId = 1
       const body = 'Fail comment'
       const req = { user: { id: 1 } }
-      ;(postService.addComment as jest.Mock).mockRejectedValue(
+      ;(postService.addComment as Mock).mockRejectedValue(
         new HttpException('Post não encontrado', HttpStatus.NOT_FOUND),
       )
 
@@ -244,7 +245,7 @@ describe('PostController', () => {
       const postId = 1
       const req = { user: { id: 2 } }
       const mockLike = { id: 5, postId, donorId: 2 }
-      ;(postService.likePost as jest.Mock).mockResolvedValue(mockLike)
+      ;(postService.likePost as Mock).mockResolvedValue(mockLike)
 
       const result = await controller.likePost(postId, req as any)
 
@@ -255,7 +256,7 @@ describe('PostController', () => {
     it('should throw if likePost fails with an HttpException', async () => {
       const postId = 2
       const req = { user: { id: 3 } }
-      ;(postService.likePost as jest.Mock).mockRejectedValue(
+      ;(postService.likePost as Mock).mockRejectedValue(
         new HttpException(
           'Post já curtido pelo usuário',
           HttpStatus.BAD_REQUEST,
@@ -272,7 +273,7 @@ describe('PostController', () => {
     it('should unlike a post and return success message', async () => {
       const postId = 1
       const req = { user: { id: 2 } }
-      ;(postService.unlikePost as jest.Mock).mockResolvedValue(undefined)
+      ;(postService.unlikePost as Mock).mockResolvedValue(undefined)
 
       const result = await controller.unlikePost(postId, req as any)
 
@@ -283,7 +284,7 @@ describe('PostController', () => {
     it('should throw if unlikePost fails with an HttpException', async () => {
       const postId = 1
       const req = { user: { id: 2 } }
-      ;(postService.unlikePost as jest.Mock).mockRejectedValue(
+      ;(postService.unlikePost as Mock).mockRejectedValue(
         new HttpException(
           'Esse usuário não curtiu este post',
           HttpStatus.BAD_REQUEST,

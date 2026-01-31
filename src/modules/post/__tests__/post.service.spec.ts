@@ -1,11 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing'
-import { PostService } from '../post.service'
-import { PrismaService } from '../../../database/prisma.service'
-import { MediaService } from '../../media-attachment/media-attachment.service'
-import { AccountService } from '../../account/account.service'
 import { HttpException, UnauthorizedException } from '@nestjs/common'
+import { Test, TestingModule } from '@nestjs/testing'
+import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { PrismaService } from '../../../database/prisma.service'
+import { AccountService } from '../../account/account.service'
+import { MediaService } from '../../media-attachment/media-attachment.service'
+import { PostService } from '../post.service'
 
-jest.mock('../../media-attachment/media-attachment.service')
+vi.mock('../../media-attachment/media-attachment.service')
 
 describe('PostService', () => {
   let service: PostService
@@ -20,36 +21,36 @@ describe('PostService', () => {
           provide: PrismaService,
           useValue: {
             post: {
-              create: jest.fn(),
-              findMany: jest.fn(),
-              findUnique: jest.fn(),
-              update: jest.fn(),
-              delete: jest.fn(),
+              create: vi.fn(),
+              findMany: vi.fn(),
+              findUnique: vi.fn(),
+              update: vi.fn(),
+              delete: vi.fn(),
             },
             institution: {
-              findUnique: jest.fn(),
+              findUnique: vi.fn(),
             },
             comment: {
-              create: jest.fn(),
+              create: vi.fn(),
             },
             like: {
-              findFirst: jest.fn(),
-              create: jest.fn(),
-              delete: jest.fn(),
+              findFirst: vi.fn(),
+              create: vi.fn(),
+              delete: vi.fn(),
             },
           },
         },
         {
           provide: MediaService,
           useValue: {
-            processMedia: jest.fn(),
-            getMediaAttachmentById: jest.fn(),
+            processMedia: vi.fn(),
+            getMediaAttachmentById: vi.fn(),
           },
         },
         {
           provide: AccountService,
           useValue: {
-            findOneDonor: jest.fn(),
+            findOneDonor: vi.fn(),
           },
         },
       ],
@@ -61,7 +62,7 @@ describe('PostService', () => {
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('postPublication', () => {
@@ -121,9 +122,9 @@ describe('PostService', () => {
         mediaId: 'mock-media-id',
       }
 
-      mediaService.processMedia = jest.fn().mockResolvedValue(mediaResponse)
-      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue(media)
-      prismaService.post.create = jest.fn().mockResolvedValue(createdPost)
+      mediaService.processMedia = vi.fn().mockResolvedValue(mediaResponse)
+      mediaService.getMediaAttachmentById = vi.fn().mockResolvedValue(media)
+      prismaService.post.create = vi.fn().mockResolvedValue(createdPost)
 
       const result = await service.postPublication(
         caption,
@@ -212,7 +213,7 @@ describe('PostService', () => {
         },
       ]
 
-      prismaService.post.findMany = jest.fn().mockResolvedValue(mockPosts)
+      prismaService.post.findMany = vi.fn().mockResolvedValue(mockPosts)
 
       const result = await service.getAllPosts()
 
@@ -232,8 +233,8 @@ describe('PostService', () => {
       const media1 = { id: 'media-1', url: 'http://example.com/media1.jpg' }
       const media2 = { id: 'media-2', url: 'http://example.com/media2.jpg' }
 
-      prismaService.post.findMany = jest.fn().mockResolvedValue(mockPosts)
-      mediaService.getMediaAttachmentById = jest
+      prismaService.post.findMany = vi.fn().mockResolvedValue(mockPosts)
+      mediaService.getMediaAttachmentById = vi
         .fn()
         .mockImplementation((mediaId) => {
           if (mediaId === 'media-1') return Promise.resolve(media1)
@@ -296,7 +297,7 @@ describe('PostService', () => {
       const postId = 1
       const userId = 2
 
-      prismaService.institution.findUnique = jest.fn().mockResolvedValue(null)
+      prismaService.institution.findUnique = vi.fn().mockResolvedValue(null)
 
       await expect(service.deletePost(postId, userId)).rejects.toThrow(
         UnauthorizedException,
@@ -320,11 +321,11 @@ describe('PostService', () => {
         likes: [],
       }
 
-      prismaService.institution.findUnique = jest
+      prismaService.institution.findUnique = vi
         .fn()
         .mockResolvedValue(institution)
-      prismaService.post.findUnique = jest.fn().mockResolvedValue(post)
-      prismaService.post.delete = jest.fn().mockResolvedValue(undefined)
+      prismaService.post.findUnique = vi.fn().mockResolvedValue(post)
+      prismaService.post.delete = vi.fn().mockResolvedValue(undefined)
 
       await service.deletePost(postId, userId)
 
@@ -380,13 +381,13 @@ describe('PostService', () => {
       }
       const media = { id: 'new-media-id', url: 'http://example.com/media.jpg' }
 
-      prismaService.institution.findUnique = jest
+      prismaService.institution.findUnique = vi
         .fn()
         .mockResolvedValue(institution)
-      prismaService.post.findUnique = jest.fn().mockResolvedValue(post)
-      mediaService.processMedia = jest.fn().mockResolvedValue(mediaResponse)
-      mediaService.getMediaAttachmentById = jest.fn().mockResolvedValue(media)
-      prismaService.post.update = jest.fn().mockResolvedValue(updatedPost)
+      prismaService.post.findUnique = vi.fn().mockResolvedValue(post)
+      mediaService.processMedia = vi.fn().mockResolvedValue(mediaResponse)
+      mediaService.getMediaAttachmentById = vi.fn().mockResolvedValue(media)
+      prismaService.post.update = vi.fn().mockResolvedValue(updatedPost)
 
       const result = await service.updatePost(
         postId,
@@ -476,8 +477,8 @@ describe('PostService', () => {
 
     it('should add a comment successfully', async () => {
       ;(service as any).accountService.findOneDonor.mockResolvedValue(donor)
-      jest.spyOn(service, 'findPostById').mockResolvedValue(post)
-      ;(prismaService.comment.create as jest.Mock).mockResolvedValue({
+      vi.spyOn(service, 'findPostById').mockResolvedValue(post)
+      ;(prismaService.comment.create as Mock).mockResolvedValue({
         id: 100,
         body,
         postId,
@@ -518,7 +519,7 @@ describe('PostService', () => {
 
     it('should throw NOT_FOUND if post not found', async () => {
       ;(service as any).accountService.findOneDonor.mockResolvedValue(donor)
-      jest.spyOn(service, 'findPostById').mockResolvedValue(null)
+      vi.spyOn(service, 'findPostById').mockResolvedValue(null)
 
       await expect(service.addComment(postId, accountId, body)).rejects.toThrow(
         'Não foi possível encontrar o post associado a este ID.',
@@ -555,9 +556,9 @@ describe('PostService', () => {
 
     it('should like the post successfully', async () => {
       ;(service as any).accountService.findOneDonor.mockResolvedValue(donor)
-      jest.spyOn(service, 'findPostById').mockResolvedValue(post)
-      ;(prismaService.like.findFirst as jest.Mock).mockResolvedValue(null)
-      ;(prismaService.like.create as jest.Mock).mockResolvedValue(like)
+      vi.spyOn(service, 'findPostById').mockResolvedValue(post)
+      ;(prismaService.like.findFirst as Mock).mockResolvedValue(null)
+      ;(prismaService.like.create as Mock).mockResolvedValue(like)
 
       const result = await service.likePost(postId, accountId)
 
@@ -573,7 +574,7 @@ describe('PostService', () => {
 
     it('should throw NOT_FOUND if post not found', async () => {
       ;(service as any).accountService.findOneDonor.mockResolvedValue(donor)
-      jest.spyOn(service, 'findPostById').mockResolvedValue(null)
+      vi.spyOn(service, 'findPostById').mockResolvedValue(null)
 
       await expect(service.likePost(postId, accountId)).rejects.toThrow(
         'Post não encontrado',
@@ -582,8 +583,8 @@ describe('PostService', () => {
 
     it('should throw BAD_REQUEST if post already liked by user', async () => {
       ;(service as any).accountService.findOneDonor.mockResolvedValue(donor)
-      jest.spyOn(service, 'findPostById').mockResolvedValue(post)
-      ;(prismaService.like.findFirst as jest.Mock).mockResolvedValue({
+      vi.spyOn(service, 'findPostById').mockResolvedValue(post)
+      ;(prismaService.like.findFirst as Mock).mockResolvedValue({
         id: 300,
       })
 
@@ -600,7 +601,7 @@ describe('PostService', () => {
 
     it('should unlike the post successfully', async () => {
       ;(service as any).accountService.findOneDonor.mockResolvedValue(donor)
-      ;(prismaService.like.findFirst as jest.Mock).mockResolvedValue({
+      ;(prismaService.like.findFirst as Mock).mockResolvedValue({
         id: 400,
         postId,
         donorId: donor.id,
@@ -618,7 +619,7 @@ describe('PostService', () => {
 
     it('should throw BAD_REQUEST if user never liked the post', async () => {
       ;(service as any).accountService.findOneDonor.mockResolvedValue(donor)
-      ;(prismaService.like.findFirst as jest.Mock).mockResolvedValue(null)
+      ;(prismaService.like.findFirst as Mock).mockResolvedValue(null)
 
       await expect(service.unlikePost(postId, accountId)).rejects.toThrow(
         'Esse usuário não curtiu este post',

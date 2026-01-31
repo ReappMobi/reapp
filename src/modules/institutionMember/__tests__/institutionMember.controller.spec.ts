@@ -8,6 +8,7 @@ import { UnauthorizedException } from '@nestjs/common'
 import { CreateInstitutionMemberDto } from '../dto/createInstitutionMember.dto'
 import { UpdateInstitutionMemberDto } from '../dto/updateInstitutionMember.dto'
 import { InstitutionMemberType } from '@prisma/client'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('InstitutionMemberController', () => {
   let controller: InstitutionMemberController
@@ -21,24 +22,24 @@ describe('InstitutionMemberController', () => {
         {
           provide: InstitutionMemberService,
           useValue: {
-            createInstitutionMember: jest.fn(),
-            getInstitutionMembersByType: jest.fn(),
-            findInstitutionMemberById: jest.fn(),
-            updateInstitutionMember: jest.fn(),
-            deleteInstitutionMember: jest.fn(),
+            createInstitutionMember: vi.fn(),
+            getInstitutionMembersByType: vi.fn(),
+            findInstitutionMemberById: vi.fn(),
+            updateInstitutionMember: vi.fn(),
+            deleteInstitutionMember: vi.fn(),
           },
         },
         {
           provide: AccountService,
           useValue: {
-            findOneInstitution: jest.fn(),
+            findOneInstitution: vi.fn(),
           },
         },
       ],
     })
       .overrideGuard(AuthGuard)
       .useValue({
-        canActivate: jest.fn().mockReturnValue(true),
+        canActivate: vi.fn().mockReturnValue(true),
       })
       .compile()
 
@@ -123,12 +124,13 @@ describe('InstitutionMemberController', () => {
         },
       }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(institutionMemberService, 'createInstitutionMember')
-        .mockResolvedValue(createdMember)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'createInstitutionMember',
+      ).mockResolvedValue(createdMember)
 
       const result = await controller.createInstitutionMember(
         request,
@@ -155,7 +157,7 @@ describe('InstitutionMemberController', () => {
       const file = {} as Express.Multer.File
       const request = { user: { id: 1 } } as any
 
-      jest.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null)
 
       await expect(
         controller.createInstitutionMember(request, createMemberDto, file),
@@ -217,9 +219,10 @@ describe('InstitutionMemberController', () => {
         },
       ]
 
-      jest
-        .spyOn(institutionMemberService, 'getInstitutionMembersByType')
-        .mockResolvedValue(collaborators)
+      vi.spyOn(
+        institutionMemberService,
+        'getInstitutionMembersByType',
+      ).mockResolvedValue(collaborators)
 
       const result =
         await controller.getCollaboratorsByInstitutionId(institutionId)
@@ -280,9 +283,10 @@ describe('InstitutionMemberController', () => {
         },
       ]
 
-      jest
-        .spyOn(institutionMemberService, 'getInstitutionMembersByType')
-        .mockResolvedValue(volunteers)
+      vi.spyOn(
+        institutionMemberService,
+        'getInstitutionMembersByType',
+      ).mockResolvedValue(volunteers)
 
       const result =
         await controller.getVolunteersByInstitutionId(institutionId)
@@ -343,9 +347,10 @@ describe('InstitutionMemberController', () => {
         },
       ]
 
-      jest
-        .spyOn(institutionMemberService, 'getInstitutionMembersByType')
-        .mockResolvedValue(partners)
+      vi.spyOn(
+        institutionMemberService,
+        'getInstitutionMembersByType',
+      ).mockResolvedValue(partners)
 
       const result = await controller.getPartnersByInstitutionId(institutionId)
 
@@ -423,12 +428,13 @@ describe('InstitutionMemberController', () => {
         },
       }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(member)
 
       const result = await controller.getInstitutionMemberById(
         memberId,
@@ -446,7 +452,7 @@ describe('InstitutionMemberController', () => {
       const memberId = 1
       const request = { user: { id: 1 } } as any
 
-      jest.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null)
 
       await expect(
         controller.getInstitutionMemberById(memberId, request),
@@ -481,12 +487,13 @@ describe('InstitutionMemberController', () => {
         fields: [],
       }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(null)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(null)
 
       await expect(
         controller.getInstitutionMemberById(memberId, request),
@@ -564,12 +571,13 @@ describe('InstitutionMemberController', () => {
         },
       }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(member)
 
       await expect(
         controller.getInstitutionMemberById(memberId, request),
@@ -697,15 +705,17 @@ describe('InstitutionMemberController', () => {
         },
       }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member)
-      jest
-        .spyOn(institutionMemberService, 'updateInstitutionMember')
-        .mockResolvedValue(updatedMember)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(member)
+      vi.spyOn(
+        institutionMemberService,
+        'updateInstitutionMember',
+      ).mockResolvedValue(updatedMember)
 
       const result = await controller.updateInstitutionMember(
         memberId,
@@ -735,7 +745,7 @@ describe('InstitutionMemberController', () => {
       }
       const file = {} as Express.Multer.File
 
-      jest.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null)
 
       await expect(
         controller.updateInstitutionMember(
@@ -779,12 +789,13 @@ describe('InstitutionMemberController', () => {
         fields: [],
       }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(null)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(null)
 
       await expect(
         controller.updateInstitutionMember(
@@ -874,12 +885,13 @@ describe('InstitutionMemberController', () => {
         },
       }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(member)
 
       await expect(
         controller.updateInstitutionMember(
@@ -967,15 +979,17 @@ describe('InstitutionMemberController', () => {
         },
       }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member)
-      jest
-        .spyOn(institutionMemberService, 'deleteInstitutionMember')
-        .mockResolvedValue({ message: 'Membro deletado com sucesso' })
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(member)
+      vi.spyOn(
+        institutionMemberService,
+        'deleteInstitutionMember',
+      ).mockResolvedValue({ message: 'Membro deletado com sucesso' })
 
       const result = await controller.deleteInstitutionMember(memberId, request)
 
@@ -993,7 +1007,7 @@ describe('InstitutionMemberController', () => {
       const memberId = 1
       const request = { user: { id: 1 } } as any
 
-      jest.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(null)
 
       await expect(
         controller.deleteInstitutionMember(memberId, request),
@@ -1028,12 +1042,13 @@ describe('InstitutionMemberController', () => {
         fields: [],
       }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(null)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(null)
 
       await expect(
         controller.deleteInstitutionMember(memberId, request),
@@ -1114,12 +1129,13 @@ describe('InstitutionMemberController', () => {
           thumbnailRemoteUrl: 'http://example.com/thumbnail.jpg',
         },
       }
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(institutionMemberService, 'findInstitutionMemberById')
-        .mockResolvedValue(member)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(
+        institutionMemberService,
+        'findInstitutionMemberById',
+      ).mockResolvedValue(member)
 
       await expect(
         controller.deleteInstitutionMember(memberId, request),

@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthenticationController } from '../auth.controller'
 import { AuthService } from '../auth.service'
 import { LoginDto } from '../dto/login.dto'
@@ -15,8 +16,8 @@ describe('AuthenticationController', () => {
         {
           provide: AuthService,
           useValue: {
-            login: jest.fn(),
-            loginWithGoogle: jest.fn(),
+            login: vi.fn(),
+            loginWithGoogle: vi.fn(),
           },
         },
       ],

@@ -1,10 +1,11 @@
+import { ForbiddenException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { ProjectController } from '../project.controller'
-import { ProjectService } from '../project.service'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AccountService } from '../../account/account.service'
 import { AuthGuard } from '../../auth/auth.guard'
-import { ForbiddenException } from '@nestjs/common'
 import { UpdateProjectDto } from '../dto/updateProject.dto'
+import { ProjectController } from '../project.controller'
+import { ProjectService } from '../project.service'
 
 describe('ProjectController', () => {
   let controller: ProjectController
@@ -18,29 +19,29 @@ describe('ProjectController', () => {
         {
           provide: ProjectService,
           useValue: {
-            postProjectService: jest.fn(),
-            toggleFavoriteService: jest.fn(),
-            getAllProjectsService: jest.fn(),
-            getFavoriteProjectService: jest.fn(),
-            getProjectCategoriesService: jest.fn(),
-            getProjectByIdService: jest.fn(),
-            getProjectsByInstitutionService: jest.fn(),
-            updateProjectService: jest.fn(),
-            deleteProjectService: jest.fn(),
+            postProjectService: vi.fn(),
+            toggleFavoriteService: vi.fn(),
+            getAllProjectsService: vi.fn(),
+            getFavoriteProjectService: vi.fn(),
+            getProjectCategoriesService: vi.fn(),
+            getProjectByIdService: vi.fn(),
+            getProjectsByInstitutionService: vi.fn(),
+            updateProjectService: vi.fn(),
+            deleteProjectService: vi.fn(),
           },
         },
         {
           provide: AccountService,
           useValue: {
-            findOneInstitution: jest.fn(),
-            findOneDonor: jest.fn(),
+            findOneInstitution: vi.fn(),
+            findOneDonor: vi.fn(),
           },
         },
       ],
     })
       .overrideGuard(AuthGuard)
       .useValue({
-        canActivate: jest.fn().mockReturnValue(true),
+        canActivate: vi.fn().mockReturnValue(true),
       })
       .compile()
 
@@ -50,7 +51,7 @@ describe('ProjectController', () => {
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('postProject', () => {
@@ -198,12 +199,10 @@ describe('ProjectController', () => {
         },
       }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(projectService, 'postProjectService')
-        .mockResolvedValue(project)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(projectService, 'postProjectService').mockResolvedValue(project)
 
       const result = await controller.postProject(
         mockFile,
@@ -264,9 +263,9 @@ describe('ProjectController', () => {
 
       const req = { user: { id: accountId } }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
 
       await expect(
         controller.postProject(mockFile, createProjectDto, req as any),
@@ -462,15 +461,15 @@ describe('ProjectController', () => {
 
       const req = { user: { id: accountId } }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(projectService, 'getProjectByIdService')
-        .mockResolvedValue(project)
-      jest
-        .spyOn(projectService, 'updateProjectService')
-        .mockResolvedValue(updatedProject)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(projectService, 'getProjectByIdService').mockResolvedValue(
+        project,
+      )
+      vi.spyOn(projectService, 'updateProjectService').mockResolvedValue(
+        updatedProject,
+      )
 
       const result = await controller.updateProject(
         projectId,
@@ -536,9 +535,9 @@ describe('ProjectController', () => {
 
       const req = { user: { id: accountId } }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
 
       await expect(
         controller.updateProject(
@@ -697,12 +696,12 @@ describe('ProjectController', () => {
 
       const req = { user: { id: accountId } }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(projectService, 'getProjectByIdService')
-        .mockResolvedValue(project)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(projectService, 'getProjectByIdService').mockResolvedValue(
+        project,
+      )
 
       await expect(
         controller.updateProject(
@@ -848,15 +847,15 @@ describe('ProjectController', () => {
 
       const req = { user: { id: accountId } }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(projectService, 'getProjectByIdService')
-        .mockResolvedValue(project)
-      jest
-        .spyOn(projectService, 'deleteProjectService')
-        .mockResolvedValue({ message: 'Projeto deletado com sucesso' })
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(projectService, 'getProjectByIdService').mockResolvedValue(
+        project,
+      )
+      vi.spyOn(projectService, 'deleteProjectService').mockResolvedValue({
+        message: 'Projeto deletado com sucesso',
+      })
 
       const result = await controller.deleteProject(projectId, req as any)
 
@@ -895,9 +894,9 @@ describe('ProjectController', () => {
 
       const req = { user: { id: accountId } }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
 
       await expect(
         controller.deleteProject(projectId, req as any),
@@ -1034,12 +1033,12 @@ describe('ProjectController', () => {
 
       const req = { user: { id: accountId } }
 
-      jest
-        .spyOn(accountService, 'findOneInstitution')
-        .mockResolvedValue(institution)
-      jest
-        .spyOn(projectService, 'getProjectByIdService')
-        .mockResolvedValue(project)
+      vi.spyOn(accountService, 'findOneInstitution').mockResolvedValue(
+        institution,
+      )
+      vi.spyOn(projectService, 'getProjectByIdService').mockResolvedValue(
+        project,
+      )
 
       await expect(
         controller.deleteProject(projectId, req as any),
@@ -1074,10 +1073,10 @@ describe('ProjectController', () => {
       const req = { user: { id: accountId } }
       const toggleResult = { message: 'Favorite toggled' }
 
-      jest.spyOn(accountService, 'findOneDonor').mockResolvedValue(donor)
-      jest
-        .spyOn(projectService, 'toggleFavoriteService')
-        .mockResolvedValue(toggleResult)
+      vi.spyOn(accountService, 'findOneDonor').mockResolvedValue(donor)
+      vi.spyOn(projectService, 'toggleFavoriteService').mockResolvedValue(
+        toggleResult,
+      )
 
       const result = await controller.toggleFavorite(projectId, req as any)
 
@@ -1212,10 +1211,10 @@ describe('ProjectController', () => {
       ]
 
       const req = { user: { id: 1 } }
-      jest.spyOn(accountService, 'findOneDonor').mockResolvedValue(donor)
-      jest
-        .spyOn(projectService, 'getAllProjectsService')
-        .mockResolvedValue(projects)
+      vi.spyOn(accountService, 'findOneDonor').mockResolvedValue(donor)
+      vi.spyOn(projectService, 'getAllProjectsService').mockResolvedValue(
+        projects,
+      )
       const result = await controller.getAllProjects(req as any)
 
       expect(accountService.findOneDonor).toHaveBeenCalledWith(accountId)
@@ -1333,10 +1332,10 @@ describe('ProjectController', () => {
         },
       ]
 
-      jest.spyOn(accountService, 'findOneDonor').mockResolvedValue(null)
-      jest
-        .spyOn(projectService, 'getAllProjectsService')
-        .mockResolvedValue(projects)
+      vi.spyOn(accountService, 'findOneDonor').mockResolvedValue(null)
+      vi.spyOn(projectService, 'getAllProjectsService').mockResolvedValue(
+        projects,
+      )
 
       const result = await controller.getAllProjects(req as any)
 
@@ -1468,10 +1467,10 @@ describe('ProjectController', () => {
         },
       ]
 
-      jest.spyOn(accountService, 'findOneDonor').mockResolvedValue(donor)
-      jest
-        .spyOn(projectService, 'getFavoriteProjectService')
-        .mockResolvedValue(favoriteProjects)
+      vi.spyOn(accountService, 'findOneDonor').mockResolvedValue(donor)
+      vi.spyOn(projectService, 'getFavoriteProjectService').mockResolvedValue(
+        favoriteProjects,
+      )
 
       const result = await controller.getFavoriteProjects(req as any)
 
@@ -1487,9 +1486,9 @@ describe('ProjectController', () => {
     it('should return project categories', async () => {
       const categories = [{ id: 1, name: 'Category 1' }]
 
-      jest
-        .spyOn(projectService, 'getProjectCategoriesService')
-        .mockResolvedValue(categories)
+      vi.spyOn(projectService, 'getProjectCategoriesService').mockResolvedValue(
+        categories,
+      )
 
       const result = await controller.getProjectCategories('')
 
@@ -1603,9 +1602,9 @@ describe('ProjectController', () => {
         },
       }
 
-      jest
-        .spyOn(projectService, 'getProjectByIdService')
-        .mockResolvedValue(project)
+      vi.spyOn(projectService, 'getProjectByIdService').mockResolvedValue(
+        project,
+      )
 
       const result = await controller.getProjectById(projectId)
 
@@ -1724,9 +1723,10 @@ describe('ProjectController', () => {
         },
       ]
 
-      jest
-        .spyOn(projectService, 'getProjectsByInstitutionService')
-        .mockResolvedValue(projects)
+      vi.spyOn(
+        projectService,
+        'getProjectsByInstitutionService',
+      ).mockResolvedValue(projects)
 
       const result = await controller.getProjectsByInstitution(institutionId)
 

@@ -1,12 +1,28 @@
 import { Test, TestingModule } from '@nestjs/testing'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MercadopagoService } from './mercadopago.service'
-import { Payment, Preference } from 'mercadopago'
 
-jest.mock('mercadopago')
+const createMock = vi.fn()
+const getMock = vi.fn()
+
+vi.mock('mercadopago', () => {
+  return {
+    Preference: vi.fn(
+      class {
+        create = createMock
+      },
+    ),
+    Payment: vi.fn(
+      class {
+        get = getMock
+      },
+    ),
+    MercadoPagoConfig: vi.fn(class {}),
+  }
+})
+
 describe('MercadopagoService', () => {
   let service: MercadopagoService
-  let mercadopagoPreferenceMock: jest.Mocked<Preference>
-  let mercadopagoPaymentMock: jest.Mocked<Payment>
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -14,8 +30,8 @@ describe('MercadopagoService', () => {
     }).compile()
 
     service = module.get<MercadopagoService>(MercadopagoService)
-    mercadopagoPaymentMock = Payment.prototype as any
-    mercadopagoPreferenceMock = Preference.prototype as any
+    createMock.mockClear()
+    getMock.mockClear()
   })
 
   it('should be defined', () => {
@@ -46,9 +62,9 @@ describe('MercadopagoService', () => {
           init_point: 'https://test.com/payment',
         },
       }
-      mercadopagoPreferenceMock.create.mockResolvedValue(response as any)
+      createMock.mockResolvedValue(response as any)
       const result = await service.processPayment(data)
-      expect(mercadopagoPreferenceMock.create).toHaveBeenCalledWith({
+      expect(createMock).toHaveBeenCalledWith({
         body: data,
       })
       expect(result).toEqual(response)
@@ -73,9 +89,9 @@ describe('MercadopagoService', () => {
         notification_url: 'https://test.com/webhook',
       }
       const error = new Error('Test error')
-      mercadopagoPreferenceMock.create.mockRejectedValue(error)
+      createMock.mockRejectedValue(error)
       const result = await service.processPayment(data)
-      expect(mercadopagoPreferenceMock.create).toHaveBeenCalledWith({
+      expect(createMock).toHaveBeenCalledWith({
         body: data,
       })
       expect(result).toEqual(error)
@@ -90,11 +106,11 @@ describe('MercadopagoService', () => {
           status: 'approved',
         },
       }
-      mercadopagoPaymentMock.get.mockResolvedValue(response as any)
+      getMock.mockResolvedValue(response as any)
 
       const result = await service.getPayment(preferenceId)
 
-      expect(mercadopagoPaymentMock.get).toHaveBeenCalledWith({
+      expect(getMock).toHaveBeenCalledWith({
         id: preferenceId,
       })
       expect(result).toEqual(response)
@@ -103,11 +119,11 @@ describe('MercadopagoService', () => {
     it('should return error if mercadopago.get throws an error', async () => {
       const preferenceId = '123'
       const error = new Error('Test error')
-      mercadopagoPaymentMock.get.mockRejectedValue(error)
+      getMock.mockRejectedValue(error)
 
       const result = await service.getPayment(preferenceId)
 
-      expect(mercadopagoPaymentMock.get).toHaveBeenCalledWith({
+      expect(getMock).toHaveBeenCalledWith({
         id: preferenceId,
       })
       expect(result).toEqual(error)

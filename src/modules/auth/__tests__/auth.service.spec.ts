@@ -1,25 +1,31 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
-import * as PrismaClient from '@prisma/client'
+import { Account } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 import { OAuth2Client } from 'google-auth-library'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PrismaService } from '../../../database/prisma.service'
 import { AuthService } from '../auth.service'
 import { LoginDto } from '../dto/login.dto'
 
+vi.mock('bcryptjs', () => ({
+  hash: vi.fn().mockResolvedValue('hashed_password'),
+  compare: vi.fn(),
+}))
+
 const mockPrismaService = {
   account: {
-    findFirst: jest.fn(),
+    findFirst: vi.fn(),
   },
 }
 
 const mockJwtService = {
-  sign: jest.fn(),
+  sign: vi.fn(),
 }
 
 const mockOAuth2Client = {
-  verifyIdToken: jest.fn(),
+  verifyIdToken: vi.fn(),
 }
 
 describe('AuthService', () => {
@@ -50,10 +56,10 @@ describe('AuthService', () => {
       const user = {
         id: 1,
         email,
-        passwordHash: await bcrypt.hash(password, 10),
+        passwordHash: 'hashed_password',
       }
       mockPrismaService.account.findFirst.mockResolvedValue(user)
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => true)
+      vi.mocked(bcrypt.compare).mockResolvedValue(true as never)
 
       const result = await authService.validateUser(email, password)
       expect(result).toEqual({ id: 1, email })
@@ -63,10 +69,10 @@ describe('AuthService', () => {
       const user = {
         id: 1,
         email,
-        passwordHash: await bcrypt.hash(password, 10),
+        passwordHash: 'hashed_password',
       }
       mockPrismaService.account.findFirst.mockResolvedValue(user)
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => false)
+      vi.mocked(bcrypt.compare).mockResolvedValue(false as never)
 
       const result = await authService.validateUser(email, password)
       expect(result).toBeNull()
@@ -87,7 +93,7 @@ describe('AuthService', () => {
     }
 
     it('should throw an error if credentials are invalid', async () => {
-      jest.spyOn(authService, 'validateUser').mockResolvedValue(null)
+      vi.spyOn(authService, 'validateUser').mockResolvedValue(null)
 
       await expect(authService.login(loginDto)).rejects.toThrowError(
         new HttpException('Credenciais inválidas', HttpStatus.UNAUTHORIZED),
@@ -99,8 +105,8 @@ describe('AuthService', () => {
         id: 1,
         email: loginDto.email,
         status: 'ACTIVE',
-      } as Partial<PrismaClient.Account>
-      jest.spyOn(authService, 'validateUser').mockResolvedValue(user)
+      } as Partial<Account>
+      vi.spyOn(authService, 'validateUser').mockResolvedValue(user)
       mockJwtService.sign.mockReturnValue('mockToken')
 
       const result = await authService.login(loginDto)

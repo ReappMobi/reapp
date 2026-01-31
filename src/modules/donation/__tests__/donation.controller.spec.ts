@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthGuard } from '../../auth/auth.guard'
 import { DonationController } from '../donation.controller'
 import { DonationService } from '../donation.service'
@@ -16,19 +17,19 @@ describe('DonationController', () => {
         {
           provide: DonationService,
           useValue: {
-            requestDonation: jest.fn(),
-            notifyDonation: jest.fn(),
-            getGeneralDonations: jest.fn(),
-            getProjectsDonationsByInstitution: jest.fn(),
-            getDonationsByInstitution: jest.fn(),
-            getDonationsByDonor: jest.fn(),
+            requestDonation: vi.fn(),
+            notifyDonation: vi.fn(),
+            getGeneralDonations: vi.fn(),
+            getProjectsDonationsByInstitution: vi.fn(),
+            getDonationsByInstitution: vi.fn(),
+            getDonationsByDonor: vi.fn(),
           },
         },
       ],
     })
       .overrideGuard(AuthGuard)
       .useValue({
-        canActivate: jest.fn().mockReturnValue(true),
+        canActivate: vi.fn().mockReturnValue(true),
       })
       .compile()
 
