@@ -127,9 +127,9 @@ describe('PostController', () => {
       ]
       postService.getAllPosts = vi.fn().mockResolvedValue(mockPosts)
 
-      const result = await controller.getAllPosts()
+      const result = await controller.getAllPosts({ user: { id: 1 } } as any)
 
-      expect(postService.getAllPosts).toHaveBeenCalled()
+      expect(postService.getAllPosts).toHaveBeenCalledWith(1)
       expect(result).toEqual(mockPosts)
     })
   })
