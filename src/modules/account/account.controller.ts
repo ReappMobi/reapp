@@ -80,6 +80,13 @@ export class AccountController {
   }
 
   @UseGuards(AuthGuard)
+  @Get('blocked/list')
+  getBlockedUsers(@Req() request: any) {
+    const userId = request.user.id
+    return this.accountService.getBlockedUsers(userId)
+  }
+
+  @UseGuards(AuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.accountService.findOne(+id)
@@ -128,5 +135,19 @@ export class AccountController {
   @Patch(':id/status')
   updateStatus(@Param('id') id: number, @Body() body: UpdateAccountStatusDto) {
     return this.accountService.updateStatus(+id, body.status)
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('block/:id')
+  block(@Req() request: any, @Param('id') id: number) {
+    const userId = request.user.id
+    return this.accountService.blockAccount(userId, +id)
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('unblock/:id')
+  unblock(@Req() request: any, @Param('id') id: number) {
+    const userId = request.user.id
+    return this.accountService.unblockAccount(userId, +id)
   }
 }
