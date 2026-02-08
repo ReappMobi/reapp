@@ -829,10 +829,7 @@ export class AccountService {
 
   async blockAccount(blockerId: number, blockedId: number) {
     if (blockerId === blockedId) {
-      throw new HttpException(
-        'Você não pode bloquear a si mesmo',
-        HttpStatus.BAD_REQUEST,
-      )
+      throw new ReappException(BackendErrorCodes.CANNOT_BLOCK_SELF)
     }
 
     const blocked = await this.prismaService.account.findUnique({
@@ -849,15 +846,31 @@ export class AccountService {
         blockerId_blockedId: { blockerId, blockedId },
       },
     })
-    if (existing) {
-      return { message: 'Usuário já está bloqueado' }
+
+    if (existing && existing.active) {
+      throw new ReappException(BackendErrorCodes.USER_ALREADY_BLOCKED)
     }
 
-    await this.prismaService.block.create({
-      data: { blockerId, blockedId },
-    })
+    let block
+    if (existing && !existing.active) {
+      block = await this.prismaService.block.update({
+        where: { id: existing.id },
+        data: { active: true },
+      })
+    } else {
+      block = await this.prismaService.block.create({
+        data: { blockerId, blockedId },
+      })
+    }
 
-    return { message: 'Usuário bloqueado com sucesso' }
+    return {
+      success: true,
+      message: 'Usuário bloqueado com sucesso.',
+      data: {
+        blocked_user_id: blockedId,
+        blocked_at: block.createdAt,
+      },
+    }
   }
 
   async unblockAccount(blockerId: number, blockedId: number) {
@@ -866,23 +879,28 @@ export class AccountService {
         blockerId_blockedId: { blockerId, blockedId },
       },
     })
-    if (!existing) {
-      throw new HttpException(
-        'Usuário não está bloqueado',
-        HttpStatus.BAD_REQUEST,
-      )
+    if (!existing || !existing.active) {
+      throw new ReappException(BackendErrorCodes.USER_NOT_BLOCKED)
     }
 
-    await this.prismaService.block.delete({
+    const block = await this.prismaService.block.update({
       where: { id: existing.id },
+      data: { active: false },
     })
 
-    return { message: 'Usuário desbloqueado com sucesso' }
+    return {
+      success: true,
+      message: 'Usuário desbloqueado com sucesso.',
+      data: {
+        unblocked_user_id: blockedId,
+        unblocked_at: block.updatedAt,
+      },
+    }
   }
 
   async getBlockedUsers(blockerId: number) {
     const blocks = await this.prismaService.block.findMany({
-      where: { blockerId },
+      where: { blockerId, active: true },
       select: {
         blockedId: true,
         blocked: {
@@ -894,12 +912,18 @@ export class AccountService {
         },
       },
     })
-    return blocks.map((b) => b.blocked)
+    const data = blocks.map((b) => b.blocked)
+    return {
+      success: true,
+      message: 'Lista de usuários bloqueados.',
+      data,
+      meta: { total: data.length },
+    }
   }
 
   async getBlockedUserIds(accountId: number): Promise<number[]> {
     const blocks = await this.prismaService.block.findMany({
-      where: { blockerId: accountId },
+      where: { blockerId: accountId, active: true },
       select: { blockedId: true },
     })
     return blocks.map((b) => b.blockedId)

@@ -16,13 +16,8 @@ import {
 } from '@nestjs/common'
 import { AuthGuard } from '../auth/auth.guard'
 import { FileInterceptor } from '@nestjs/platform-express'
+import { RequestWithUser } from '../../types/request-with-user'
 import { PostService } from './post.service'
-
-import { Request } from 'express'
-
-interface RequestWithUser extends Request {
-  user?: any
-}
 
 @Controller('post')
 export class PostController {
