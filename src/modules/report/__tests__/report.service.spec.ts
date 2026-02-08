@@ -48,7 +48,6 @@ describe('ReportService', () => {
       resolved: false,
       createdAt: new Date('2026-02-08T00:00:00.000Z'),
     }
-
     ;(mockPrismaService.report.create as Mock).mockResolvedValue(report)
 
     const result = await service.create(reporterId, dto)
