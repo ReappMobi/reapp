@@ -1,6 +1,6 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common'
-import { RequestWithUser } from '../../types/request-with-user'
 import { ZodValidationPipe } from '../../common/zod.validation.pipe'
+import { Request } from 'express'
 import { AuthGuard } from '../auth/auth.guard'
 import { CreateReportDto, createReportSchema } from './dto/create-report.dto'
 import { ReportService } from './report.service'
@@ -12,7 +12,7 @@ export class ReportController {
   @Post()
   @UseGuards(AuthGuard)
   async create(
-    @Req() request: RequestWithUser,
+    @Req() request: Request,
     @Body(new ZodValidationPipe(createReportSchema)) dto: CreateReportDto,
   ) {
     const reporterId = request.user.id

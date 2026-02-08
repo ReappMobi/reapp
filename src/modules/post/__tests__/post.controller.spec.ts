@@ -4,8 +4,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { Request } from 'express'
 import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { RequestWithUser } from '../../../types/request-with-user'
 import { AuthGuard } from '../../auth/auth.guard'
 import { PostController } from '../post.controller'
 import { PostService } from '../post.service'
@@ -79,7 +79,7 @@ describe('PostController', () => {
       const result = await controller.postPublication(
         mockFile,
         caption,
-        req as unknown as RequestWithUser,
+        req as unknown as Request,
       )
 
       expect(postService.findInstitutionByAccountId).toHaveBeenCalledWith(
@@ -118,7 +118,7 @@ describe('PostController', () => {
         controller.postPublication(
           mockFile,
           caption,
-          req as unknown as RequestWithUser,
+          req as unknown as Request,
         ),
       ).rejects.toThrow(UnauthorizedException)
     })
@@ -134,7 +134,7 @@ describe('PostController', () => {
 
       const result = await controller.getAllPosts({
         user: { id: 1 },
-      } as unknown as RequestWithUser)
+      } as unknown as Request)
 
       expect(postService.getAllPosts).toHaveBeenCalledWith(1)
       expect(result).toEqual(mockPosts)
@@ -170,7 +170,7 @@ describe('PostController', () => {
 
       const result = await controller.deletePost(
         postId,
-        req as unknown as RequestWithUser,
+        req as unknown as Request,
       )
 
       expect(postService.deletePost).toHaveBeenCalledWith(postId, 1)
@@ -208,7 +208,7 @@ describe('PostController', () => {
         postId,
         caption,
         mockFile,
-        req as unknown as RequestWithUser,
+        req as unknown as Request,
       )
 
       expect(postService.updatePost).toHaveBeenCalledWith(
@@ -233,7 +233,7 @@ describe('PostController', () => {
       const result = await controller.addComment(
         postId,
         body,
-        req as unknown as RequestWithUser,
+        req as unknown as Request,
       )
 
       expect(postService.addComment).toHaveBeenCalledWith(postId, 1, body)
@@ -249,7 +249,7 @@ describe('PostController', () => {
       )
 
       await expect(
-        controller.addComment(postId, body, req as unknown as RequestWithUser),
+        controller.addComment(postId, body, req as unknown as Request),
       ).rejects.toThrow('Post não encontrado')
     })
   })
@@ -263,7 +263,7 @@ describe('PostController', () => {
 
       const result = await controller.likePost(
         postId,
-        req as unknown as RequestWithUser,
+        req as unknown as Request,
       )
 
       expect(postService.likePost).toHaveBeenCalledWith(postId, 2)
@@ -281,7 +281,7 @@ describe('PostController', () => {
       )
 
       await expect(
-        controller.likePost(postId, req as unknown as RequestWithUser),
+        controller.likePost(postId, req as unknown as Request),
       ).rejects.toThrow('Post já curtido pelo usuário')
     })
   })
@@ -294,7 +294,7 @@ describe('PostController', () => {
 
       const result = await controller.unlikePost(
         postId,
-        req as unknown as RequestWithUser,
+        req as unknown as Request,
       )
 
       expect(postService.unlikePost).toHaveBeenCalledWith(postId, 2)
@@ -312,7 +312,7 @@ describe('PostController', () => {
       )
 
       await expect(
-        controller.unlikePost(postId, req as unknown as RequestWithUser),
+        controller.unlikePost(postId, req as unknown as Request),
       ).rejects.toThrow('Esse usuário não curtiu este post')
     })
   })
