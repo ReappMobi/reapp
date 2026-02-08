@@ -115,7 +115,11 @@ describe('PostController', () => {
       postService.findInstitutionByAccountId = vi.fn().mockResolvedValue(null)
 
       await expect(
-        controller.postPublication(mockFile, caption, req as unknown as RequestWithUser),
+        controller.postPublication(
+          mockFile,
+          caption,
+          req as unknown as RequestWithUser,
+        ),
       ).rejects.toThrow(UnauthorizedException)
     })
   })
@@ -128,7 +132,9 @@ describe('PostController', () => {
       ]
       postService.getAllPosts = vi.fn().mockResolvedValue(mockPosts)
 
-      const result = await controller.getAllPosts({ user: { id: 1 } } as unknown as RequestWithUser)
+      const result = await controller.getAllPosts({
+        user: { id: 1 },
+      } as unknown as RequestWithUser)
 
       expect(postService.getAllPosts).toHaveBeenCalledWith(1)
       expect(result).toEqual(mockPosts)
@@ -162,7 +168,10 @@ describe('PostController', () => {
 
       postService.deletePost = vi.fn().mockResolvedValue(undefined)
 
-      const result = await controller.deletePost(postId, req as unknown as RequestWithUser)
+      const result = await controller.deletePost(
+        postId,
+        req as unknown as RequestWithUser,
+      )
 
       expect(postService.deletePost).toHaveBeenCalledWith(postId, 1)
       expect(result).toEqual({ message: 'Post deletado com sucesso' })
@@ -221,7 +230,11 @@ describe('PostController', () => {
       const mockComment = { id: 10, body: 'My comment', postId: 1 }
       ;(postService.addComment as Mock).mockResolvedValue(mockComment)
 
-      const result = await controller.addComment(postId, body, req as unknown as RequestWithUser)
+      const result = await controller.addComment(
+        postId,
+        body,
+        req as unknown as RequestWithUser,
+      )
 
       expect(postService.addComment).toHaveBeenCalledWith(postId, 1, body)
       expect(result).toEqual(mockComment)
@@ -248,7 +261,10 @@ describe('PostController', () => {
       const mockLike = { id: 5, postId, donorId: 2 }
       ;(postService.likePost as Mock).mockResolvedValue(mockLike)
 
-      const result = await controller.likePost(postId, req as unknown as RequestWithUser)
+      const result = await controller.likePost(
+        postId,
+        req as unknown as RequestWithUser,
+      )
 
       expect(postService.likePost).toHaveBeenCalledWith(postId, 2)
       expect(result).toEqual(mockLike)
@@ -264,9 +280,9 @@ describe('PostController', () => {
         ),
       )
 
-      await expect(controller.likePost(postId, req as unknown as RequestWithUser)).rejects.toThrow(
-        'Post já curtido pelo usuário',
-      )
+      await expect(
+        controller.likePost(postId, req as unknown as RequestWithUser),
+      ).rejects.toThrow('Post já curtido pelo usuário')
     })
   })
 
@@ -276,7 +292,10 @@ describe('PostController', () => {
       const req = { user: { id: 2 } }
       ;(postService.unlikePost as Mock).mockResolvedValue(undefined)
 
-      const result = await controller.unlikePost(postId, req as unknown as RequestWithUser)
+      const result = await controller.unlikePost(
+        postId,
+        req as unknown as RequestWithUser,
+      )
 
       expect(postService.unlikePost).toHaveBeenCalledWith(postId, 2)
       expect(result).toEqual({ message: 'Post descurtido com sucesso' })
@@ -292,9 +311,9 @@ describe('PostController', () => {
         ),
       )
 
-      await expect(controller.unlikePost(postId, req as unknown as RequestWithUser)).rejects.toThrow(
-        'Esse usuário não curtiu este post',
-      )
+      await expect(
+        controller.unlikePost(postId, req as unknown as RequestWithUser),
+      ).rejects.toThrow('Esse usuário não curtiu este post')
     })
   })
 })
