@@ -827,6 +827,108 @@ export class AccountService {
     return { message: 'Senha alterada com sucesso!' }
   }
 
+  async blockAccount(blockerId: number, blockedId: number) {
+    if (blockerId === blockedId) {
+      throw new ReappException(BackendErrorCodes.CANNOT_BLOCK_SELF)
+    }
+
+    const blocked = await this.prismaService.account.findUnique({
+      where: { id: blockedId },
+    })
+    if (!blocked) {
+      throw new ReappException(BackendErrorCodes.ACCOUNT_NOT_FOUND_ERROR, {
+        id: blockedId,
+      })
+    }
+
+    const existing = await this.prismaService.block.findUnique({
+      where: {
+        blockerId_blockedId: { blockerId, blockedId },
+      },
+    })
+
+    if (existing && existing.active) {
+      throw new ReappException(BackendErrorCodes.USER_ALREADY_BLOCKED)
+    }
+
+    let block
+    if (existing && !existing.active) {
+      block = await this.prismaService.block.update({
+        where: { id: existing.id },
+        data: { active: true },
+      })
+    } else {
+      block = await this.prismaService.block.create({
+        data: { blockerId, blockedId },
+      })
+    }
+
+    return {
+      success: true,
+      message: 'Usuário bloqueado com sucesso.',
+      data: {
+        blocked_user_id: blockedId,
+        blocked_at: block.createdAt,
+      },
+    }
+  }
+
+  async unblockAccount(blockerId: number, blockedId: number) {
+    const existing = await this.prismaService.block.findUnique({
+      where: {
+        blockerId_blockedId: { blockerId, blockedId },
+      },
+    })
+    if (!existing || !existing.active) {
+      throw new ReappException(BackendErrorCodes.USER_NOT_BLOCKED)
+    }
+
+    const block = await this.prismaService.block.update({
+      where: { id: existing.id },
+      data: { active: false },
+    })
+
+    return {
+      success: true,
+      message: 'Usuário desbloqueado com sucesso.',
+      data: {
+        unblocked_user_id: blockedId,
+        unblocked_at: block.updatedAt,
+      },
+    }
+  }
+
+  async getBlockedUsers(blockerId: number) {
+    const blocks = await this.prismaService.block.findMany({
+      where: { blockerId, active: true },
+      select: {
+        blockedId: true,
+        blocked: {
+          select: {
+            id: true,
+            name: true,
+            media: true,
+          },
+        },
+      },
+    })
+    const data = blocks.map((b) => b.blocked)
+    return {
+      success: true,
+      message: 'Lista de usuários bloqueados.',
+      data,
+      meta: { total: data.length },
+    }
+  }
+
+  async getBlockedUserIds(accountId: number): Promise<number[]> {
+    const blocks = await this.prismaService.block.findMany({
+      where: { blockerId: accountId, active: true },
+      select: { blockedId: true },
+    })
+    return blocks.map((b) => b.blockedId)
+  }
+
   async updateStatus(id: number, status: AccountStatus) {
     const account = await this.prismaService.account.findUnique({
       where: { id },

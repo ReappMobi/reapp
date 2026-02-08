@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Mock, beforeEach, describe, expect, it, vi } from 'vitest'
+import { RequestWithUser } from '../../../types/request-with-user'
 import { AuthGuard } from '../../auth/auth.guard'
 import { AccountController } from '../account.controller'
 import { AccountService } from '../account.service'
@@ -151,7 +152,7 @@ describe('AccountController', () => {
         institutionData,
       )
 
-      const request = { user: { id: 1 } } as any
+      const request = { user: { id: 1 } } as unknown as RequestWithUser
       const result = await controller.findOneInsitution('1', request)
       expect(accountService.findOneInstitution).toHaveBeenCalledWith(
         1,
@@ -163,7 +164,7 @@ describe('AccountController', () => {
 
   describe('follow', () => {
     it('should follow an account', async () => {
-      const request = { user: { id: 1 } }
+      const request = { user: { id: 1 } } as unknown as RequestWithUser
       const targetAccountId = 2
       ;(accountService.followAccount as Mock).mockResolvedValue({
         message: `You are now following account ${targetAccountId}`,
@@ -180,7 +181,7 @@ describe('AccountController', () => {
     })
 
     it('should handle error when trying to follow an invalid account', async () => {
-      const request = { user: { id: 1 } }
+      const request = { user: { id: 1 } } as unknown as RequestWithUser
       const targetAccountId = 999
       ;(accountService.followAccount as Mock).mockRejectedValue(
         new HttpException('Account not found', HttpStatus.NOT_FOUND),
@@ -198,7 +199,7 @@ describe('AccountController', () => {
 
   describe('unfollow', () => {
     it('should unfollow an account', async () => {
-      const request = { user: { id: 1 } }
+      const request = { user: { id: 1 } } as unknown as RequestWithUser
       const targetAccountId = 2
       ;(accountService.unfollowAccount as Mock).mockResolvedValue({
         message: `You have unfollowed account ${targetAccountId}`,
@@ -215,7 +216,7 @@ describe('AccountController', () => {
     })
 
     it('should handle error when trying to unfollow an invalid account', async () => {
-      const request = { user: { id: 1 } }
+      const request = { user: { id: 1 } } as unknown as RequestWithUser
       const targetAccountId = 999
       ;(accountService.unfollowAccount as Mock).mockRejectedValue(
         new HttpException('Account not found', HttpStatus.NOT_FOUND),
@@ -248,7 +249,7 @@ describe('AccountController', () => {
 
   describe('remove', () => {
     it('should remove the account if authorized', async () => {
-      const request = { user: { id: 1 } }
+      const request = { user: { id: 1 } } as unknown as RequestWithUser
       ;(accountService.remove as Mock).mockResolvedValue({
         message: 'Account removed',
       })
@@ -259,7 +260,7 @@ describe('AccountController', () => {
     })
 
     it('should throw unauthorized if user tries to remove another account', async () => {
-      const request = { user: { id: 2 } }
+      const request = { user: { id: 2 } } as unknown as RequestWithUser
       ;(accountService.remove as Mock).mockRejectedValue(
         new HttpException('Acesso não autorizado', HttpStatus.UNAUTHORIZED),
       )
@@ -272,7 +273,7 @@ describe('AccountController', () => {
 
   describe('update', () => {
     it('should update the account', async () => {
-      const request = { user: { id: 1 } }
+      const request = { user: { id: 1 } } as unknown as RequestWithUser
       const updateAccountDto: UpdateAccountDto = {
         name: 'Updated User',
         password: 'senha1234',
@@ -299,7 +300,7 @@ describe('AccountController', () => {
     })
 
     it('should handle not found exception on update', async () => {
-      const request = { user: { id: 999 } }
+      const request = { user: { id: 999 } } as unknown as RequestWithUser
       const updateAccountDto: UpdateAccountDto = {
         name: 'Not Found',
         password: 'senha1234',

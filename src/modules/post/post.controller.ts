@@ -16,13 +16,8 @@ import {
 } from '@nestjs/common'
 import { AuthGuard } from '../auth/auth.guard'
 import { FileInterceptor } from '@nestjs/platform-express'
+import { RequestWithUser } from '../../types/request-with-user'
 import { PostService } from './post.service'
-
-import { Request } from 'express'
-
-interface RequestWithUser extends Request {
-  user?: any
-}
 
 @Controller('post')
 export class PostController {
@@ -60,8 +55,9 @@ export class PostController {
 
   @Get()
   @UseGuards(AuthGuard)
-  async getAllPosts() {
-    const posts = await this.postService.getAllPosts()
+  async getAllPosts(@Req() req: RequestWithUser) {
+    const userId = req.user?.id
+    const posts = await this.postService.getAllPosts(userId)
     return posts
   }
 

@@ -17,6 +17,7 @@ import { MediaProcessingModule } from './modules/media-processing/media-processi
 import { PasswordRecoveryModule } from './modules/password-recovery/password-recovery.module'
 import { PostModule } from './modules/post/post.module'
 import { ProjectModule } from './modules/project/project.module'
+import { ReportModule } from './modules/report/report.module'
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { ProjectModule } from './modules/project/project.module'
     PasswordRecoveryModule,
     PostModule,
     ProjectModule,
+    ReportModule,
     HealthModule,
   ],
   providers: [

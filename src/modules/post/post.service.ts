@@ -104,8 +104,21 @@ export class PostService {
     return post
   }
 
-  async getAllPosts() {
+  async getAllPosts(userId?: number) {
+    let blockedAccountIds: number[] = []
+    if (userId) {
+      blockedAccountIds = await this.accountService.getBlockedUserIds(userId)
+    }
+
     const allPosts = await this.prismaService.post.findMany({
+      where:
+        blockedAccountIds.length > 0
+          ? {
+              institution: {
+                accountId: { notIn: blockedAccountIds },
+              },
+            }
+          : undefined,
       select: postResponseFields,
       orderBy: {
         createdAt: 'desc',
