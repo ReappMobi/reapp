@@ -12,6 +12,7 @@ export enum BackendErrorCodes {
   USER_NOT_AUTHORIZED_ERROR = 'USER_NOT_AUTHORIZED_ERROR',
   INVALID_EMAIL_OR_PASSWORD = 'INVALID_EMAIL_OR_PASSWORD',
   PENDING_AUTHORIZATION = 'PENDING_AUTHORIZATION',
+  GOOGLE_AUTH_FAILED = 'GOOGLE_AUTH_FAILED',
 
   ZOD_VALIDATION_ERROR = 'ZOD_VALIDATION_ERROR',
 
@@ -35,7 +36,7 @@ const GenericErrors = {
 
 const AuthErrors = {
   [BackendErrorCodes.USER_NOT_FOUND_ERROR]: {
-    status: 500,
+    status: 404,
     description: 'Erro interno do servidor',
     data: [],
   },
@@ -59,6 +60,11 @@ const AuthErrors = {
     status: 403,
     description:
       'Sua conta ainda está em processo de aprovação. Avisaremos você assim que estiver tudo pronto!',
+    data: [],
+  },
+  [BackendErrorCodes.GOOGLE_AUTH_FAILED]: {
+    status: 401,
+    description: 'Falha na autenticação com o Google. Tente novamente.',
     data: [],
   },
 }

@@ -1,13 +1,12 @@
-import { HttpException, HttpStatus } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Account } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 import { OAuth2Client } from 'google-auth-library'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { PrismaService } from '../../../database/prisma.service'
 import { BackendErrorCodes } from '../../../types/errors'
 import { ReappException } from '../../../utils/error.utils'
-import { PrismaService } from '../../../database/prisma.service'
 import { AuthService } from '../auth.service'
 import { LoginDto } from '../dto/login.dto'
 import { LoginGoogleDto } from '../dto/loginGoogle.dto'
@@ -146,10 +145,7 @@ describe('AuthService', () => {
       await expect(
         authService.loginWithGoogle(loginGoogleDto),
       ).rejects.toThrowError(
-        new HttpException(
-          'Autenticação com Google falhou',
-          HttpStatus.BAD_REQUEST,
-        ),
+        new ReappException(BackendErrorCodes.GOOGLE_AUTH_FAILED),
       )
     })
 
@@ -162,7 +158,7 @@ describe('AuthService', () => {
       await expect(
         authService.loginWithGoogle(loginGoogleDto),
       ).rejects.toThrowError(
-        new HttpException('Usuário não encontrado', HttpStatus.UNAUTHORIZED),
+        new ReappException(BackendErrorCodes.USER_NOT_FOUND_ERROR),
       )
     })
 
