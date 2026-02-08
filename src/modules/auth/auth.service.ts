@@ -114,10 +114,7 @@ export class AuthService {
     const payload = ticket.getPayload()
 
     if (!payload) {
-      throw new HttpException(
-        'Autenticação com Google falhou',
-        HttpStatus.BAD_REQUEST,
-      )
+      throw new ReappException(BackendErrorCodes.GOOGLE_AUTH_FAILED)
     }
 
     const email = payload?.email
@@ -127,7 +124,7 @@ export class AuthService {
     })
 
     if (!user) {
-      throw new HttpException('Usuário não encontrado', HttpStatus.UNAUTHORIZED)
+      throw new ReappException(BackendErrorCodes.USER_NOT_FOUND_ERROR)
     }
 
     const token = await this.generateJwtToken(user)

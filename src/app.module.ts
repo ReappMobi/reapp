@@ -1,8 +1,9 @@
 import { BullModule } from '@nestjs/bull'
 import { Module } from '@nestjs/common'
-import { APP_GUARD } from '@nestjs/core'
+import { APP_FILTER, APP_GUARD } from '@nestjs/core'
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 import { LoggerModule } from 'nestjs-pino'
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter'
 import { ConfigModule } from './config/config.module'
 import { ConfigService } from './config/config.service'
 import { AccountModule } from './modules/account/account.module'
@@ -70,6 +71,10 @@ import { ProjectModule } from './modules/project/project.module'
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
     },
   ],
 })
