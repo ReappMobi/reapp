@@ -10,6 +10,7 @@ export enum BackendErrorCodes {
   USER_NOT_FOUND_ERROR = 'USER_NOT_FOUND_ERROR',
   INVALID_TOKEN_ERROR = 'INVALID_TOKEN_ERROR',
   USER_NOT_AUTHORIZED_ERROR = 'USER_NOT_AUTHORIZED_ERROR',
+  INVALID_EMAIL_OR_PASSWORD = 'INVALID_EMAIL_OR_PASSWORD',
 
   ZOD_VALIDATION_ERROR = 'ZOD_VALIDATION_ERROR',
 
@@ -45,6 +46,12 @@ const AuthErrors = {
   [BackendErrorCodes.USER_NOT_AUTHORIZED_ERROR]: {
     status: 401,
     description: 'O usuário não tem permissão para acessar este recurso',
+    data: [],
+  },
+  [BackendErrorCodes.INVALID_EMAIL_OR_PASSWORD]: {
+    status: 401,
+    description:
+      'Dados de acesso incorretos. Verifique seu e-mail e senha e tente novamente',
     data: [],
   },
 }
