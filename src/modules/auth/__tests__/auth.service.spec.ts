@@ -5,9 +5,12 @@ import { Account } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 import { OAuth2Client } from 'google-auth-library'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { BackendErrorCodes } from '../../../types/errors'
+import { ReappException } from '../../../utils/error.utils'
 import { PrismaService } from '../../../database/prisma.service'
 import { AuthService } from '../auth.service'
 import { LoginDto } from '../dto/login.dto'
+import { LoginGoogleDto } from '../dto/loginGoogle.dto'
 
 vi.mock('bcryptjs', () => ({
   hash: vi.fn().mockResolvedValue('hashed_password'),
@@ -32,6 +35,9 @@ describe('AuthService', () => {
   let authService: AuthService
 
   beforeEach(async () => {
+    process.env.JWT_SECRET = 'test_secret'
+    process.env.GOOGLE_CLIENT_ID = 'test_google_client_id'
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -96,7 +102,20 @@ describe('AuthService', () => {
       vi.spyOn(authService, 'validateUser').mockResolvedValue(null)
 
       await expect(authService.login(loginDto)).rejects.toThrowError(
-        new HttpException('Credenciais inválidas', HttpStatus.UNAUTHORIZED),
+        new ReappException(BackendErrorCodes.INVALID_EMAIL_OR_PASSWORD),
+      )
+    })
+
+    it('should throw an error if account is not active', async () => {
+      const user = {
+        id: 1,
+        email: loginDto.email,
+        status: 'PENDING',
+      } as Partial<Account>
+      vi.spyOn(authService, 'validateUser').mockResolvedValue(user)
+
+      await expect(authService.login(loginDto)).rejects.toThrowError(
+        new ReappException(BackendErrorCodes.PENDING_AUTHORIZATION),
       )
     })
 
@@ -114,5 +133,53 @@ describe('AuthService', () => {
     })
   })
 
-  //TODO: loginWithGoogle test
+  describe('loginWithGoogle', () => {
+    const loginGoogleDto: LoginGoogleDto = {
+      idToken: 'google_token',
+    }
+
+    it('should throw an error if google verification fails', async () => {
+      vi.spyOn(authService['client'], 'verifyIdToken').mockResolvedValue({
+        getPayload: () => null,
+      } as any)
+
+      await expect(
+        authService.loginWithGoogle(loginGoogleDto),
+      ).rejects.toThrowError(
+        new HttpException(
+          'Autenticação com Google falhou',
+          HttpStatus.BAD_REQUEST,
+        ),
+      )
+    })
+
+    it('should throw an error if user is not found', async () => {
+      vi.spyOn(authService['client'], 'verifyIdToken').mockResolvedValue({
+        getPayload: () => ({ email: 'test@example.com' }),
+      } as any)
+      mockPrismaService.account.findFirst.mockResolvedValue(null)
+
+      await expect(
+        authService.loginWithGoogle(loginGoogleDto),
+      ).rejects.toThrowError(
+        new HttpException('Usuário não encontrado', HttpStatus.UNAUTHORIZED),
+      )
+    })
+
+    it('should return token and user if google login is successful', async () => {
+      const user = {
+        id: 1,
+        email: 'test@example.com',
+        name: 'Test User',
+      }
+      vi.spyOn(authService['client'], 'verifyIdToken').mockResolvedValue({
+        getPayload: () => ({ email: 'test@example.com' }),
+      } as any)
+      mockPrismaService.account.findFirst.mockResolvedValue(user)
+      mockJwtService.sign.mockReturnValue('mockToken')
+
+      const result = await authService.loginWithGoogle(loginGoogleDto)
+      expect(result).toEqual({ token: 'mockToken', user })
+    })
+  })
 })
