@@ -101,10 +101,7 @@ export class AuthService {
       throw new ReappException(BackendErrorCodes.INVALID_EMAIL_OR_PASSWORD)
     }
     if (user.status != 'ACTIVE') {
-      throw new HttpException(
-        'Cadastro pendente de autorização',
-        HttpStatus.UNAUTHORIZED,
-      )
+      throw new ReappException(BackendErrorCodes.PENDING_AUTHORIZATION)
     }
     const token = await this.generateJwtToken(user)
     return { token, user }
