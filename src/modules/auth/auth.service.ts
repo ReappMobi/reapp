@@ -3,6 +3,8 @@ import { JwtService } from '@nestjs/jwt'
 import * as PrismaClient from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 
+import { BackendErrorCodes } from '@app/types/errors'
+import { ReappException } from '@app/utils/error.utils'
 import { OAuth2Client } from 'google-auth-library'
 import { PrismaService } from '../../database/prisma.service'
 import { LoginDto } from './dto/login.dto'
@@ -96,7 +98,7 @@ export class AuthService {
   async login({ email, password }: LoginDto) {
     const user = await this.validateUser(email.toLowerCase(), password)
     if (!user) {
-      throw new HttpException('Credenciais inválidas', HttpStatus.UNAUTHORIZED)
+      throw new ReappException(BackendErrorCodes.INVALID_EMAIL_OR_PASSWORD)
     }
     if (user.status != 'ACTIVE') {
       throw new HttpException(
