@@ -1,3 +1,5 @@
+import { BackendErrorCodes } from '@app/types/errors'
+import { ReappException } from '@app/utils/error.utils'
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
 import {
   Account,
@@ -8,6 +10,7 @@ import {
 } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 import { OAuth2Client } from 'google-auth-library'
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import { PrismaService } from '../../database/prisma.service'
 import { MediaService } from '../media-attachment/media-attachment.service'
 import {
@@ -17,9 +20,6 @@ import {
 import { GetAccountsQuery } from './dto/get-account-query.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
 import { UpdateAccountDto } from './dto/update-account.dto'
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
-import { ReappException } from '@app/utils/error.utils'
-import { BackendErrorCodes } from '@app/types/errors'
 
 const donorResponseFields = {
   id: true,
@@ -851,17 +851,16 @@ export class AccountService {
       throw new ReappException(BackendErrorCodes.USER_ALREADY_BLOCKED)
     }
 
-    let block
-    if (existing && !existing.active) {
-      block = await this.prismaService.block.update({
-        where: { id: existing.id },
-        data: { active: true },
-      })
-    } else {
-      block = await this.prismaService.block.create({
-        data: { blockerId, blockedId },
-      })
-    }
+    const block = await this.prismaService.block.upsert({
+      create: {
+        blockerId,
+        blockedId,
+      },
+      update: { active: true },
+      where: {
+        id: existing.id,
+      },
+    })
 
     return {
       success: true,
@@ -921,7 +920,8 @@ export class AccountService {
     }
   }
 
-  async getBlockedUserIds(accountId: number): Promise<number[]> {
+  async getBlockedUserIds(accountId?: number): Promise<number[]> {
+    if (!accountId) return []
     const blocks = await this.prismaService.block.findMany({
       where: { blockerId: accountId, active: true },
       select: { blockedId: true },
