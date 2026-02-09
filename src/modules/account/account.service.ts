@@ -8,6 +8,7 @@ import {
   Institution,
   Prisma,
 } from '@prisma/client'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import * as bcrypt from 'bcryptjs'
 import { OAuth2Client } from 'google-auth-library'
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
@@ -831,69 +832,66 @@ export class AccountService {
     if (blockerId === blockedId) {
       throw new ReappException(BackendErrorCodes.CANNOT_BLOCK_SELF)
     }
-
-    const blocked = await this.prismaService.account.findUnique({
-      where: { id: blockedId },
-    })
-    if (!blocked) {
-      throw new ReappException(BackendErrorCodes.ACCOUNT_NOT_FOUND_ERROR, {
-        id: blockedId,
+    try {
+      const block = await this.prismaService.block.upsert({
+        where: {
+          blockerId_blockedId: { blockerId, blockedId },
+        },
+        update: {
+          active: true,
+        },
+        create: {
+          blockerId,
+          blockedId,
+          active: true,
+        },
       })
-    }
-
-    const existing = await this.prismaService.block.findUnique({
-      where: {
-        blockerId_blockedId: { blockerId, blockedId },
-      },
-    })
-
-    if (existing && existing.active) {
-      throw new ReappException(BackendErrorCodes.USER_ALREADY_BLOCKED)
-    }
-
-    const block = await this.prismaService.block.upsert({
-      create: {
-        blockerId,
-        blockedId,
-      },
-      update: { active: true },
-      where: {
-        id: existing.id,
-      },
-    })
-
-    return {
-      success: true,
-      message: 'Usuário bloqueado com sucesso.',
-      data: {
-        blocked_user_id: blockedId,
-        blocked_at: block.createdAt,
-      },
+      return {
+        success: true,
+        message: 'Usuário bloqueado com sucesso.',
+        data: {
+          blocked_user_id: blockedId,
+          blocked_at: block.createdAt,
+        },
+      }
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2003') {
+          throw new ReappException(BackendErrorCodes.ACCOUNT_NOT_FOUND_ERROR, {
+            id: blockedId,
+          })
+        }
+      }
+      throw error
     }
   }
 
   async unblockAccount(blockerId: number, blockedId: number) {
-    const existing = await this.prismaService.block.findUnique({
-      where: {
-        blockerId_blockedId: { blockerId, blockedId },
-      },
-    })
-    if (!existing || !existing.active) {
-      throw new ReappException(BackendErrorCodes.USER_NOT_BLOCKED)
-    }
+    try {
+      const block = await this.prismaService.block.update({
+        where: {
+          blockerId_blockedId: { blockerId, blockedId },
+          active: true,
+        },
+        data: { active: false },
+      })
 
-    const block = await this.prismaService.block.update({
-      where: { id: existing.id },
-      data: { active: false },
-    })
-
-    return {
-      success: true,
-      message: 'Usuário desbloqueado com sucesso.',
-      data: {
-        unblocked_user_id: blockedId,
-        unblocked_at: block.updatedAt,
-      },
+      return {
+        success: true,
+        message: 'Usuário desbloqueado com sucesso.',
+        data: {
+          unblocked_user_id: blockedId,
+          unblocked_at: block.updatedAt,
+        },
+      }
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        // P2025: "An operation failed because it depends on one or more records that were not found"
+        if (error.code === 'P2025') {
+          throw new ReappException(BackendErrorCodes.USER_NOT_BLOCKED)
+        }
+      }
+      throw error
     }
   }
 
