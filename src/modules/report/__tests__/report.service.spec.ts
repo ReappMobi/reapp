@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { ReportReason, ReportTargetType } from '@prisma/client'
 import { Mock, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PrismaService } from '../../../database/prisma.service'
-import { CreateReportDto } from '../dto/create-report.dto'
+import { CreateReportData } from '../dto/create-report.dto'
 import { ReportService } from '../report.service'
 
 describe('ReportService', () => {
@@ -31,7 +31,7 @@ describe('ReportService', () => {
 
   it('should create a report and return a success response', async () => {
     const reporterId = 10
-    const dto: CreateReportDto = {
+    const dto: CreateReportData = {
       targetType: 'POST',
       targetId: 20,
       reason: 'SPAM',

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { Report } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { IApiResponse } from '../../types/api-response'
-import { CreateReportDto } from './dto/create-report.dto'
+import { CreateReportData } from './dto/create-report.dto'
 
 @Injectable()
 export class ReportService {
@@ -10,15 +10,15 @@ export class ReportService {
 
   async create(
     reporterId: number,
-    dto: CreateReportDto,
+    { details, reason, targetId, targetType }: CreateReportData,
   ): Promise<IApiResponse<Report>> {
     const report = await this.prismaService.report.create({
       data: {
         reporterId,
-        targetType: dto.targetType,
-        targetId: dto.targetId,
-        reason: dto.reason,
-        details: dto.details,
+        targetType,
+        targetId,
+        reason,
+        details,
       },
     })
 
