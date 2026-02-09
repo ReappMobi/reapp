@@ -1,16 +1,11 @@
+import { ReportReason, ReportTargetType } from '@prisma/client'
 import { z } from 'zod'
 
 export const createReportSchema = z.object({
-  targetType: z.enum(['POST', 'COMMENT', 'ACCOUNT']),
+  targetType: z.nativeEnum(ReportTargetType),
   targetId: z.number().int().positive(),
-  reason: z.enum([
-    'SPAM',
-    'INAPPROPRIATE',
-    'HARASSMENT',
-    'MISINFORMATION',
-    'OTHER',
-  ]),
+  reason: z.nativeEnum(ReportReason),
   details: z.string().max(500).optional(),
 })
 
-export type CreateReportDto = z.infer<typeof createReportSchema>
+export type CreateReportData = z.infer<typeof createReportSchema>
