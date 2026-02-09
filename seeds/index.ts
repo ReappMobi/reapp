@@ -5,7 +5,7 @@ import { seedDonations } from './dontaion.seed'
 const prisma = new PrismaClient()
 
 async function seed() {
-  // await seedAccounts(prisma)
+  await seedAccounts(prisma)
   await seedDonations(prisma)
 }
 
