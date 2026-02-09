@@ -111,12 +111,12 @@ const BlockErrors = {
   },
   [BackendErrorCodes.USER_ALREADY_BLOCKED]: {
     status: 400,
-    description: 'Usuário já está bloqueado',
+    description: 'Este usuário já está bloqueado',
     data: [],
   },
   [BackendErrorCodes.USER_NOT_BLOCKED]: {
     status: 400,
-    description: 'Usuário não está bloqueado',
+    description: 'Este usuário não está bloqueado',
     data: [],
   },
 }
