@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { Account } from '@prisma/client'
+import { Request } from 'express'
 import { AuthGuard } from '../auth/auth.guard'
 import { Roles } from '../auth/docorators/roles.decorator'
 import { Role } from '../auth/enums/role.enum'
@@ -60,23 +61,30 @@ export class AccountController {
 
   @UseGuards(AuthGuard)
   @Post('follow/:id')
-  follow(@Req() request: any, @Param('id') id: number) {
+  follow(@Req() request: Request, @Param('id') id: number) {
     const userId = request.user.id
     return this.accountService.followAccount(userId, +id)
   }
 
   @UseGuards(AuthGuard)
   @Delete('unfollow/:id')
-  unfollow(@Req() request: any, @Param('id') id: number) {
+  unfollow(@Req() request: Request, @Param('id') id: number) {
     const userId = request.user.id
     return this.accountService.unfollowAccount(userId, +id)
   }
 
   @UseGuards(AuthGuard)
   @Get('institution')
-  findAllInstitutions(@Req() request: any) {
+  findAllInstitutions(@Req() request: Request) {
     const userId = request.user.id
     return this.accountService.findAllInstitutions(userId)
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('blocked/list')
+  getBlockedUsers(@Req() request: Request) {
+    const userId = request.user.id
+    return this.accountService.getBlockedUsers(userId)
   }
 
   @UseGuards(AuthGuard)
@@ -87,7 +95,7 @@ export class AccountController {
 
   @UseGuards(AuthGuard)
   @Get('institution/:id')
-  findOneInsitution(@Param('id') id: string, @Req() request: any) {
+  findOneInsitution(@Param('id') id: string, @Req() request: Request) {
     const userId = request.user.id
     return this.accountService.findOneInstitution(+id, userId)
   }
@@ -100,7 +108,7 @@ export class AccountController {
 
   @UseGuards(AuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string, @Req() request: any) {
+  remove(@Param('id') id: string, @Req() request: Request) {
     const accountId = request.user.id
     return this.accountService.remove(accountId, +id)
   }
@@ -109,7 +117,7 @@ export class AccountController {
   @Put(':id')
   @UseInterceptors(FileInterceptor('media'))
   async update(
-    @Req() request: any,
+    @Req() request: Request,
     @Body() body: UpdateAccountDto,
     @Param('id') id: number,
     @UploadedFile() media: Express.Multer.File,
@@ -128,5 +136,19 @@ export class AccountController {
   @Patch(':id/status')
   updateStatus(@Param('id') id: number, @Body() body: UpdateAccountStatusDto) {
     return this.accountService.updateStatus(+id, body.status)
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('block/:id')
+  block(@Req() request: Request, @Param('id') id: number) {
+    const userId = request.user.id
+    return this.accountService.blockAccount(userId, +id)
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('unblock/:id')
+  unblock(@Req() request: Request, @Param('id') id: number) {
+    const userId = request.user.id
+    return this.accountService.unblockAccount(userId, +id)
   }
 }

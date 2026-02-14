@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { Post } from '@nestjs/common'
+import { Request } from 'express'
 import { AuthGuard } from '../auth/auth.guard'
 import { Roles } from '../auth/docorators/roles.decorator'
 import { Role } from '../auth/enums/role.enum'
@@ -19,10 +20,6 @@ import {
   DonationRequestBody,
   requestDonationSchema,
 } from './dto/request-donation.dto'
-
-interface RequestWithUser extends Request {
-  user?: { id: number }
-}
 
 @Controller('donation')
 export class DonationController {
@@ -34,7 +31,7 @@ export class DonationController {
   requestDonation(
     @Body(new ZodValidationPipe(requestDonationSchema))
     requestDonationDto: DonationRequestBody,
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
     this.logger.log(
       { donation_info: requestDonationDto, requester: req.user.id },
@@ -60,7 +57,7 @@ export class DonationController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('period') period: string = 'week',
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
     return this.donationService.getGeneralDonations(
       req.user,
@@ -76,7 +73,7 @@ export class DonationController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('period') period: string = 'week',
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
     return this.donationService.getProjectsDonationsByInstitution(
       req.user,
@@ -92,7 +89,7 @@ export class DonationController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('period') period: string = 'week',
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
     return this.donationService.getDonationsByInstitution(
       req.user,
@@ -108,7 +105,7 @@ export class DonationController {
     @Param('institutionId') institutionId: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
     const { user } = req
     return this.donationService.getDonationsByInstitutionId(
@@ -125,7 +122,7 @@ export class DonationController {
     @Param('projectId') projectId: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
     return this.donationService.getDonationsByInstitutionId(
       projectId,
@@ -138,7 +135,7 @@ export class DonationController {
   @UseGuards(AuthGuard)
   @Get('donor/:donorId')
   findByDonor(
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
     @Param('donorId') donorId: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,

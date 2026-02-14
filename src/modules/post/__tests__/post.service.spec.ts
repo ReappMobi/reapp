@@ -12,6 +12,7 @@ describe('PostService', () => {
   let service: PostService
   let prismaService: PrismaService
   let mediaService: MediaService
+  let accountService: AccountService
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -51,6 +52,7 @@ describe('PostService', () => {
           provide: AccountService,
           useValue: {
             findOneDonor: vi.fn(),
+            getBlockedUserIds: vi.fn(),
           },
         },
       ],
@@ -59,6 +61,7 @@ describe('PostService', () => {
     service = module.get<PostService>(PostService)
     prismaService = module.get<PrismaService>(PrismaService)
     mediaService = module.get<MediaService>(MediaService)
+    accountService = module.get<AccountService>(AccountService)
   })
 
   afterEach(() => {
@@ -212,7 +215,7 @@ describe('PostService', () => {
           },
         },
       ]
-
+      accountService.getBlockedUserIds.mockResolvedValue([])
       prismaService.post.findMany = vi.fn().mockResolvedValue(mockPosts)
 
       const result = await service.getAllPosts()
@@ -476,7 +479,7 @@ describe('PostService', () => {
     }
 
     it('should add a comment successfully', async () => {
-      ;(service as any).accountService.findOneDonor.mockResolvedValue(donor)
+      accountService.findOneDonor.mockResolvedValue(donor)
       vi.spyOn(service, 'findPostById').mockResolvedValue(post)
       ;(prismaService.comment.create as Mock).mockResolvedValue({
         id: 100,
@@ -510,7 +513,7 @@ describe('PostService', () => {
     })
 
     it('should throw NOT_FOUND if donor not found', async () => {
-      ;(service as any).accountService.findOneDonor.mockResolvedValue(null)
+      accountService.findOneDonor.mockResolvedValue(null)
 
       await expect(service.addComment(postId, accountId, body)).rejects.toThrow(
         'Não foi possível encontrar o post associado a este ID.',
@@ -518,7 +521,7 @@ describe('PostService', () => {
     })
 
     it('should throw NOT_FOUND if post not found', async () => {
-      ;(service as any).accountService.findOneDonor.mockResolvedValue(donor)
+      accountService.findOneDonor.mockResolvedValue(donor)
       vi.spyOn(service, 'findPostById').mockResolvedValue(null)
 
       await expect(service.addComment(postId, accountId, body)).rejects.toThrow(
@@ -555,7 +558,7 @@ describe('PostService', () => {
     const like = { id: 200, postId, donorId: donor.id }
 
     it('should like the post successfully', async () => {
-      ;(service as any).accountService.findOneDonor.mockResolvedValue(donor)
+      accountService.findOneDonor.mockResolvedValue(donor)
       vi.spyOn(service, 'findPostById').mockResolvedValue(post)
       ;(prismaService.like.findFirst as Mock).mockResolvedValue(null)
       ;(prismaService.like.create as Mock).mockResolvedValue(like)
@@ -573,7 +576,7 @@ describe('PostService', () => {
     })
 
     it('should throw NOT_FOUND if post not found', async () => {
-      ;(service as any).accountService.findOneDonor.mockResolvedValue(donor)
+      accountService.findOneDonor.mockResolvedValue(donor)
       vi.spyOn(service, 'findPostById').mockResolvedValue(null)
 
       await expect(service.likePost(postId, accountId)).rejects.toThrow(
@@ -582,7 +585,7 @@ describe('PostService', () => {
     })
 
     it('should throw BAD_REQUEST if post already liked by user', async () => {
-      ;(service as any).accountService.findOneDonor.mockResolvedValue(donor)
+      accountService.findOneDonor.mockResolvedValue(donor)
       vi.spyOn(service, 'findPostById').mockResolvedValue(post)
       ;(prismaService.like.findFirst as Mock).mockResolvedValue({
         id: 300,
@@ -600,7 +603,7 @@ describe('PostService', () => {
     const donor = { id: 30 }
 
     it('should unlike the post successfully', async () => {
-      ;(service as any).accountService.findOneDonor.mockResolvedValue(donor)
+      accountService.findOneDonor.mockResolvedValue(donor)
       ;(prismaService.like.findFirst as Mock).mockResolvedValue({
         id: 400,
         postId,
@@ -618,7 +621,7 @@ describe('PostService', () => {
     })
 
     it('should throw BAD_REQUEST if user never liked the post', async () => {
-      ;(service as any).accountService.findOneDonor.mockResolvedValue(donor)
+      accountService.findOneDonor.mockResolvedValue(donor)
       ;(prismaService.like.findFirst as Mock).mockResolvedValue(null)
 
       await expect(service.unlikePost(postId, accountId)).rejects.toThrow(

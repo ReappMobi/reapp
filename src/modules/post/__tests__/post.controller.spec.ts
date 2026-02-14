@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { Request } from 'express'
 import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthGuard } from '../../auth/auth.guard'
 import { PostController } from '../post.controller'
@@ -78,7 +79,7 @@ describe('PostController', () => {
       const result = await controller.postPublication(
         mockFile,
         caption,
-        req as any,
+        req as unknown as Request,
       )
 
       expect(postService.findInstitutionByAccountId).toHaveBeenCalledWith(
@@ -114,7 +115,11 @@ describe('PostController', () => {
       postService.findInstitutionByAccountId = vi.fn().mockResolvedValue(null)
 
       await expect(
-        controller.postPublication(mockFile, caption, req as any),
+        controller.postPublication(
+          mockFile,
+          caption,
+          req as unknown as Request,
+        ),
       ).rejects.toThrow(UnauthorizedException)
     })
   })
@@ -127,9 +132,11 @@ describe('PostController', () => {
       ]
       postService.getAllPosts = vi.fn().mockResolvedValue(mockPosts)
 
-      const result = await controller.getAllPosts()
+      const result = await controller.getAllPosts({
+        user: { id: 1 },
+      } as unknown as Request)
 
-      expect(postService.getAllPosts).toHaveBeenCalled()
+      expect(postService.getAllPosts).toHaveBeenCalledWith(1)
       expect(result).toEqual(mockPosts)
     })
   })
@@ -161,7 +168,10 @@ describe('PostController', () => {
 
       postService.deletePost = vi.fn().mockResolvedValue(undefined)
 
-      const result = await controller.deletePost(postId, req as any)
+      const result = await controller.deletePost(
+        postId,
+        req as unknown as Request,
+      )
 
       expect(postService.deletePost).toHaveBeenCalledWith(postId, 1)
       expect(result).toEqual({ message: 'Post deletado com sucesso' })
@@ -198,7 +208,7 @@ describe('PostController', () => {
         postId,
         caption,
         mockFile,
-        req as any,
+        req as unknown as Request,
       )
 
       expect(postService.updatePost).toHaveBeenCalledWith(
@@ -220,7 +230,11 @@ describe('PostController', () => {
       const mockComment = { id: 10, body: 'My comment', postId: 1 }
       ;(postService.addComment as Mock).mockResolvedValue(mockComment)
 
-      const result = await controller.addComment(postId, body, req as any)
+      const result = await controller.addComment(
+        postId,
+        body,
+        req as unknown as Request,
+      )
 
       expect(postService.addComment).toHaveBeenCalledWith(postId, 1, body)
       expect(result).toEqual(mockComment)
@@ -235,7 +249,7 @@ describe('PostController', () => {
       )
 
       await expect(
-        controller.addComment(postId, body, req as any),
+        controller.addComment(postId, body, req as unknown as Request),
       ).rejects.toThrow('Post não encontrado')
     })
   })
@@ -247,7 +261,10 @@ describe('PostController', () => {
       const mockLike = { id: 5, postId, donorId: 2 }
       ;(postService.likePost as Mock).mockResolvedValue(mockLike)
 
-      const result = await controller.likePost(postId, req as any)
+      const result = await controller.likePost(
+        postId,
+        req as unknown as Request,
+      )
 
       expect(postService.likePost).toHaveBeenCalledWith(postId, 2)
       expect(result).toEqual(mockLike)
@@ -263,9 +280,9 @@ describe('PostController', () => {
         ),
       )
 
-      await expect(controller.likePost(postId, req as any)).rejects.toThrow(
-        'Post já curtido pelo usuário',
-      )
+      await expect(
+        controller.likePost(postId, req as unknown as Request),
+      ).rejects.toThrow('Post já curtido pelo usuário')
     })
   })
 
@@ -275,7 +292,10 @@ describe('PostController', () => {
       const req = { user: { id: 2 } }
       ;(postService.unlikePost as Mock).mockResolvedValue(undefined)
 
-      const result = await controller.unlikePost(postId, req as any)
+      const result = await controller.unlikePost(
+        postId,
+        req as unknown as Request,
+      )
 
       expect(postService.unlikePost).toHaveBeenCalledWith(postId, 2)
       expect(result).toEqual({ message: 'Post descurtido com sucesso' })
@@ -291,9 +311,9 @@ describe('PostController', () => {
         ),
       )
 
-      await expect(controller.unlikePost(postId, req as any)).rejects.toThrow(
-        'Esse usuário não curtiu este post',
-      )
+      await expect(
+        controller.unlikePost(postId, req as unknown as Request),
+      ).rejects.toThrow('Esse usuário não curtiu este post')
     })
   })
 })

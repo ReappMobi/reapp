@@ -1,3 +1,5 @@
+import { BackendErrorCodes } from '@app/types/errors'
+import { ReappException } from '@app/utils/error.utils'
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
 import {
   Account,
@@ -6,8 +8,10 @@ import {
   Institution,
   Prisma,
 } from '@prisma/client'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import * as bcrypt from 'bcryptjs'
 import { OAuth2Client } from 'google-auth-library'
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import { PrismaService } from '../../database/prisma.service'
 import { MediaService } from '../media-attachment/media-attachment.service'
 import {
@@ -17,9 +21,6 @@ import {
 import { GetAccountsQuery } from './dto/get-account-query.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
 import { UpdateAccountDto } from './dto/update-account.dto'
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
-import { ReappException } from '@app/utils/error.utils'
-import { BackendErrorCodes } from '@app/types/errors'
 
 const donorResponseFields = {
   id: true,
@@ -825,6 +826,105 @@ export class AccountService {
     })
 
     return { message: 'Senha alterada com sucesso!' }
+  }
+
+  async blockAccount(blockerId: number, blockedId: number) {
+    if (blockerId === blockedId) {
+      throw new ReappException(BackendErrorCodes.CANNOT_BLOCK_SELF)
+    }
+    try {
+      const block = await this.prismaService.block.upsert({
+        where: {
+          blockerId_blockedId: { blockerId, blockedId },
+        },
+        update: {
+          active: true,
+        },
+        create: {
+          blockerId,
+          blockedId,
+          active: true,
+        },
+      })
+      return {
+        success: true,
+        message: 'Usuário bloqueado com sucesso.',
+        data: {
+          blocked_user_id: blockedId,
+          blocked_at: block.createdAt,
+        },
+      }
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2003') {
+          throw new ReappException(BackendErrorCodes.ACCOUNT_NOT_FOUND_ERROR, {
+            id: blockedId,
+          })
+        }
+      }
+      throw error
+    }
+  }
+
+  async unblockAccount(blockerId: number, blockedId: number) {
+    try {
+      const block = await this.prismaService.block.update({
+        where: {
+          blockerId_blockedId: { blockerId, blockedId },
+          active: true,
+        },
+        data: { active: false },
+      })
+
+      return {
+        success: true,
+        message: 'Usuário desbloqueado com sucesso.',
+        data: {
+          unblocked_user_id: blockedId,
+          unblocked_at: block.updatedAt,
+        },
+      }
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        // P2025: "An operation failed because it depends on one or more records that were not found"
+        if (error.code === 'P2025') {
+          throw new ReappException(BackendErrorCodes.USER_NOT_BLOCKED)
+        }
+      }
+      throw error
+    }
+  }
+
+  async getBlockedUsers(blockerId: number) {
+    const blocks = await this.prismaService.block.findMany({
+      where: { blockerId, active: true },
+      select: {
+        blockedId: true,
+        blocked: {
+          select: {
+            id: true,
+            name: true,
+            media: true,
+          },
+        },
+      },
+    })
+    const data = blocks.map((b) => b.blocked)
+    return {
+      success: true,
+      message: 'Lista de usuários bloqueados.',
+      data,
+      meta: { total: data.length },
+    }
+  }
+
+  async getBlockedUserIds(accountId?: number): Promise<number[]> {
+    if (!accountId) return []
+    const blocks = await this.prismaService.block.findMany({
+      where: { blockerId: accountId, active: true },
+      select: { blockedId: true },
+    })
+    return blocks.map((b) => b.blockedId)
   }
 
   async updateStatus(id: number, status: AccountStatus) {

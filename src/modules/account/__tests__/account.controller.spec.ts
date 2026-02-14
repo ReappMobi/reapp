@@ -1,5 +1,7 @@
+import { LoggedUser } from '@app/types/logged-user'
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { Request } from 'express'
 import { Mock, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthGuard } from '../../auth/auth.guard'
 import { AccountController } from '../account.controller'
@@ -9,6 +11,18 @@ import {
   CreateAccountGoogleDto,
 } from '../dto/create-account.dto'
 import { UpdateAccountDto } from '../dto/update-account.dto'
+
+const getRequest = (opts?: Partial<LoggedUser>): Request => {
+  return {
+    user: {
+      id: 1,
+      email: 'user@test.com',
+      name: 'Donor Test',
+      accountType: 'DONOR',
+      ...opts,
+    },
+  } as Request
+}
 
 describe('AccountController', () => {
   let controller: AccountController
@@ -151,7 +165,7 @@ describe('AccountController', () => {
         institutionData,
       )
 
-      const request = { user: { id: 1 } } as any
+      const request = getRequest()
       const result = await controller.findOneInsitution('1', request)
       expect(accountService.findOneInstitution).toHaveBeenCalledWith(
         1,
@@ -163,7 +177,7 @@ describe('AccountController', () => {
 
   describe('follow', () => {
     it('should follow an account', async () => {
-      const request = { user: { id: 1 } }
+      const request = getRequest()
       const targetAccountId = 2
       ;(accountService.followAccount as Mock).mockResolvedValue({
         message: `You are now following account ${targetAccountId}`,
@@ -180,7 +194,7 @@ describe('AccountController', () => {
     })
 
     it('should handle error when trying to follow an invalid account', async () => {
-      const request = { user: { id: 1 } }
+      const request = getRequest()
       const targetAccountId = 999
       ;(accountService.followAccount as Mock).mockRejectedValue(
         new HttpException('Account not found', HttpStatus.NOT_FOUND),
@@ -198,7 +212,7 @@ describe('AccountController', () => {
 
   describe('unfollow', () => {
     it('should unfollow an account', async () => {
-      const request = { user: { id: 1 } }
+      const request = getRequest()
       const targetAccountId = 2
       ;(accountService.unfollowAccount as Mock).mockResolvedValue({
         message: `You have unfollowed account ${targetAccountId}`,
@@ -215,7 +229,7 @@ describe('AccountController', () => {
     })
 
     it('should handle error when trying to unfollow an invalid account', async () => {
-      const request = { user: { id: 1 } }
+      const request = getRequest()
       const targetAccountId = 999
       ;(accountService.unfollowAccount as Mock).mockRejectedValue(
         new HttpException('Account not found', HttpStatus.NOT_FOUND),
@@ -248,7 +262,7 @@ describe('AccountController', () => {
 
   describe('remove', () => {
     it('should remove the account if authorized', async () => {
-      const request = { user: { id: 1 } }
+      const request = getRequest()
       ;(accountService.remove as Mock).mockResolvedValue({
         message: 'Account removed',
       })
@@ -259,7 +273,7 @@ describe('AccountController', () => {
     })
 
     it('should throw unauthorized if user tries to remove another account', async () => {
-      const request = { user: { id: 2 } }
+      const request = getRequest()
       ;(accountService.remove as Mock).mockRejectedValue(
         new HttpException('Acesso não autorizado', HttpStatus.UNAUTHORIZED),
       )
@@ -272,7 +286,7 @@ describe('AccountController', () => {
 
   describe('update', () => {
     it('should update the account', async () => {
-      const request = { user: { id: 1 } }
+      const request = getRequest()
       const updateAccountDto: UpdateAccountDto = {
         name: 'Updated User',
         password: 'senha1234',
@@ -299,7 +313,7 @@ describe('AccountController', () => {
     })
 
     it('should handle not found exception on update', async () => {
-      const request = { user: { id: 999 } }
+      const request = getRequest({ id: 999 })
       const updateAccountDto: UpdateAccountDto = {
         name: 'Not Found',
         password: 'senha1234',

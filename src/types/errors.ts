@@ -24,6 +24,9 @@ export enum BackendErrorCodes {
   ALREADY_FOLLOWING = 'ALREADY_FOLLOWING',
   NOT_FOLLOWING = 'NOT_FOLLOWING',
   PASSWORD_MISMATCH = 'PASSWORD_MISMATCH',
+  CANNOT_BLOCK_SELF = 'CANNOT_BLOCK_SELF',
+  USER_ALREADY_BLOCKED = 'USER_ALREADY_BLOCKED',
+  USER_NOT_BLOCKED = 'USER_NOT_BLOCKED',
 }
 
 const GenericErrors = {
@@ -120,9 +123,28 @@ const AccountErrors = {
   },
 }
 
+const BlockErrors = {
+  [BackendErrorCodes.CANNOT_BLOCK_SELF]: {
+    status: 400,
+    description: 'Você não pode bloquear a si mesmo',
+    data: [],
+  },
+  [BackendErrorCodes.USER_ALREADY_BLOCKED]: {
+    status: 400,
+    description: 'Este usuário já está bloqueado',
+    data: [],
+  },
+  [BackendErrorCodes.USER_NOT_BLOCKED]: {
+    status: 400,
+    description: 'Este usuário não está bloqueado',
+    data: [],
+  },
+}
+
 export const BackendErrors = {
   ...GenericErrors,
   ...AuthErrors,
   ...ZodErrors,
   ...AccountErrors,
+  ...BlockErrors,
 } as const

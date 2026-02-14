@@ -16,13 +16,8 @@ import {
 } from '@nestjs/common'
 import { AuthGuard } from '../auth/auth.guard'
 import { FileInterceptor } from '@nestjs/platform-express'
-import { PostService } from './post.service'
-
 import { Request } from 'express'
-
-interface RequestWithUser extends Request {
-  user?: any
-}
+import { PostService } from './post.service'
 
 @Controller('post')
 export class PostController {
@@ -34,9 +29,9 @@ export class PostController {
   async postPublication(
     @UploadedFile() media: Express.Multer.File,
     @Body('content') content: string,
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
-    const accountId = req.user?.id
+    const accountId = req.user.id
 
     if (!accountId) {
       throw new UnauthorizedException('Usuário não autenticado')
@@ -60,15 +55,16 @@ export class PostController {
 
   @Get()
   @UseGuards(AuthGuard)
-  async getAllPosts() {
-    const posts = await this.postService.getAllPosts()
+  async getAllPosts(@Req() req: Request) {
+    const userId = req.user.id
+    const posts = await this.postService.getAllPosts(userId)
     return posts
   }
 
   @Get('/saved')
   @UseGuards(AuthGuard)
-  async getSavedPostsByUserId(@Req() req: RequestWithUser) {
-    const userId = req.user?.id
+  async getSavedPostsByUserId(@Req() req: Request) {
+    const userId = req.user.id
     const savedPosts = await this.postService.findSavedPostsByUserId(userId)
     return savedPosts
   }
@@ -101,9 +97,9 @@ export class PostController {
   @UseGuards(AuthGuard)
   async deletePost(
     @Param('id', ParseIntPipe) postId: number,
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
-    const userId = req.user?.id
+    const userId = req.user.id
     await this.postService.deletePost(postId, userId)
     return { message: 'Post deletado com sucesso' }
   }
@@ -115,9 +111,9 @@ export class PostController {
     @Param('id', ParseIntPipe) postId: number,
     @Body('caption') caption: string,
     @UploadedFile() file: Express.Multer.File | null,
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
-    const userId = req.user?.id
+    const userId = req.user.id
     const updatedPost = await this.postService.updatePost(
       postId,
       caption,
@@ -132,9 +128,9 @@ export class PostController {
   async addComment(
     @Param('id', ParseIntPipe) postId: number,
     @Body('body') body: string,
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
-    const userId = req.user?.id
+    const userId = req.user.id
     const comment = await this.postService.addComment(postId, userId, body)
     return comment
   }
@@ -143,9 +139,9 @@ export class PostController {
   @UseGuards(AuthGuard)
   async likePost(
     @Param('id', ParseIntPipe) postId: number,
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
-    const userId = req.user?.id
+    const userId = req.user.id
     const like = await this.postService.likePost(postId, userId)
     return like
   }
@@ -154,9 +150,9 @@ export class PostController {
   @UseGuards(AuthGuard)
   async unlikePost(
     @Param('id', ParseIntPipe) postId: number,
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
-    const userId = req.user?.id
+    const userId = req.user.id
     await this.postService.unlikePost(postId, userId)
     return { message: 'Post descurtido com sucesso' }
   }
@@ -165,9 +161,9 @@ export class PostController {
   @UseGuards(AuthGuard)
   async savePost(
     @Param('id', ParseIntPipe) postId: number,
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
-    const userId = req.user?.id
+    const userId = req.user.id
     const savedPost = await this.postService.savePost(postId, userId)
     return savedPost
   }
@@ -176,9 +172,9 @@ export class PostController {
   @UseGuards(AuthGuard)
   async unsavePost(
     @Param('id', ParseIntPipe) postId: number,
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
-    const userId = req.user?.id
+    const userId = req.user.id
     await this.postService.unsavePost(postId, userId)
     return { message: 'Post retirado dos salvos com sucesso' }
   }

@@ -4,10 +4,10 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common'
-import { MediaService } from '../media-attachment/media-attachment.service'
 import { Institution } from '@prisma/client'
 import { PrismaService } from '../../database/prisma.service'
 import { AccountService } from '../account/account.service'
+import { MediaService } from '../media-attachment/media-attachment.service'
 
 const postResponseFields = {
   id: true,
@@ -104,8 +104,19 @@ export class PostService {
     return post
   }
 
-  async getAllPosts() {
+  async getAllPosts(userId?: number) {
+    const blockedAccountIds =
+      await this.accountService.getBlockedUserIds(userId)
+
     const allPosts = await this.prismaService.post.findMany({
+      where:
+        blockedAccountIds.length > 0
+          ? {
+              institution: {
+                accountId: { notIn: blockedAccountIds },
+              },
+            }
+          : undefined,
       select: postResponseFields,
       orderBy: {
         createdAt: 'desc',
@@ -116,7 +127,7 @@ export class PostService {
   }
 
   async getPostById(id: number) {
-    const post = await this.prismaService.post.findMany({
+    const post = await this.prismaService.post.findFirst({
       where: {
         id,
       },

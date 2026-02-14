@@ -22,10 +22,6 @@ import { InstitutionMemberType } from '@prisma/client'
 import { CreateInstitutionMemberDto } from './dto/createInstitutionMember.dto'
 import { UpdateInstitutionMemberDto } from './dto/updateInstitutionMember.dto'
 
-interface RequestWithUser extends Request {
-  user?: any
-}
-
 @UseGuards(AuthGuard)
 @Controller('institution-members')
 export class InstitutionMemberController {
@@ -37,11 +33,11 @@ export class InstitutionMemberController {
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   async createInstitutionMember(
-    @Req() request: RequestWithUser,
+    @Req() request: Request,
     @Body() createMemberDto: CreateInstitutionMemberDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const accountId = request.user?.id
+    const accountId = request.user.id
 
     const institution = await this.accountService.findOneInstitution(
       Number(accountId),
@@ -101,9 +97,9 @@ export class InstitutionMemberController {
   @Get('member/:memberId')
   async getInstitutionMemberById(
     @Param('memberId', ParseIntPipe) memberId: number,
-    @Req() request: RequestWithUser,
+    @Req() request: Request,
   ) {
-    const accountId = request.user?.id
+    const accountId = request.user.id
 
     const institution = await this.accountService.findOneInstitution(accountId)
 
@@ -129,11 +125,11 @@ export class InstitutionMemberController {
   @UseInterceptors(FileInterceptor('file'))
   async updateInstitutionMember(
     @Param('memberId', ParseIntPipe) memberId: number,
-    @Req() request: RequestWithUser,
+    @Req() request: Request,
     @Body() updateMemberDto: UpdateInstitutionMemberDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    const accountId = request.user?.id
+    const accountId = request.user.id
 
     const institution = await this.accountService.findOneInstitution(accountId)
 
@@ -166,9 +162,9 @@ export class InstitutionMemberController {
   @Delete(':memberId')
   async deleteInstitutionMember(
     @Param('memberId', ParseIntPipe) memberId: number,
-    @Req() request: RequestWithUser,
+    @Req() request: Request,
   ) {
-    const accountId = request.user?.id
+    const accountId = request.user.id
 
     const institution = await this.accountService.findOneInstitution(accountId)
 

@@ -24,10 +24,6 @@ import { UpdateProjectDto } from './dto/updateProject.dto'
 import { ProjectService } from './project.service'
 import { AccountService } from '../account/account.service'
 
-interface RequestWithUser extends Request {
-  user?: { id: number }
-}
-
 @Controller('project')
 export class ProjectController {
   constructor(
@@ -41,7 +37,7 @@ export class ProjectController {
   async postProject(
     @UploadedFile() media: Express.Multer.File,
     @Body() createProjectDto: CreateProjectDto,
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
     const { description, name, category, subtitle } = createProjectDto
 
@@ -51,7 +47,7 @@ export class ProjectController {
       Number(accountId),
     )
 
-    if (institution.account.id != req.user?.id) {
+    if (institution.account.id != req.user.id) {
       throw new ForbiddenException('Acesso não autorizado')
     }
 
@@ -75,7 +71,7 @@ export class ProjectController {
     @Param('projectId', ParseIntPipe) projectId: number,
     @UploadedFile() file: Express.Multer.File,
     @Body() updateProjectDto: UpdateProjectDto,
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
     const accountId = req.user.id
     const institution = await this.accountService.findOneInstitution(accountId)
@@ -107,7 +103,7 @@ export class ProjectController {
   @Post('toggle-favorite/:id')
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
-  async toggleFavorite(@Param('id') id: string, @Req() req: RequestWithUser) {
+  async toggleFavorite(@Param('id') id: string, @Req() req: Request) {
     const projectId = Number(id)
     const accountId = req.user.id
     const donor = await this.accountService.findOneDonor(Number(accountId))
@@ -120,7 +116,7 @@ export class ProjectController {
 
   @Get()
   @UseGuards(AuthGuard)
-  async getAllProjects(@Req() req: RequestWithUser) {
+  async getAllProjects(@Req() req: Request) {
     const accountId = req.user.id
     const donor = await this.accountService.findOneDonor(Number(accountId))
 
@@ -132,7 +128,7 @@ export class ProjectController {
 
   @Get('favorite')
   @UseGuards(AuthGuard)
-  async getFavoriteProjects(@Req() req: RequestWithUser) {
+  async getFavoriteProjects(@Req() req: Request) {
     const donor = await this.accountService.findOneDonor(Number(req.user.id))
     const donorId = donor.id
     const result = await this.projectService.getFavoriteProjectService(donorId)
@@ -165,7 +161,7 @@ export class ProjectController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteProject(
     @Param('projectId', ParseIntPipe) projectId: number,
-    @Req() req: RequestWithUser,
+    @Req() req: Request,
   ) {
     const accountId = req.user.id
     const institution = await this.accountService.findOneInstitution(accountId)

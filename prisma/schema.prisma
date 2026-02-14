@@ -63,6 +63,9 @@ model Account {
   followers        Follow[]          @relation("Followers")
   status           AccountStatus     @default(ACTIVE)
   Token            Token[]
+  reports          Report[]
+  blockedUsers     Block[]           @relation("Blocker")
+  blockedByUsers   Block[]           @relation("Blocked")
 }
 
 model Follow {
@@ -251,4 +254,46 @@ model Token {
   active    Boolean   @default(true)
   createdAt DateTime  @default(now())
   expiresAt DateTime
+}
+
+enum ReportTargetType {
+  POST
+  COMMENT
+  ACCOUNT
+}
+
+enum ReportReason {
+  SPAM
+  INAPPROPRIATE
+  HARASSMENT
+  MISINFORMATION
+  OTHER
+}
+
+model Report {
+  id         String           @id @default(cuid())
+  reporterId Int
+  targetType ReportTargetType
+  targetId   Int
+  reason     ReportReason
+  details    String?          @db.VarChar(500)
+  resolved   Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+  reporter   Account          @relation(fields: [reporterId], references: [id])
+
+  @@index([reporterId])
+  @@index([targetType, targetId])
+}
+
+model Block {
+  id        Int      @id @default(autoincrement())
+  blockerId Int
+  blockedId Int
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  blocker   Account  @relation("Blocker", fields: [blockerId], references: [id])
+  blocked   Account  @relation("Blocked", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
 }
