@@ -1,56 +1,10 @@
 services:
-  traefik:
-    image: traefik:v3.4
-    command:
-      - "--api.dashboard=true"
-      - "--log.level=INFO"
-      - "--accesslog=true"
-      - "--providers.docker"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entryPoints.websecure.address=:443"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      - "--certificatesResolvers.myresolver.acme.tlsChallenge=true"
-      - "--certificatesResolvers.myresolver.acme.email=reapp@gmail.com"
-      - "--certificatesResolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - letsencrypt:/letsencrypt
-      - /var/run/docker.sock:/var/run/docker.sock
-      - traefik_logs:/logs
-
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: reapp
-    ports:
-      - "3000:3000"
-    volumes:
-      - /var/www/reapp/uploads:/usr/src/app/uploads
-    env_file:
-      - .env
-    depends_on:
-      database:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`reapp.dev.br`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.tls.certresolver=myresolver"
-      - "traefik.http.services.backend.loadbalancer.server.port=3000"
-
   database:
     container_name: database
     image: postgres:17-alpine3.21
     restart: always
     healthcheck:
-      test: ["CMD", "pg_isready", "-q", "-d", "reapp", "-U", "reapp"]
+      test: ['CMD', 'pg_isready', '-q', '-d', 'reapp', '-U', 'reapp']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -58,8 +12,6 @@ services:
       - .env
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
 
   redis:
     container_name: redis
@@ -67,8 +19,3 @@ services:
     restart: always
     ports:
       - "6379:6379"
-
-volumes:
-  postgres_data:
-  letsencrypt:
-  traefik_logs:
