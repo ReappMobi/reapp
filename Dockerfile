@@ -21,7 +21,7 @@ FROM base AS builder
 COPY --from=installer /usr/src/app/node_modules ./node_modules
 COPY . .
 
-RUN pnpm prisma migrate deploy && pnpm build && pnpm prune --production --ignore-scripts
+RUN pnpm build && pnpm prune --production --ignore-scripts
 
 FROM base AS runner
 
@@ -29,6 +29,7 @@ COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
 
+RUN pnpm dlx prisma@6.19.2 migrate deploy
 RUN mkdir -p uploads temp_uploads
 
 USER node
