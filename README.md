@@ -45,7 +45,7 @@ The project includes two compose files:
 Bring up only the database + redis (fast, does not build the backend):
 
 ```bash
-docker-compose -f compose-dev.yaml up -d
+docker-compose up -d
 ```
 
 Bring up the full stack (includes backend build, Traefik etc):
