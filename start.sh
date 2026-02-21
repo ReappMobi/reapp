@@ -3,7 +3,7 @@
 set -ex
 
 echo "Applying migrations"
-./node_modules/prisma/node_modules/.bin/prisma migrate deploy
+pnpm prisma migrate deploy
 
 echo "Running reapp"
 
