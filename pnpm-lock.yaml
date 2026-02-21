@@ -101,6 +101,9 @@ importers:
       pino-pretty:
         specifier: ^13.0.0
         version: 13.0.0
+      prisma:
+        specifier: ^6.19.2
+        version: 6.19.2(typescript@5.8.3)
       redis:
         specifier: ^4.7.0
         version: 4.7.1
@@ -177,9 +180,6 @@ importers:
       husky:
         specifier: ^9.1.4
         version: 9.1.7
-      prisma:
-        specifier: ^6.19.2
-        version: 6.19.2(typescript@5.8.3)
       source-map-support:
         specifier: ^0.5.21
         version: 0.5.21
