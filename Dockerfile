@@ -21,7 +21,7 @@ FROM base AS builder
 COPY --from=installer /usr/src/app/node_modules ./node_modules
 COPY . .
 
-RUN pnpm dlx prisma migrate deploy && pnpm build && pnpm prune --production --ignore-scripts
+RUN pnpm prisma migrate deploy && pnpm build && pnpm prune --production --ignore-scripts
 
 FROM base AS runner
 
