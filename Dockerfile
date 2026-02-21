@@ -21,7 +21,7 @@ FROM base AS builder
 COPY --from=installer /usr/src/app/node_modules ./node_modules
 COPY . .
 
-RUN pnpm prisma migrate deploy && pnpm build && pnpm prune --production --ignore-scripts
+RUN pnpm prisma generate && pnpm build && pnpm prune --production --ignore-scripts
 
 FROM base AS runner
 
@@ -31,6 +31,8 @@ COPY --from=builder /usr/src/app/prisma ./prisma
 
 RUN mkdir -p uploads temp_uploads
 
+COPY start.sh ./
+
 USER node
 
-ENTRYPOINT [ "sh", "-c", "node dist/src/main.js" ]
+ENTRYPOINT ["./start.sh"]
