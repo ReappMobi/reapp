@@ -29,9 +29,10 @@ COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
 
-RUN pnpm dlx prisma@6.19.2 migrate deploy
 RUN mkdir -p uploads temp_uploads
+
+COPY start.sh ./
 
 USER node
 
-ENTRYPOINT [ "sh", "-c", "node dist/src/main.js" ]
+ENTRYPOINT ["./start.sh"]
