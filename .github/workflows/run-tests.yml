@@ -1,5 +1,3 @@
-# .github/workflows/test.yamname: Run tests
-
 name: CI - Run Tests on Develop
 on:
   pull_request:
