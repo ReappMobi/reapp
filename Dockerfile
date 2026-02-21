@@ -33,6 +33,8 @@ RUN mkdir -p uploads temp_uploads
 
 COPY start.sh ./
 
+RUN chmod +x ./start.sh
+
 USER node
 
 ENTRYPOINT ["./start.sh"]
