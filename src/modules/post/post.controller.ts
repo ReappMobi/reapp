@@ -78,18 +78,23 @@ export class PostController {
   @Get(':id/comments')
   @UseGuards(AuthGuard)
   async getPostComments(
+    @Req() req: Request,
     @Param('id', ParseIntPipe) id: number,
     @Query('page', ParseIntPipe) page: number,
   ) {
-    return await this.postService.getPostComments(id, page)
+    return await this.postService.getPostComments(id, page, req.user.id)
   }
 
   @Get('institution/:institutionId')
   @UseGuards(AuthGuard)
   async getPostsByInstitution(
+    @Req() req: Request,
     @Param('institutionId', ParseIntPipe) institutionId: number,
   ) {
-    const posts = await this.postService.getPostsByInstitution(institutionId)
+    const posts = await this.postService.getPostsByInstitution(
+      institutionId,
+      req.user.id,
+    )
     return posts
   }
 

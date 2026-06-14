@@ -1220,6 +1220,7 @@ describe('ProjectController', () => {
       expect(accountService.findOneDonor).toHaveBeenCalledWith(accountId)
       expect(projectService.getAllProjectsService).toHaveBeenCalledWith(
         donor.id,
+        req.user.id,
       )
       expect(result).toEqual(projects)
     })
@@ -1340,7 +1341,10 @@ describe('ProjectController', () => {
       const result = await controller.getAllProjects(req as any)
 
       expect(accountService.findOneDonor).toHaveBeenCalledWith(accountId)
-      expect(projectService.getAllProjectsService).toHaveBeenCalledWith(null)
+      expect(projectService.getAllProjectsService).toHaveBeenCalledWith(
+        null,
+        req.user.id,
+      )
       expect(result).toEqual(projects)
     })
   })
@@ -1477,6 +1481,7 @@ describe('ProjectController', () => {
       expect(accountService.findOneDonor).toHaveBeenCalledWith(accountId)
       expect(projectService.getFavoriteProjectService).toHaveBeenCalledWith(
         donor.id,
+        req.user.id,
       )
       expect(result).toEqual(favoriteProjects)
     })

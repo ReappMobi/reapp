@@ -13,6 +13,7 @@ import {
   PostProjectData,
   ProjectService,
 } from '../project.service'
+import { AccountService } from '../../account/account.service'
 
 vi.mock('../../media-attachment/media-attachment.service')
 
@@ -25,6 +26,13 @@ describe('ProjectService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProjectService,
+        {
+          provide: AccountService,
+          useValue: {
+            getBlockedUserIds: vi.fn().mockResolvedValue([]),
+            findOneDonor: vi.fn(),
+          },
+        },
         {
           provide: PrismaService,
           useValue: {

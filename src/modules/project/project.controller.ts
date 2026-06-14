@@ -121,7 +121,10 @@ export class ProjectController {
     const donor = await this.accountService.findOneDonor(Number(accountId))
 
     const donorId = donor ? donor.id : null
-    const result = await this.projectService.getAllProjectsService(donorId)
+    const result = await this.projectService.getAllProjectsService(
+      donorId,
+      accountId,
+    )
 
     return result
   }
@@ -129,9 +132,13 @@ export class ProjectController {
   @Get('favorite')
   @UseGuards(AuthGuard)
   async getFavoriteProjects(@Req() req: Request) {
-    const donor = await this.accountService.findOneDonor(Number(req.user.id))
+    const accountId = Number(req.user.id)
+    const donor = await this.accountService.findOneDonor(accountId)
     const donorId = donor.id
-    const result = await this.projectService.getFavoriteProjectService(donorId)
+    const result = await this.projectService.getFavoriteProjectService(
+      donorId,
+      accountId,
+    )
     return result
   }
 
