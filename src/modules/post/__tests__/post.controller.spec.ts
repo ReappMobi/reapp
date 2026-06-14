@@ -151,10 +151,13 @@ describe('PostController', () => {
       ]
       postService.getPostsByInstitution = vi.fn().mockResolvedValue(mockPosts)
 
-      const result = await controller.getPostsByInstitution(institutionId)
+      const req = { user: { id: 1 } } as unknown as Request
+
+      const result = await controller.getPostsByInstitution(req, institutionId)
 
       expect(postService.getPostsByInstitution).toHaveBeenCalledWith(
         institutionId,
+        1,
       )
 
       expect(result).toEqual(mockPosts)

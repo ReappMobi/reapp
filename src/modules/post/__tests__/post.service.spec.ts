@@ -52,7 +52,7 @@ describe('PostService', () => {
           provide: AccountService,
           useValue: {
             findOneDonor: vi.fn(),
-            getBlockedUserIds: vi.fn(),
+            getBlockedUserIds: vi.fn().mockResolvedValue([]),
           },
         },
       ],
