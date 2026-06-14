@@ -9,6 +9,7 @@ import { PrismaService } from '../../database/prisma.service'
 import { MediaService } from '../media-attachment/media-attachment.service'
 import { UpdateProjectDto } from './dto/updateProject.dto'
 import { Prisma } from '@prisma/client'
+import { AccountService } from '../account/account.service'
 
 export type PostProjectData = {
   description: string
@@ -66,6 +67,7 @@ export class ProjectService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly mediaService: MediaService,
+    private readonly accountService: AccountService,
   ) {}
 
   async postProjectService({
@@ -284,8 +286,19 @@ export class ProjectService {
     }
   }
 
-  async getAllProjectsService(donorId?: number) {
+  async getAllProjectsService(donorId?: number, accountId?: number) {
+    const blockedAccountIds =
+      await this.accountService.getBlockedUserIds(accountId)
+
     const allProjects = await this.prismaService.project.findMany({
+      where:
+        blockedAccountIds.length > 0
+          ? {
+              institution: {
+                accountId: { notIn: blockedAccountIds },
+              },
+            }
+          : undefined,
       select: projectResponseFields,
     })
 
@@ -327,10 +340,20 @@ export class ProjectService {
     return project
   }
 
-  async getFavoriteProjectService(donorId: number) {
+  async getFavoriteProjectService(donorId: number, accountId?: number) {
+    const blockedAccountIds =
+      await this.accountService.getBlockedUserIds(accountId)
+
     const favoriteProjects = await this.prismaService.favoriteProject.findMany({
       where: {
         donorId: donorId,
+        ...(blockedAccountIds.length > 0 && {
+          project: {
+            institution: {
+              accountId: { notIn: blockedAccountIds },
+            },
+          },
+        }),
       },
       include: {
         project: {

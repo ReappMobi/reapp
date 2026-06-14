@@ -390,10 +390,15 @@ export class AccountService {
   }
 
   async findAllInstitutions(followerId: number) {
+    const blockedAccountIds = await this.getBlockedUserIds(followerId)
+
     const allInstitutions = await this.prismaService.institution.findMany({
       where: {
         account: {
           status: AccountStatus.ACTIVE,
+          ...(blockedAccountIds.length > 0 && {
+            id: { notIn: blockedAccountIds },
+          }),
         },
       },
       select: {
@@ -923,10 +928,18 @@ export class AccountService {
   async getBlockedUserIds(accountId?: number): Promise<number[]> {
     if (!accountId) return []
     const blocks = await this.prismaService.block.findMany({
-      where: { blockerId: accountId, active: true },
-      select: { blockedId: true },
+      where: {
+        active: true,
+        OR: [{ blockerId: accountId }, { blockedId: accountId }],
+      },
+      select: { blockerId: true, blockedId: true },
     })
-    return blocks.map((b) => b.blockedId)
+    const ids = new Set<number>()
+    for (const block of blocks) {
+      if (block.blockerId !== accountId) ids.add(block.blockerId)
+      if (block.blockedId !== accountId) ids.add(block.blockedId)
+    }
+    return Array.from(ids)
   }
 
   async updateStatus(id: number, status: AccountStatus) {

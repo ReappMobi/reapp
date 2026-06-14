@@ -135,10 +135,16 @@ export class PostService {
     return post
   }
 
-  async getPostComments(id: number, page: number) {
+  async getPostComments(id: number, page: number, userId?: number) {
+    const blockedAccountIds =
+      await this.accountService.getBlockedUserIds(userId)
+
     const comments = await this.prismaService.comment.findMany({
       where: {
         postId: id,
+        ...(blockedAccountIds.length > 0 && {
+          accountId: { notIn: blockedAccountIds },
+        }),
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       include: {
@@ -156,10 +162,18 @@ export class PostService {
     return comments
   }
 
-  async getPostsByInstitution(institutionId: number) {
+  async getPostsByInstitution(institutionId: number, userId?: number) {
+    const blockedAccountIds =
+      await this.accountService.getBlockedUserIds(userId)
+
     const posts = await this.prismaService.post.findMany({
       where: {
         institutionId,
+        ...(blockedAccountIds.length > 0 && {
+          institution: {
+            accountId: { notIn: blockedAccountIds },
+          },
+        }),
       },
       orderBy: {
         createdAt: 'desc',
@@ -384,8 +398,20 @@ export class PostService {
   }
 
   async findSavedPostsByUserId(accountId: number) {
+    const blockedAccountIds =
+      await this.accountService.getBlockedUserIds(accountId)
+
     const posts = await this.prismaService.save.findMany({
-      where: { accountId },
+      where: {
+        accountId,
+        ...(blockedAccountIds.length > 0 && {
+          post: {
+            institution: {
+              accountId: { notIn: blockedAccountIds },
+            },
+          },
+        }),
+      },
       select: {
         post: {
           select: postResponseFields,
